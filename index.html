@@ -20,6 +20,13 @@
     font-family: 'Sora', sans-serif;
   }
 
+  body {
+    transition: filter 0.6s ease;
+  }
+  body.inverted {
+    filter: invert(1);
+  }
+
   #ambientGlow {
     position: fixed;
     inset: -20%;
@@ -202,10 +209,6 @@
     justify-content: center;
     padding: 8vh 6vw;
     position: relative;
-    transition: filter 0.6s ease;
-  }
-  .container.inverted {
-    filter: invert(1);
   }
 
   .top-row {
@@ -482,7 +485,7 @@
   </div>
 
   <div id="mainContent">
-    <div class="container inverted">
+    <div class="container">
       <div class="top-row">
         <div class="pic-wrap">
           <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
@@ -702,7 +705,6 @@
     typeLoop();
 
     const titleEl = document.getElementById('titleText');
-    const containerEl = document.querySelector('.container');
     const words = ['yin', 'yang'];
     let wordIndex = 0;
 
@@ -721,9 +723,9 @@
         titleEl.style.opacity = '';
 
         if (words[wordIndex] === 'yin') {
-          containerEl.classList.add('inverted');
+          document.body.classList.add('inverted');
         } else {
-          containerEl.classList.remove('inverted');
+          document.body.classList.remove('inverted');
         }
       }, 350);
     }
