@@ -117,6 +117,27 @@
     filter: invert(1);
   }
 
+  #bgShine {
+    position: fixed;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.05), transparent);
+    pointer-events: none;
+    z-index: 2;
+    animation: bgShineSweep 6s ease-in-out infinite;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #bgShine {
+    filter: invert(1);
+  }
+  @keyframes bgShineSweep {
+    0% { left: -60%; }
+    25% { left: 140%; }
+    100% { left: 140%; }
+  }
+
   #scanlines {
     position: fixed;
     inset: 0;
@@ -253,7 +274,6 @@
     perspective: 1000px;
   }
 
-  /* ---- Profile pic: fold-out reveal instead of slide-in ---- */
   #mainContent .pic-wrap {
     opacity: 0;
     transform: rotateX(-100deg);
@@ -283,6 +303,7 @@
     opacity: 1;
   }
 
+  /* ---- Profile picture: no border, no glow ---- */
   .pic-wrap {
     width: 36vw;
     max-width: 210px;
@@ -292,24 +313,6 @@
     position: relative;
     perspective: 800px;
     flex-shrink: 0;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.06);
-  }
-  .pic-wrap::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent);
-    animation: shineSweep 5s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 2;
-  }
-  @keyframes shineSweep {
-    0% { left: -150%; }
-    20% { left: 150%; }
-    100% { left: 150%; }
   }
 
   .profile-pic {
@@ -525,6 +528,7 @@
   <div id="particles"></div>
   <div id="bgText"></div>
   <div id="spotlight"></div>
+  <div id="bgShine"></div>
   <div id="scanlines"></div>
   <div id="grain"></div>
   <div id="vignette"></div>
