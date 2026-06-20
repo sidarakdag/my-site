@@ -58,7 +58,6 @@
     left: 50%;
   }
 
-  /* ---- Flickering "her eyes" line ---- */
   #bgText {
     position: fixed;
     inset: 0;
@@ -193,7 +192,6 @@
     100% { background-position: -200% 0; }
   }
 
-  /* ---- Small custom emoji (gif) next to title ---- */
   .mini-icon {
     width: 24px;
     height: 24px;
@@ -266,17 +264,17 @@
   <div id="grain"></div>
 
   <div id="entrance">
-    <img src="kataly-logo.png" alt="logo">
+    <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
   </div>
 
   <div id="mainContent">
     <div class="container">
       <div class="top-row">
-        <img class="profile-pic" src="https://placehold.co/300x400/0a0a0a/0a0a0a" alt="profile">
+        <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
         <div class="text-block">
           <div class="title-row">
             <span class="title" id="titleText">ying</span>
-            <!-- upload your gif to Replit and rename it to match the src below -->
+            <!-- still need to upload your gif and rename src below to match -->
             <img class="mini-icon" src="waiting.gif" alt="icon">
           </div>
           <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
@@ -295,11 +293,9 @@
   <button class="music-btn" id="musicToggle">🔇</button>
 
   <script>
-    /* ---- "her eyes" scattered along ONE random line, each flickering independently ---- */
     const bgContainer = document.getElementById('bgText');
     const wordCount = 22;
 
-    // pick one random line across the screen (in % coordinates)
     const lineStart = { x: Math.random() * 30, y: Math.random() * 100 };
     const lineEnd   = { x: 70 + Math.random() * 30, y: Math.random() * 100 };
 
@@ -308,8 +304,8 @@
       word.classList.add('bg-word');
       word.textContent = 'her eyes';
 
-      const t = Math.random(); // position along the line
-      const jitterX = (Math.random() - 0.5) * 6; // small perpendicular scatter
+      const t = Math.random();
+      const jitterX = (Math.random() - 0.5) * 6;
       const jitterY = (Math.random() - 0.5) * 6;
 
       const x = lineStart.x + (lineEnd.x - lineStart.x) * t + jitterX;
@@ -318,8 +314,8 @@
       const size = 10 + Math.random() * 14;
       const rotation = Math.random() * 360;
       const peakOpacity = 0.08 + Math.random() * 0.14;
-      const duration = 3 + Math.random() * 6; // flicker cycle length
-      const delay = -Math.random() * 9; // negative delay = starts mid-cycle, staggers them
+      const duration = 3 + Math.random() * 6;
+      const delay = -Math.random() * 9;
 
       word.style.left = `${x}%`;
       word.style.top = `${y}%`;
@@ -332,7 +328,6 @@
       bgContainer.appendChild(word);
     }
 
-    /* ---- Touch/cursor reactive spotlight ---- */
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -344,7 +339,6 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
-    /* ---- Entrance + music ---- */
     const entrance = document.getElementById('entrance');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
@@ -371,7 +365,6 @@
       playing = !playing;
     });
 
-    /* ---- Typewriter loop for handle ---- */
     const handleEl = document.getElementById('handleText');
     const fullText = '@yourname';
     let charIndex = 0;
@@ -407,7 +400,6 @@
 
     typeLoop();
 
-    /* ---- Title swap loop: ying <-> yang (3D flip) ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
