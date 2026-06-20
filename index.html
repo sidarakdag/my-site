@@ -2,21 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>realization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
     background: radial-gradient(circle at 50% 40%, #0c0c0c 0%, #000 75%);
     color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    overflow-x: hidden;
-    position: relative;
+    font-family: 'Sora', sans-serif;
+    position: fixed;
+    inset: 0;
   }
 
   #ambientGlow {
@@ -126,7 +129,6 @@
     pointer-events: none;
   }
 
-  /* ---- Entrance screen ---- */
   #entrance {
     position: fixed;
     inset: 0;
@@ -179,7 +181,6 @@
     50% { opacity: 0.45; transform: scale(0.94); }
   }
 
-  /* ---- Loading screen ---- */
   #loadingScreen {
     position: fixed;
     inset: 0;
@@ -228,12 +229,12 @@
     50% { opacity: 1; }
   }
 
-  /* ---- Main content ---- */
   #mainContent {
-    position: relative;
+    position: fixed;
+    inset: 0;
     z-index: 2;
     width: 100%;
-    min-height: 100dvh;
+    height: 100%;
     filter: blur(20px);
     opacity: 0;
     transform: scale(0.97);
@@ -247,7 +248,7 @@
 
   .container {
     width: 100%;
-    min-height: 100dvh;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -339,7 +340,7 @@
 
   .title {
     font-size: clamp(28px, 7vw, 46px);
-    font-weight: 700;
+    font-weight: 600;
     text-transform: lowercase;
     letter-spacing: 1px;
     display: inline-block;
@@ -376,6 +377,7 @@
   .handle {
     margin-top: 2.2vh;
     font-size: clamp(15px, 3.6vw, 19px);
+    font-weight: 300;
     color: #f5f5f5;
     min-height: 24px;
     letter-spacing: 0.5px;
@@ -512,7 +514,6 @@
   </audio>
 
   <script>
-    /* ---- Particles ---- */
     const particleContainer = document.getElementById('particles');
     for (let i = 0; i < 18; i++) {
       const p = document.createElement('div');
@@ -528,7 +529,6 @@
       particleContainer.appendChild(p);
     }
 
-    /* ---- "her eyes" random spawn, 3-5 visible at once ---- */
     const bgContainer = document.getElementById('bgText');
     let activeWords = 0;
     const MAX_WORDS = 5;
@@ -579,7 +579,6 @@
     setInterval(maintainWords, 400);
     for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 250);
 
-    /* ---- Spotlight follow ---- */
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -591,7 +590,6 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
-    /* ---- Profile pic tilt ---- */
     const picWrap = document.querySelector('.pic-wrap');
     const pic = document.querySelector('.profile-pic');
     function tilt(e) {
@@ -612,7 +610,6 @@
     picWrap.addEventListener('touchmove', tilt, { passive: true });
     picWrap.addEventListener('touchend', resetTilt);
 
-    /* ---- Ripple effect on buttons ---- */
     function addRipple(e, btn) {
       const rect = btn.getBoundingClientRect();
       const clientX = e.touches ? e.changedTouches[0].clientX : e.clientX;
@@ -630,7 +627,6 @@
       btn.addEventListener('click', (e) => addRipple(e, btn));
     });
 
-    /* ---- Entrance -> Loading -> Main reveal ---- */
     const entrance = document.getElementById('entrance');
     const loadingScreen = document.getElementById('loadingScreen');
     const mainContent = document.getElementById('mainContent');
@@ -663,7 +659,6 @@
       playing = !playing;
     });
 
-    /* ---- Typewriter loop for handle ---- */
     const handleEl = document.getElementById('handleText');
     const fullText = 'kataly';
     let charIndex = 0;
@@ -698,7 +693,6 @@
     }
     typeLoop();
 
-    /* ---- Title swap loop: ying <-> yang ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
