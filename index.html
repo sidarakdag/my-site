@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>realization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(circle at 50% 40%, #0c0c0c 0%, #000 75%);
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  #grain {
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    z-index: 2;
+    pointer-events: none;
+    animation: grainShift 0.5s steps(2) infinite;
+  }
+
+  @keyframes grainShift {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(-2%,1%); }
+    100% { transform: translate(1%,-2%); }
+  }
+
+  #vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  #spotlight {
+    position: fixed;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+  }
+
+  /* ---- Flickering "her eyes" line ---- */
+  #bgText {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bg-word {
+    position: absolute;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    color: #fff;
+    opacity: 0;
+    animation: flicker ease-in-out infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--peak); }
+  }
+
+  #entrance {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    backdrop-filter: blur(24px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.9s ease, visibility 0.9s ease;
+  }
+
+  #entrance.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  #entrance img {
+    width: 62vw;
+    max-width: 320px;
+    filter: invert(1) grayscale(1) brightness(1.6)
+            drop-shadow(0 0 10px #fff)
+            drop-shadow(0 0 28px rgba(255,255,255,0.8));
+    animation: pulse 1.8s infinite ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.94); }
+  }
+
+  #mainContent {
+    position: relative;
+    z-index: 1;
+    filter: blur(20px);
+    opacity: 0;
+    transform: scale(0.97);
+    transition: filter 0.9s ease, opacity 0.9s ease, transform 0.9s ease;
+  }
+
+  #mainContent.revealed {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8vh 6vw;
+  }
+
+  .top-row {
+    display: flex;
+    align-items: center;
+    gap: 5vw;
+  }
+
+  .profile-pic {
+    width: 36vw;
+    max-width: 210px;
+    aspect-ratio: 3/4;
+    background: linear-gradient(180deg, #1a1a1a, #000);
+    border-radius: 6px;
+    filter: grayscale(0.6) contrast(1.3) brightness(0.85);
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.06);
+  }
+
+  .text-block {
+    flex: 1;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    perspective: 600px;
+  }
+
+  .title {
+    font-size: clamp(28px, 7vw, 46px);
+    font-weight: 700;
+    text-transform: lowercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    min-width: 90px;
+    background: linear-gradient(110deg, #fff 30%, #aaa 50%, #fff 70%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 25px rgba(255,255,255,0.35);
+    animation: shimmer 3.5s linear infinite;
+    transform-style: preserve-3d;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+
+  .title.flip {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ---- Small custom emoji (gif) next to title ---- */
+  .mini-icon {
+    width: 24px;
+    height: 24px;
+    margin-left: 10px;
+    border-radius: 6px;
+    object-fit: cover;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+
+  .handle {
+    margin-top: 2.2vh;
+    font-size: clamp(15px, 3.6vw, 19px);
+    color: #f5f5f5;
+    min-height: 24px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 8px rgba(255,255,255,0.5);
+  }
+
+  .cursor {
+    animation: blink 1s step-start infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .telegram-btn, .music-btn {
+    position: fixed;
+    bottom: 20px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #fff;
+    z-index: 10;
+    cursor: pointer;
+    box-shadow: 0 0 16px rgba(255,255,255,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .telegram-btn { left: 18px; }
+  .music-btn { right: 18px; border: none; font-size: 18px; }
+
+  .telegram-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
+  }
+
+  .telegram-btn:active, .music-btn:active {
+    transform: scale(0.88);
+    box-shadow: 0 0 22px rgba(255,255,255,0.18);
+  }
+</style>
+</head>
+<body>
+
+  <div id="bgText"></div>
+  <div id="spotlight"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+
+  <div id="entrance">
+    <img src="kataly-logo.png" alt="logo">
+  </div>
+
+  <div id="mainContent">
+    <div class="container">
+      <div class="top-row">
+        <img class="profile-pic" src="https://placehold.co/300x400/0a0a0a/0a0a0a" alt="profile">
+        <div class="text-block">
+          <div class="title-row">
+            <span class="title" id="titleText">ying</span>
+            <!-- upload your gif to Replit and rename it to match the src below -->
+            <img class="mini-icon" src="waiting.gif" alt="icon">
+          </div>
+          <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a class="telegram-btn" href="https://t.me/yourusername" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+  </a>
+
+  <audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+  <button class="music-btn" id="musicToggle">🔇</button>
+
+  <script>
+    /* ---- "her eyes" scattered along ONE random line, each flickering independently ---- */
+    const bgContainer = document.getElementById('bgText');
+    const wordCount = 22;
+
+    // pick one random line across the screen (in % coordinates)
+    const lineStart = { x: Math.random() * 30, y: Math.random() * 100 };
+    const lineEnd   = { x: 70 + Math.random() * 30, y: Math.random() * 100 };
+
+    for (let i = 0; i < wordCount; i++) {
+      const word = document.createElement('div');
+      word.classList.add('bg-word');
+      word.textContent = 'her eyes';
+
+      const t = Math.random(); // position along the line
+      const jitterX = (Math.random() - 0.5) * 6; // small perpendicular scatter
+      const jitterY = (Math.random() - 0.5) * 6;
+
+      const x = lineStart.x + (lineEnd.x - lineStart.x) * t + jitterX;
+      const y = lineStart.y + (lineEnd.y - lineStart.y) * t + jitterY;
+
+      const size = 10 + Math.random() * 14;
+      const rotation = Math.random() * 360;
+      const peakOpacity = 0.08 + Math.random() * 0.14;
+      const duration = 3 + Math.random() * 6; // flicker cycle length
+      const delay = -Math.random() * 9; // negative delay = starts mid-cycle, staggers them
+
+      word.style.left = `${x}%`;
+      word.style.top = `${y}%`;
+      word.style.fontSize = `${size}px`;
+      word.style.transform = `rotate(${rotation}deg)`;
+      word.style.setProperty('--peak', peakOpacity);
+      word.style.animationDuration = `${duration}s`;
+      word.style.animationDelay = `${delay}s`;
+
+      bgContainer.appendChild(word);
+    }
+
+    /* ---- Touch/cursor reactive spotlight ---- */
+    const spotlight = document.getElementById('spotlight');
+    function moveSpotlight(x, y) {
+      spotlight.style.left = `${x}px`;
+      spotlight.style.top = `${y}px`;
+    }
+    window.addEventListener('mousemove', (e) => moveSpotlight(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      moveSpotlight(t.clientX, t.clientY);
+    });
+
+    /* ---- Entrance + music ---- */
+    const entrance = document.getElementById('entrance');
+    const mainContent = document.getElementById('mainContent');
+    const music = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicToggle');
+    let playing = false;
+
+    entrance.addEventListener('click', () => {
+      entrance.classList.add('hidden');
+      mainContent.classList.add('revealed');
+      music.play();
+      musicBtn.textContent = '🔊';
+      playing = true;
+    });
+
+    musicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!playing) {
+        music.play();
+        musicBtn.textContent = '🔊';
+      } else {
+        music.pause();
+        musicBtn.textContent = '🔇';
+      }
+      playing = !playing;
+    });
+
+    /* ---- Typewriter loop for handle ---- */
+    const handleEl = document.getElementById('handleText');
+    const fullText = '@yourname';
+    let charIndex = 0;
+    let isTyping = true;
+
+    function typeLoop() {
+      if (isTyping) {
+        if (charIndex <= fullText.length) {
+          handleEl.textContent = fullText.slice(0, charIndex);
+          charIndex++;
+          setTimeout(typeLoop, 110);
+        } else {
+          setTimeout(() => {
+            isTyping = false;
+            charIndex = fullText.length;
+            typeLoop();
+          }, 5000);
+        }
+      } else {
+        if (charIndex >= 0) {
+          handleEl.textContent = fullText.slice(0, charIndex);
+          charIndex--;
+          setTimeout(typeLoop, 60);
+        } else {
+          setTimeout(() => {
+            isTyping = true;
+            charIndex = 0;
+            typeLoop();
+          }, 800);
+        }
+      }
+    }
+
+    typeLoop();
+
+    /* ---- Title swap loop: ying <-> yang (3D flip) ---- */
+    const titleEl = document.getElementById('titleText');
+    const words = ['ying', 'yang'];
+    let wordIndex = 0;
+
+    setInterval(() => {
+      titleEl.classList.add('flip');
+      setTimeout(() => {
+        wordIndex = (wordIndex + 1) % words.length;
+        titleEl.textContent = words[wordIndex];
+        titleEl.classList.remove('flip');
+      }, 350);
+    }, 2000);
+  </script>
+
+</body>
+</html>
