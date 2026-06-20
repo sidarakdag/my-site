@@ -39,6 +39,10 @@
     filter: blur(60px);
     animation: ambientRotate 30s linear infinite;
     pointer-events: none;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #ambientGlow {
+    filter: blur(60px) invert(1);
   }
   @keyframes ambientRotate { to { transform: rotate(360deg); } }
 
@@ -48,6 +52,10 @@
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #particles {
+    filter: invert(1);
   }
   .particle {
     position: absolute;
@@ -68,6 +76,10 @@
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #bgText {
+    filter: invert(1);
   }
   .bg-word {
     position: absolute;
@@ -89,6 +101,10 @@
     z-index: 1;
     top: 50%;
     left: 50%;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #spotlight {
+    filter: invert(1);
   }
 
   #scanlines {
@@ -104,6 +120,10 @@
       transparent 3px
     );
     animation: scanMove 6s linear infinite;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #scanlines {
+    filter: invert(1);
   }
   @keyframes scanMove {
     from { background-position-y: 0; }
@@ -134,6 +154,10 @@
     background: radial-gradient(circle at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.6) 100%);
     z-index: 5;
     pointer-events: none;
+    transition: filter 0.6s ease;
+  }
+  body.fx-inverted #vignette {
+    filter: invert(1);
   }
 
   #entrance {
@@ -484,7 +508,6 @@
 </head>
 <body>
 
-  <!-- Background atmosphere layers: OUTSIDE the invert wrapper, stay stable -->
   <div id="ambientGlow"></div>
   <div id="particles"></div>
   <div id="bgText"></div>
@@ -698,6 +721,7 @@
         const isYin = words[wordIndex] === 'yin';
         invertWrapper.classList.toggle('inverted', isYin);
         allBtnWraps.forEach(w => w.classList.toggle('btn-inverted', isYin));
+        document.body.classList.toggle('fx-inverted', isYin);
       }, 350);
     }
 
