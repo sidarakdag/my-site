@@ -593,8 +593,13 @@
       if (activeWords < target) spawnWord();
     }
 
-    setInterval(maintainWords, 400);
-    for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 250);
+    let bgTextStarted = false;
+    function startBgText() {
+      if (bgTextStarted) return;
+      bgTextStarted = true;
+      setInterval(maintainWords, 400);
+      for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 250);
+    }
 
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
@@ -650,12 +655,48 @@
     const musicBtn = document.getElementById('musicToggle');
     let playing = false;
 
+    const titleEl = document.getElementById('titleText');
+    const words = ['yin', 'yang'];
+    let wordIndex = 1;
+    let titleLoopStarted = false;
+
+    function swapTitle() {
+      titleEl.classList.add('slide-out');
+      setTimeout(() => {
+        wordIndex = (wordIndex + 1) % words.length;
+        titleEl.textContent = words[wordIndex];
+        titleEl.style.transition = 'none';
+        titleEl.style.transform = 'translateY(16px)';
+        titleEl.style.opacity = '0';
+        void titleEl.offsetWidth;
+        titleEl.style.transition = '';
+        titleEl.classList.remove('slide-out');
+        titleEl.style.transform = '';
+        titleEl.style.opacity = '';
+
+        if (words[wordIndex] === 'yin') {
+          document.body.classList.add('inverted');
+        } else {
+          document.body.classList.remove('inverted');
+        }
+      }, 350);
+    }
+
+    function startTitleLoop() {
+      if (titleLoopStarted) return;
+      titleLoopStarted = true;
+      setInterval(swapTitle, 2000);
+    }
+
     entrance.addEventListener('click', () => {
       entrance.classList.add('hidden');
       mainContent.classList.add('revealed');
       music.play();
       musicBtn.textContent = '🔊';
       playing = true;
+
+      startTitleLoop();
+      startBgText();
     });
 
     musicBtn.addEventListener('click', (e) => {
@@ -703,33 +744,6 @@
       }
     }
     typeLoop();
-
-    const titleEl = document.getElementById('titleText');
-    const words = ['yin', 'yang'];
-    let wordIndex = 1;
-
-    function swapTitle() {
-      titleEl.classList.add('slide-out');
-      setTimeout(() => {
-        wordIndex = (wordIndex + 1) % words.length;
-        titleEl.textContent = words[wordIndex];
-        titleEl.style.transition = 'none';
-        titleEl.style.transform = 'translateY(16px)';
-        titleEl.style.opacity = '0';
-        void titleEl.offsetWidth;
-        titleEl.style.transition = '';
-        titleEl.classList.remove('slide-out');
-        titleEl.style.transform = '';
-        titleEl.style.opacity = '';
-
-        if (words[wordIndex] === 'yin') {
-          document.body.classList.add('inverted');
-        } else {
-          document.body.classList.remove('inverted');
-        }
-      }, 350);
-    }
-    setInterval(swapTitle, 2000);
   </script>
 
 </body>
