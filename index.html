@@ -20,10 +20,10 @@
     font-family: 'Sora', sans-serif;
   }
 
-  body {
+  #invertWrapper {
     transition: filter 0.6s ease;
   }
-  body.inverted {
+  #invertWrapper.inverted {
     filter: invert(1);
   }
 
@@ -420,6 +420,7 @@
     opacity: 0.55;
     animation: rotateGlow 5s linear infinite;
     z-index: -1;
+    transition: opacity 0.5s ease;
   }
   @keyframes rotateGlow { to { transform: rotate(360deg); } }
 
@@ -440,7 +441,7 @@
     font-size: 18px;
     cursor: pointer;
     overflow: hidden;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, background 0.5s ease, border-color 0.5s ease;
   }
   .telegram-btn:active, .music-btn:active {
     transform: scale(0.88);
@@ -451,6 +452,18 @@
     height: 20px;
     fill: #fff;
     filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
+    transition: fill 0.5s ease;
+  }
+
+  .btn-wrap.btn-inverted .telegram-btn,
+  .btn-wrap.btn-inverted .music-btn {
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #000;
+  }
+  .btn-wrap.btn-inverted .telegram-btn svg {
+    fill: #000;
+    filter: drop-shadow(0 0 6px rgba(0,0,0,0.4));
   }
 
   .ripple {
@@ -470,49 +483,51 @@
 </head>
 <body>
 
-  <div id="ambientGlow"></div>
-  <div id="particles"></div>
-  <div id="bgText"></div>
-  <div id="spotlight"></div>
-  <div id="scanlines"></div>
-  <div id="grain"></div>
-  <div id="vignette"></div>
+  <div id="invertWrapper">
+    <div id="ambientGlow"></div>
+    <div id="particles"></div>
+    <div id="bgText"></div>
+    <div id="spotlight"></div>
+    <div id="scanlines"></div>
+    <div id="grain"></div>
+    <div id="vignette"></div>
 
-  <div id="entrance">
-    <div class="logo-wrap">
-      <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
+    <div id="entrance">
+      <div class="logo-wrap">
+        <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
+      </div>
     </div>
-  </div>
 
-  <div id="mainContent">
-    <div class="container">
-      <div class="top-row">
-        <div class="pic-wrap">
-          <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
-        </div>
-        <div class="text-block">
-          <div class="title-block">
-            <div class="title-row">
-              <span class="title" id="titleText">yang</span>
-            </div>
-            <div class="title-underline"></div>
+    <div id="mainContent">
+      <div class="container">
+        <div class="top-row">
+          <div class="pic-wrap">
+            <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
           </div>
-          <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
+          <div class="text-block">
+            <div class="title-block">
+              <div class="title-row">
+                <span class="title" id="titleText">yang</span>
+              </div>
+              <div class="title-underline"></div>
+            </div>
+            <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
+          </div>
+        </div>
+
+        <div class="scroll-indicator">
+          <span>scroll for more</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 4v16m0 0l-6-6m6 6l6-6"/>
+          </svg>
         </div>
       </div>
 
-      <div class="scroll-indicator">
-        <span>scroll for more</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4v16m0 0l-6-6m6 6l6-6"/>
-        </svg>
-      </div>
-    </div>
-
-    <div class="quote-section">
-      <div>
-        <span class="quote-mark">"</span>
-        <p class="quote-text">şiiri yazan benim kalemimdi<br>kalemin mürekkebi senin gözlerindi<br>gözlerine kanmak benim kaderimdi<br>kaderime oynayan senin sözlerindi.</p>
+      <div class="quote-section">
+        <div>
+          <span class="quote-mark">"</span>
+          <p class="quote-text">şiiri yazan benim kalemimdi<br>kalemin mürekkebi senin gözlerindi<br>gözlerine kanmak benim kaderimdi<br>kaderime oynayan senin sözlerindi.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -655,12 +670,16 @@
     const musicBtn = document.getElementById('musicToggle');
     let playing = false;
 
+    const invertWrapper = document.getElementById('invertWrapper');
+    const allBtnWraps = document.querySelectorAll('.btn-wrap');
+
     const titleEl = document.getElementById('titleText');
     const words = ['yin', 'yang'];
     let wordIndex = 1;
     let titleLoopStarted = false;
 
     function swapTitle() {
+      if (!entrance.classList.contains('hidden')) return;
       titleEl.classList.add('slide-out');
       setTimeout(() => {
         wordIndex = (wordIndex + 1) % words.length;
@@ -674,11 +693,9 @@
         titleEl.style.transform = '';
         titleEl.style.opacity = '';
 
-        if (words[wordIndex] === 'yin') {
-          document.body.classList.add('inverted');
-        } else {
-          document.body.classList.remove('inverted');
-        }
+        const isYin = words[wordIndex] === 'yin';
+        invertWrapper.classList.toggle('inverted', isYin);
+        allBtnWraps.forEach(w => w.classList.toggle('btn-inverted', isYin));
       }, 350);
     }
 
