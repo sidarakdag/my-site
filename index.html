@@ -250,22 +250,25 @@
     display: flex;
     align-items: center;
     gap: 5vw;
+    perspective: 1000px;
   }
 
+  /* ---- Profile pic: fold-out reveal instead of slide-in ---- */
   #mainContent .pic-wrap {
     opacity: 0;
-    transform: translateX(-24px);
-    transition: opacity 0.8s ease 0.15s, transform 0.8s ease 0.15s;
+    transform: rotateX(-100deg);
+    transform-origin: top center;
+    transition: opacity 0.9s ease 0.15s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
   }
   #mainContent.revealed .pic-wrap {
     opacity: 1;
-    transform: translateX(0);
+    transform: rotateX(0deg);
   }
 
   #mainContent .title-block {
     opacity: 0;
     transform: translateY(14px);
-    transition: opacity 0.8s ease 0.35s, transform 0.8s ease 0.35s;
+    transition: opacity 0.8s ease 0.45s, transform 0.8s ease 0.45s;
   }
   #mainContent.revealed .title-block {
     opacity: 1;
@@ -274,7 +277,7 @@
 
   #mainContent .handle {
     opacity: 0;
-    transition: opacity 0.8s ease 0.55s;
+    transition: opacity 0.8s ease 0.65s;
   }
   #mainContent.revealed .handle {
     opacity: 1;
