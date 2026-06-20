@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>realization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +18,7 @@
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: none;
-    background: radial-gradient(circle at 50% 40%, #0c0c0c 0%, #000 75%);
+    background: #000;
     color: #fff;
     font-family: 'Sora', sans-serif;
     position: fixed;
@@ -27,8 +30,8 @@
     inset: -20%;
     z-index: 0;
     background: conic-gradient(from 0deg at 50% 50%,
-      rgba(255,126,179,0.06), rgba(124,58,237,0.07),
-      rgba(255,255,255,0.03), rgba(255,126,179,0.06));
+      rgba(255,126,179,0.03), rgba(124,58,237,0.035),
+      rgba(255,255,255,0.015), rgba(255,126,179,0.03));
     filter: blur(60px);
     animation: ambientRotate 30s linear infinite;
     pointer-events: none;
@@ -48,7 +51,7 @@
     border-radius: 50%;
     opacity: 0;
     animation: twinkle ease-in-out infinite;
-    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+    box-shadow: 0 0 4px rgba(255,255,255,0.4);
   }
   @keyframes twinkle {
     0%, 100% { opacity: 0; }
@@ -68,7 +71,7 @@
     white-space: nowrap;
     user-select: none;
     color: #fff;
-    text-shadow: 0 0 6px rgba(255,255,255,0.4);
+    text-shadow: 0 0 4px rgba(255,255,255,0.3);
   }
 
   #spotlight {
@@ -76,7 +79,7 @@
     width: 380px;
     height: 380px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
     transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: 1;
@@ -91,8 +94,8 @@
     pointer-events: none;
     background: repeating-linear-gradient(
       to bottom,
-      rgba(255,255,255,0.025) 0px,
-      rgba(255,255,255,0.025) 1px,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
       transparent 1px,
       transparent 3px
     );
@@ -109,7 +112,7 @@
     width: 200%;
     height: 200%;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-    opacity: 0.05;
+    opacity: 0.03;
     mix-blend-mode: overlay;
     z-index: 4;
     pointer-events: none;
@@ -124,7 +127,7 @@
   #vignette {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
+    background: radial-gradient(circle at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.6) 100%);
     z-index: 5;
     pointer-events: none;
   }
@@ -179,54 +182,6 @@
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.45; transform: scale(0.94); }
-  }
-
-  #loadingScreen {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    z-index: 998;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-  }
-  #loadingScreen.visible {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .loader-ring {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.15);
-    border-top-color: #fff;
-    box-shadow: 0 0 12px rgba(255,255,255,0.5), 0 0 24px rgba(255,255,255,0.2);
-    animation: spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loader-text {
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-transform: lowercase;
-    color: #fff;
-    text-shadow: 0 0 8px rgba(255,255,255,0.6);
-  }
-  .loader-text .dots span {
-    animation: dotFade 1.2s infinite;
-    opacity: 0;
-  }
-  .loader-text .dots span:nth-child(2) { animation-delay: 0.2s; }
-  .loader-text .dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes dotFade {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 1; }
   }
 
   #mainContent {
@@ -298,7 +253,7 @@
     position: relative;
     perspective: 800px;
     flex-shrink: 0;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.08);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.06);
   }
   .pic-wrap::after {
     content: '';
@@ -307,7 +262,7 @@
     left: -150%;
     width: 60%;
     height: 100%;
-    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent);
     animation: shineSweep 5s ease-in-out infinite;
     pointer-events: none;
     z-index: 2;
@@ -333,9 +288,7 @@
   }
 
   .title-row {
-    display: flex;
-    align-items: center;
-    perspective: 600px;
+    overflow: hidden;
   }
 
   .title {
@@ -352,11 +305,10 @@
     color: transparent;
     text-shadow: 0 0 25px rgba(255,255,255,0.35);
     animation: shimmer 3.5s linear infinite;
-    transform-style: preserve-3d;
     transition: transform 0.35s ease, opacity 0.35s ease;
   }
-  .title.flip {
-    transform: rotateX(90deg);
+  .title.slide-out {
+    transform: translateY(-16px);
     opacity: 0;
   }
   @keyframes shimmer {
@@ -476,11 +428,6 @@
     </div>
   </div>
 
-  <div id="loadingScreen">
-    <div class="loader-ring"></div>
-    <div class="loader-text">loading<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
-  </div>
-
   <div id="mainContent">
     <div class="container">
       <div class="top-row">
@@ -515,7 +462,7 @@
 
   <script>
     const particleContainer = document.getElementById('particles');
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 12; i++) {
       const p = document.createElement('div');
       p.classList.add('particle');
       const size = 1 + Math.random() * 2;
@@ -523,7 +470,7 @@
       p.style.height = `${size}px`;
       p.style.top = `${Math.random() * 100}%`;
       p.style.left = `${Math.random() * 100}%`;
-      p.style.setProperty('--p-op', (0.15 + Math.random() * 0.25).toFixed(2));
+      p.style.setProperty('--p-op', (0.08 + Math.random() * 0.12).toFixed(2));
       p.style.animationDuration = `${3 + Math.random() * 5}s`;
       p.style.animationDelay = `-${Math.random() * 5}s`;
       particleContainer.appendChild(p);
@@ -545,7 +492,7 @@
       const left = Math.random() * 100;
       const size = 10 + Math.random() * 14;
       const rotation = Math.random() * 360;
-      const peakOpacity = 0.08 + Math.random() * 0.16;
+      const peakOpacity = 0.05 + Math.random() * 0.1;
       const holdTime = 1200 + Math.random() * 2800;
       const fadeTime = 700;
 
@@ -628,7 +575,6 @@
     });
 
     const entrance = document.getElementById('entrance');
-    const loadingScreen = document.getElementById('loadingScreen');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
@@ -636,15 +582,10 @@
 
     entrance.addEventListener('click', () => {
       entrance.classList.add('hidden');
-      loadingScreen.classList.add('visible');
-
-      setTimeout(() => {
-        loadingScreen.classList.remove('visible');
-        mainContent.classList.add('revealed');
-        music.play();
-        musicBtn.textContent = '🔊';
-        playing = true;
-      }, 2000);
+      mainContent.classList.add('revealed');
+      music.play();
+      musicBtn.textContent = '🔊';
+      playing = true;
     });
 
     musicBtn.addEventListener('click', (e) => {
@@ -693,18 +634,27 @@
     }
     typeLoop();
 
+    /* ---- Title swap: vertical slide instead of flip ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
 
-    setInterval(() => {
-      titleEl.classList.add('flip');
+    function swapTitle() {
+      titleEl.classList.add('slide-out');
       setTimeout(() => {
         wordIndex = (wordIndex + 1) % words.length;
         titleEl.textContent = words[wordIndex];
-        titleEl.classList.remove('flip');
+        titleEl.style.transition = 'none';
+        titleEl.style.transform = 'translateY(16px)';
+        titleEl.style.opacity = '0';
+        void titleEl.offsetWidth;
+        titleEl.style.transition = '';
+        titleEl.classList.remove('slide-out');
+        titleEl.style.transform = '';
+        titleEl.style.opacity = '';
       }, 350);
-    }, 2000);
+    }
+    setInterval(swapTitle, 2000);
   </script>
 
 </body>
