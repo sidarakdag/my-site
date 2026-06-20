@@ -19,7 +19,6 @@
     position: relative;
   }
 
-  /* ---- Ambient brand-color glow ---- */
   #ambientGlow {
     position: fixed;
     inset: -20%;
@@ -33,7 +32,6 @@
   }
   @keyframes ambientRotate { to { transform: rotate(360deg); } }
 
-  /* ---- Floating particles ---- */
   #particles {
     position: fixed;
     inset: 0;
@@ -54,7 +52,6 @@
     50% { opacity: var(--p-op); }
   }
 
-  /* ---- "her eyes" scattered text ---- */
   #bgText {
     position: fixed;
     inset: 0;
@@ -71,7 +68,6 @@
     text-shadow: 0 0 6px rgba(255,255,255,0.4);
   }
 
-  /* ---- Touch-reactive spotlight ---- */
   #spotlight {
     position: fixed;
     width: 380px;
@@ -85,7 +81,6 @@
     left: 50%;
   }
 
-  /* ---- Scanlines ---- */
   #scanlines {
     position: fixed;
     inset: 0;
@@ -105,7 +100,6 @@
     to { background-position-y: 100px; }
   }
 
-  /* ---- Grain ---- */
   #grain {
     position: fixed;
     inset: -50%;
@@ -124,7 +118,6 @@
     100% { transform: translate(1%,-2%); }
   }
 
-  /* ---- Vignette ---- */
   #vignette {
     position: fixed;
     inset: 0;
@@ -144,7 +137,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: opacity 0.9s ease, visibility 0.9s ease;
+    transition: opacity 0.7s ease, visibility 0.7s ease;
   }
   #entrance.hidden {
     opacity: 0;
@@ -186,6 +179,55 @@
     50% { opacity: 0.45; transform: scale(0.94); }
   }
 
+  /* ---- Loading screen ---- */
+  #loadingScreen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  #loadingScreen.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .loader-ring {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: #fff;
+    box-shadow: 0 0 12px rgba(255,255,255,0.5), 0 0 24px rgba(255,255,255,0.2);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.6);
+  }
+  .loader-text .dots span {
+    animation: dotFade 1.2s infinite;
+    opacity: 0;
+  }
+  .loader-text .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loader-text .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotFade {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+
   /* ---- Main content ---- */
   #mainContent {
     position: relative;
@@ -218,7 +260,6 @@
     gap: 5vw;
   }
 
-  /* staggered reveal for children */
   #mainContent .pic-wrap {
     opacity: 0;
     transform: translateX(-24px);
@@ -247,7 +288,6 @@
     opacity: 1;
   }
 
-  /* ---- Profile picture with tilt + shine ---- */
   .pic-wrap {
     width: 36vw;
     max-width: 210px;
@@ -348,7 +388,6 @@
     50% { opacity: 0; }
   }
 
-  /* ---- Glowing glass buttons ---- */
   .btn-wrap {
     position: fixed;
     bottom: 20px;
@@ -433,6 +472,11 @@
     <div class="logo-wrap">
       <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
     </div>
+  </div>
+
+  <div id="loadingScreen">
+    <div class="loader-ring"></div>
+    <div class="loader-text">loading<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
   </div>
 
   <div id="mainContent">
@@ -586,8 +630,9 @@
       btn.addEventListener('click', (e) => addRipple(e, btn));
     });
 
-    /* ---- Entrance + music ---- */
+    /* ---- Entrance -> Loading -> Main reveal ---- */
     const entrance = document.getElementById('entrance');
+    const loadingScreen = document.getElementById('loadingScreen');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
@@ -595,10 +640,15 @@
 
     entrance.addEventListener('click', () => {
       entrance.classList.add('hidden');
-      mainContent.classList.add('revealed');
-      music.play();
-      musicBtn.textContent = '🔊';
-      playing = true;
+      loadingScreen.classList.add('visible');
+
+      setTimeout(() => {
+        loadingScreen.classList.remove('visible');
+        mainContent.classList.add('revealed');
+        music.play();
+        musicBtn.textContent = '🔊';
+        playing = true;
+      }, 2000);
     });
 
     musicBtn.addEventListener('click', (e) => {
