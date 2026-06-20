@@ -14,15 +14,10 @@
 
   html, body {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-    touch-action: none;
+    overflow-x: hidden;
     background: #000;
     color: #fff;
     font-family: 'Sora', sans-serif;
-    position: fixed;
-    inset: 0;
   }
 
   #ambientGlow {
@@ -185,11 +180,9 @@
   }
 
   #mainContent {
-    position: fixed;
-    inset: 0;
+    position: relative;
     z-index: 2;
     width: 100%;
-    height: 100%;
     filter: blur(20px);
     opacity: 0;
     transform: scale(0.97);
@@ -203,11 +196,12 @@
 
   .container {
     width: 100%;
-    height: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: 8vh 6vw;
+    position: relative;
   }
 
   .top-row {
@@ -342,6 +336,61 @@
     50% { opacity: 0; }
   }
 
+  .scroll-indicator {
+    position: absolute;
+    bottom: 5vh;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.55);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: lowercase;
+    text-shadow: 0 0 6px rgba(255,255,255,0.3);
+  }
+  .scroll-indicator svg {
+    width: 16px;
+    height: 16px;
+    animation: bounce 1.6s ease-in-out infinite;
+    opacity: 0.7;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(7px); opacity: 0.9; }
+  }
+
+  .quote-section {
+    width: 100%;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10vh 9vw;
+    position: relative;
+  }
+
+  .quote-mark {
+    font-size: 60px;
+    line-height: 0.5;
+    color: rgba(255,255,255,0.25);
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .quote-text {
+    font-size: clamp(18px, 5vw, 26px);
+    font-weight: 300;
+    line-height: 1.6;
+    color: #f5f5f5;
+    text-shadow: 0 0 14px rgba(255,255,255,0.3);
+    text-align: center;
+    max-width: 600px;
+  }
+
   .btn-wrap {
     position: fixed;
     bottom: 20px;
@@ -443,6 +492,20 @@
           </div>
           <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
         </div>
+      </div>
+
+      <div class="scroll-indicator">
+        <span>scroll for more</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 4v16m0 0l-6-6m6 6l6-6"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="quote-section">
+      <div>
+        <span class="quote-mark">"</span>
+        <p class="quote-text">şiiri yazan benim kalemimdi<br>kalemin mürekkebi senin gözlerindi<br>gözlerine kanmak benim kaderimdi<br>kaderime oynayan senin sözlerindi.</p>
       </div>
     </div>
   </div>
@@ -634,7 +697,6 @@
     }
     typeLoop();
 
-    /* ---- Title swap: vertical slide instead of flip ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
