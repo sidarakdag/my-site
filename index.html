@@ -72,13 +72,6 @@
     white-space: nowrap;
     user-select: none;
     color: #fff;
-    opacity: 0;
-    animation: flicker ease-in-out infinite;
-  }
-
-  @keyframes flicker {
-    0%, 100% { opacity: 0; }
-    50% { opacity: var(--peak); }
   }
 
   #entrance {
@@ -292,41 +285,62 @@
   <button class="music-btn" id="musicToggle">🔇</button>
 
   <script>
+    /* ---- "her eyes" random spawn across whole screen, 3-5 visible at a time ---- */
     const bgContainer = document.getElementById('bgText');
-    const wordCount = 22;
+    let activeWords = 0;
+    const MAX_WORDS = 5;
 
-    const lineStart = { x: Math.random() * 30, y: Math.random() * 100 };
-    const lineEnd   = { x: 70 + Math.random() * 30, y: Math.random() * 100 };
+    function spawnWord() {
+      if (activeWords >= MAX_WORDS) return;
+      activeWords++;
 
-    for (let i = 0; i < wordCount; i++) {
       const word = document.createElement('div');
       word.classList.add('bg-word');
       word.textContent = 'her eyes';
 
-      const t = Math.random();
-      const jitterX = (Math.random() - 0.5) * 6;
-      const jitterY = (Math.random() - 0.5) * 6;
-
-      const x = lineStart.x + (lineEnd.x - lineStart.x) * t + jitterX;
-      const y = lineStart.y + (lineEnd.y - lineStart.y) * t + jitterY;
-
+      const top = Math.random() * 100;
+      const left = Math.random() * 100;
       const size = 10 + Math.random() * 14;
       const rotation = Math.random() * 360;
-      const peakOpacity = 0.08 + Math.random() * 0.14;
-      const duration = 3 + Math.random() * 6;
-      const delay = -Math.random() * 9;
+      const peakOpacity = 0.08 + Math.random() * 0.16;
+      const holdTime = 1500 + Math.random() * 2500;
+      const fadeTime = 700;
 
-      word.style.left = `${x}%`;
-      word.style.top = `${y}%`;
+      word.style.top = `${top}%`;
+      word.style.left = `${left}%`;
       word.style.fontSize = `${size}px`;
       word.style.transform = `rotate(${rotation}deg)`;
-      word.style.setProperty('--peak', peakOpacity);
-      word.style.animationDuration = `${duration}s`;
-      word.style.animationDelay = `${delay}s`;
+      word.style.opacity = '0';
+      word.style.transition = `opacity ${fadeTime}ms ease`;
 
       bgContainer.appendChild(word);
+
+      requestAnimationFrame(() => {
+        word.style.opacity = peakOpacity;
+      });
+
+      setTimeout(() => {
+        word.style.opacity = '0';
+        setTimeout(() => {
+          word.remove();
+          activeWords--;
+        }, fadeTime);
+      }, holdTime);
     }
 
+    function maintainWords() {
+      const target = 3 + Math.floor(Math.random() * 3);
+      if (activeWords < target) {
+        spawnWord();
+      }
+    }
+
+    setInterval(maintainWords, 500);
+    for (let i = 0; i < 3; i++) {
+      setTimeout(spawnWord, i * 250);
+    }
+
+    /* ---- Touch/cursor reactive spotlight ---- */
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -338,6 +352,7 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
+    /* ---- Entrance + music ---- */
     const entrance = document.getElementById('entrance');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
@@ -364,6 +379,7 @@
       playing = !playing;
     });
 
+    /* ---- Typewriter loop for handle ---- */
     const handleEl = document.getElementById('handleText');
     const fullText = '@yourname';
     let charIndex = 0;
@@ -399,6 +415,7 @@
 
     typeLoop();
 
+    /* ---- Title swap loop: ying <-> yang (3D flip) ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
