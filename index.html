@@ -19,33 +19,59 @@
     position: relative;
   }
 
-  #grain {
+  /* ---- Ambient brand-color glow ---- */
+  #ambientGlow {
     position: fixed;
-    inset: -50%;
-    width: 200%;
-    height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-    opacity: 0.05;
-    mix-blend-mode: overlay;
-    z-index: 2;
+    inset: -20%;
+    z-index: 0;
+    background: conic-gradient(from 0deg at 50% 50%,
+      rgba(255,126,179,0.06), rgba(124,58,237,0.07),
+      rgba(255,255,255,0.03), rgba(255,126,179,0.06));
+    filter: blur(60px);
+    animation: ambientRotate 30s linear infinite;
     pointer-events: none;
-    animation: grainShift 0.5s steps(2) infinite;
   }
+  @keyframes ambientRotate { to { transform: rotate(360deg); } }
 
-  @keyframes grainShift {
-    0% { transform: translate(0,0); }
-    50% { transform: translate(-2%,1%); }
-    100% { transform: translate(1%,-2%); }
-  }
-
-  #vignette {
+  /* ---- Floating particles ---- */
+  #particles {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
-    z-index: 3;
+    z-index: 0;
+    overflow: hidden;
     pointer-events: none;
   }
+  .particle {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle ease-in-out infinite;
+    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--p-op); }
+  }
 
+  /* ---- "her eyes" scattered text ---- */
+  #bgText {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .bg-word {
+    position: absolute;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255,255,255,0.4);
+  }
+
+  /* ---- Touch-reactive spotlight ---- */
   #spotlight {
     position: fixed;
     width: 380px;
@@ -59,22 +85,55 @@
     left: 50%;
   }
 
-  #bgText {
+  /* ---- Scanlines ---- */
+  #scanlines {
     position: fixed;
     inset: 0;
-    z-index: 0;
-    overflow: hidden;
+    z-index: 3;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    animation: scanMove 6s linear infinite;
+  }
+  @keyframes scanMove {
+    from { background-position-y: 0; }
+    to { background-position-y: 100px; }
+  }
+
+  /* ---- Grain ---- */
+  #grain {
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    z-index: 4;
+    pointer-events: none;
+    animation: grainShift 0.5s steps(2) infinite;
+  }
+  @keyframes grainShift {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(-2%,1%); }
+    100% { transform: translate(1%,-2%); }
+  }
+
+  /* ---- Vignette ---- */
+  #vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
+    z-index: 5;
     pointer-events: none;
   }
 
-  .bg-word {
-    position: absolute;
-    font-weight: 500;
-    white-space: nowrap;
-    user-select: none;
-    color: #fff;
-  }
-
+  /* ---- Entrance screen ---- */
   #entrance {
     position: fixed;
     inset: 0;
@@ -87,11 +146,31 @@
     cursor: pointer;
     transition: opacity 0.9s ease, visibility 0.9s ease;
   }
-
   #entrance.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+  }
+
+  .logo-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-wrap::before {
+    content: '';
+    position: absolute;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(255,126,179,0.18), rgba(124,58,237,0.12) 40%, transparent 70%);
+    filter: blur(20px);
+    animation: auraPulse 2.4s ease-in-out infinite;
+    z-index: -1;
+  }
+  @keyframes auraPulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 1; }
   }
 
   #entrance img {
@@ -102,15 +181,15 @@
             drop-shadow(0 0 28px rgba(255,255,255,0.8));
     animation: pulse 1.8s infinite ease-in-out;
   }
-
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.45; transform: scale(0.94); }
   }
 
+  /* ---- Main content ---- */
   #mainContent {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: 100%;
     min-height: 100dvh;
     filter: blur(20px);
@@ -118,7 +197,6 @@
     transform: scale(0.97);
     transition: filter 0.9s ease, opacity 0.9s ease, transform 0.9s ease;
   }
-
   #mainContent.revealed {
     filter: blur(0);
     opacity: 1;
@@ -140,15 +218,73 @@
     gap: 5vw;
   }
 
-  .profile-pic {
+  /* staggered reveal for children */
+  #mainContent .pic-wrap {
+    opacity: 0;
+    transform: translateX(-24px);
+    transition: opacity 0.8s ease 0.15s, transform 0.8s ease 0.15s;
+  }
+  #mainContent.revealed .pic-wrap {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  #mainContent .title-block {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.8s ease 0.35s, transform 0.8s ease 0.35s;
+  }
+  #mainContent.revealed .title-block {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #mainContent .handle {
+    opacity: 0;
+    transition: opacity 0.8s ease 0.55s;
+  }
+  #mainContent.revealed .handle {
+    opacity: 1;
+  }
+
+  /* ---- Profile picture with tilt + shine ---- */
+  .pic-wrap {
     width: 36vw;
     max-width: 210px;
     aspect-ratio: 3/4;
-    background: linear-gradient(180deg, #1a1a1a, #000);
     border-radius: 6px;
-    filter: grayscale(0.6) contrast(1.3) brightness(0.85);
+    overflow: hidden;
+    position: relative;
+    perspective: 800px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.08);
+  }
+  .pic-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: shineSweep 5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 2;
+  }
+  @keyframes shineSweep {
+    0% { left: -150%; }
+    20% { left: 150%; }
+    100% { left: 150%; }
+  }
+
+  .profile-pic {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(255,255,255,0.06);
+    display: block;
+    background: linear-gradient(180deg, #1a1a1a, #000);
+    filter: grayscale(0.6) contrast(1.3) brightness(0.85);
+    transition: transform 0.1s ease-out;
   }
 
   .text-block {
@@ -178,15 +314,23 @@
     transform-style: preserve-3d;
     transition: transform 0.35s ease, opacity 0.35s ease;
   }
-
   .title.flip {
     transform: rotateX(90deg);
     opacity: 0;
   }
-
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  .title-underline {
+    width: 60px;
+    height: 2px;
+    margin-top: 8px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    background-size: 200% 100%;
+    animation: shimmer 3.5s linear infinite;
+    opacity: 0.6;
   }
 
   .handle {
@@ -197,37 +341,61 @@
     letter-spacing: 0.5px;
     text-shadow: 0 0 8px rgba(255,255,255,0.5);
   }
-
   .cursor {
     animation: blink 1s step-start infinite;
   }
-
   @keyframes blink {
     50% { opacity: 0; }
   }
 
-  .telegram-btn, .music-btn {
+  /* ---- Glowing glass buttons ---- */
+  .btn-wrap {
     position: fixed;
     bottom: 20px;
     width: 46px;
     height: 46px;
+    z-index: 10;
+  }
+  .tg-wrap { left: 18px; }
+  .music-wrap { right: 18px; }
+
+  .btn-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.05);
+    background: conic-gradient(from 0deg,
+      rgba(255,255,255,0.5), rgba(255,126,179,0.5),
+      rgba(124,58,237,0.5), rgba(255,255,255,0.5));
+    filter: blur(5px);
+    opacity: 0.55;
+    animation: rotateGlow 5s linear infinite;
+    z-index: -1;
+  }
+  @keyframes rotateGlow { to { transform: rotate(360deg); } }
+
+  .telegram-btn, .music-btn {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(20,20,20,0.6);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
     color: #fff;
-    z-index: 10;
+    font-size: 18px;
     cursor: pointer;
-    box-shadow: 0 0 16px rgba(255,255,255,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    transition: transform 0.2s ease;
   }
-
-  .telegram-btn { left: 18px; }
-  .music-btn { right: 18px; border: none; font-size: 18px; }
+  .telegram-btn:active, .music-btn:active {
+    transform: scale(0.88);
+  }
 
   .telegram-btn svg {
     width: 20px;
@@ -236,30 +404,49 @@
     filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
   }
 
-  .telegram-btn:active, .music-btn:active {
-    transform: scale(0.88);
-    box-shadow: 0 0 22px rgba(255,255,255,0.18);
+  .ripple {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    animation: rippleAnim 0.6s ease-out forwards;
+  }
+  @keyframes rippleAnim {
+    to { transform: translate(-50%, -50%) scale(8); opacity: 0; }
   }
 </style>
 </head>
 <body>
 
+  <div id="ambientGlow"></div>
+  <div id="particles"></div>
   <div id="bgText"></div>
   <div id="spotlight"></div>
-  <div id="vignette"></div>
+  <div id="scanlines"></div>
   <div id="grain"></div>
+  <div id="vignette"></div>
 
   <div id="entrance">
-    <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
+    <div class="logo-wrap">
+      <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
+    </div>
   </div>
 
   <div id="mainContent">
     <div class="container">
       <div class="top-row">
-        <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
+        <div class="pic-wrap">
+          <img class="profile-pic" src="IMG_3066.jpeg" alt="profile">
+        </div>
         <div class="text-block">
-          <div class="title-row">
-            <span class="title" id="titleText">ying</span>
+          <div class="title-block">
+            <div class="title-row">
+              <span class="title" id="titleText">ying</span>
+            </div>
+            <div class="title-underline"></div>
           </div>
           <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
         </div>
@@ -267,17 +454,37 @@
     </div>
   </div>
 
-  <a class="telegram-btn" href="https://t.me/yourusername" target="_blank">
-    <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-  </a>
+  <div class="btn-wrap tg-wrap">
+    <a class="telegram-btn" href="https://t.me/yourusername" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+    </a>
+  </div>
+  <div class="btn-wrap music-wrap">
+    <button class="music-btn" id="musicToggle">🔇</button>
+  </div>
 
   <audio id="bgMusic" loop>
     <source src="ssstik.io_1781657425552.mp3" type="audio/mpeg">
   </audio>
-  <button class="music-btn" id="musicToggle">🔇</button>
 
   <script>
-    /* ---- "her eyes" random spawn anywhere, 3-5 visible at once ---- */
+    /* ---- Particles ---- */
+    const particleContainer = document.getElementById('particles');
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      const size = 1 + Math.random() * 2;
+      p.style.width = `${size}px`;
+      p.style.height = `${size}px`;
+      p.style.top = `${Math.random() * 100}%`;
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.setProperty('--p-op', (0.15 + Math.random() * 0.25).toFixed(2));
+      p.style.animationDuration = `${3 + Math.random() * 5}s`;
+      p.style.animationDelay = `-${Math.random() * 5}s`;
+      particleContainer.appendChild(p);
+    }
+
+    /* ---- "her eyes" random spawn, 3-5 visible at once ---- */
     const bgContainer = document.getElementById('bgText');
     let activeWords = 0;
     const MAX_WORDS = 5;
@@ -321,18 +528,14 @@
     }
 
     function maintainWords() {
-      const target = 3 + Math.floor(Math.random() * 3); // 3, 4, or 5
-      if (activeWords < target) {
-        spawnWord();
-      }
+      const target = 3 + Math.floor(Math.random() * 3);
+      if (activeWords < target) spawnWord();
     }
 
     setInterval(maintainWords, 400);
-    for (let i = 0; i < 3; i++) {
-      setTimeout(spawnWord, i * 250);
-    }
+    for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 250);
 
-    /* ---- Touch/cursor reactive spotlight ---- */
+    /* ---- Spotlight follow ---- */
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -342,6 +545,45 @@
     window.addEventListener('touchmove', (e) => {
       const t = e.touches[0];
       moveSpotlight(t.clientX, t.clientY);
+    });
+
+    /* ---- Profile pic tilt ---- */
+    const picWrap = document.querySelector('.pic-wrap');
+    const pic = document.querySelector('.profile-pic');
+    function tilt(e) {
+      const rect = picWrap.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const rotateY = ((x / rect.width) - 0.5) * 16;
+      const rotateX = ((y / rect.height) - 0.5) * -16;
+      pic.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+    function resetTilt() {
+      pic.style.transform = 'rotateX(0) rotateY(0)';
+    }
+    picWrap.addEventListener('mousemove', tilt);
+    picWrap.addEventListener('mouseleave', resetTilt);
+    picWrap.addEventListener('touchmove', tilt, { passive: true });
+    picWrap.addEventListener('touchend', resetTilt);
+
+    /* ---- Ripple effect on buttons ---- */
+    function addRipple(e, btn) {
+      const rect = btn.getBoundingClientRect();
+      const clientX = e.touches ? e.changedTouches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.changedTouches[0].clientY : e.clientY;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    }
+    document.querySelectorAll('.telegram-btn, .music-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => addRipple(e, btn));
     });
 
     /* ---- Entrance + music ---- */
@@ -404,10 +646,9 @@
         }
       }
     }
-
     typeLoop();
 
-    /* ---- Title swap loop: ying <-> yang (3D flip) ---- */
+    /* ---- Title swap loop: ying <-> yang ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
