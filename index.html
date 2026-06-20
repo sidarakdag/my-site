@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>realization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  body {
+  html, body {
+    width: 100%;
+    height: 100%;
     background: radial-gradient(circle at 50% 40%, #0c0c0c 0%, #000 75%);
     color: #fff;
     font-family: 'Space Grotesk', sans-serif;
-    min-height: 100vh;
     overflow-x: hidden;
     position: relative;
   }
@@ -72,13 +73,6 @@
     white-space: nowrap;
     user-select: none;
     color: #fff;
-    opacity: 0;
-    animation: flicker ease-in-out infinite;
-  }
-
-  @keyframes flicker {
-    0%, 100% { opacity: 0; }
-    50% { opacity: var(--peak); }
   }
 
   #entrance {
@@ -117,6 +111,8 @@
   #mainContent {
     position: relative;
     z-index: 1;
+    width: 100%;
+    min-height: 100dvh;
     filter: blur(20px);
     opacity: 0;
     transform: scale(0.97);
@@ -130,7 +126,8 @@
   }
 
   .container {
-    min-height: 100vh;
+    width: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -190,17 +187,6 @@
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
-  }
-
-  .mini-icon {
-    width: 24px;
-    height: 24px;
-    margin-left: 10px;
-    border-radius: 6px;
-    object-fit: cover;
-    display: inline-block;
-    box-shadow: 0 0 8px rgba(255,255,255,0.4);
-    flex-shrink: 0;
   }
 
   .handle {
@@ -274,7 +260,6 @@
         <div class="text-block">
           <div class="title-row">
             <span class="title" id="titleText">ying</span>
-            <img class="mini-icon" src="waiting.gif" alt="icon">
           </div>
           <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
         </div>
@@ -292,41 +277,62 @@
   <button class="music-btn" id="musicToggle">🔇</button>
 
   <script>
+    /* ---- "her eyes" random spawn anywhere, 3-5 visible at once ---- */
     const bgContainer = document.getElementById('bgText');
-    const wordCount = 22;
+    let activeWords = 0;
+    const MAX_WORDS = 5;
 
-    const lineStart = { x: Math.random() * 30, y: Math.random() * 100 };
-    const lineEnd   = { x: 70 + Math.random() * 30, y: Math.random() * 100 };
+    function spawnWord() {
+      if (activeWords >= MAX_WORDS) return;
+      activeWords++;
 
-    for (let i = 0; i < wordCount; i++) {
       const word = document.createElement('div');
       word.classList.add('bg-word');
       word.textContent = 'her eyes';
 
-      const t = Math.random();
-      const jitterX = (Math.random() - 0.5) * 6;
-      const jitterY = (Math.random() - 0.5) * 6;
-
-      const x = lineStart.x + (lineEnd.x - lineStart.x) * t + jitterX;
-      const y = lineStart.y + (lineEnd.y - lineStart.y) * t + jitterY;
-
+      const top = Math.random() * 100;
+      const left = Math.random() * 100;
       const size = 10 + Math.random() * 14;
       const rotation = Math.random() * 360;
-      const peakOpacity = 0.08 + Math.random() * 0.14;
-      const duration = 3 + Math.random() * 6;
-      const delay = -Math.random() * 9;
+      const peakOpacity = 0.08 + Math.random() * 0.16;
+      const holdTime = 1200 + Math.random() * 2800;
+      const fadeTime = 700;
 
-      word.style.left = `${x}%`;
-      word.style.top = `${y}%`;
+      word.style.top = `${top}%`;
+      word.style.left = `${left}%`;
       word.style.fontSize = `${size}px`;
       word.style.transform = `rotate(${rotation}deg)`;
-      word.style.setProperty('--peak', peakOpacity);
-      word.style.animationDuration = `${duration}s`;
-      word.style.animationDelay = `${delay}s`;
+      word.style.opacity = '0';
+      word.style.transition = `opacity ${fadeTime}ms ease`;
 
       bgContainer.appendChild(word);
+
+      requestAnimationFrame(() => {
+        word.style.opacity = peakOpacity;
+      });
+
+      setTimeout(() => {
+        word.style.opacity = '0';
+        setTimeout(() => {
+          word.remove();
+          activeWords--;
+        }, fadeTime);
+      }, holdTime);
     }
 
+    function maintainWords() {
+      const target = 3 + Math.floor(Math.random() * 3); // 3, 4, or 5
+      if (activeWords < target) {
+        spawnWord();
+      }
+    }
+
+    setInterval(maintainWords, 400);
+    for (let i = 0; i < 3; i++) {
+      setTimeout(spawnWord, i * 250);
+    }
+
+    /* ---- Touch/cursor reactive spotlight ---- */
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -338,6 +344,7 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
+    /* ---- Entrance + music ---- */
     const entrance = document.getElementById('entrance');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
@@ -364,8 +371,9 @@
       playing = !playing;
     });
 
+    /* ---- Typewriter loop for handle ---- */
     const handleEl = document.getElementById('handleText');
-    const fullText = '@yourname';
+    const fullText = 'kataly';
     let charIndex = 0;
     let isTyping = true;
 
@@ -399,6 +407,7 @@
 
     typeLoop();
 
+    /* ---- Title swap loop: ying <-> yang (3D flip) ---- */
     const titleEl = document.getElementById('titleText');
     const words = ['ying', 'yang'];
     let wordIndex = 0;
