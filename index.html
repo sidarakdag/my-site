@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title id="pageTitleTag">realization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet">
 <style>
   @font-face {
     font-family: 'Terminus TTF';
@@ -87,7 +89,6 @@
     transition: color 0.6s ease;
   }
 
-  /* ---- Matrix rain ---- */
   #matrixRain {
     position: fixed;
     inset: 0;
@@ -112,7 +113,6 @@
     to { transform: translateY(220%); }
   }
 
-  /* ---- Snowfall ---- */
   #snowfall {
     position: fixed;
     inset: 0;
@@ -132,25 +132,45 @@
     to { transform: translateY(115vh) translateX(var(--drift)); }
   }
 
-  /* ---- Starfield ---- */
   #starfield {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: 6;
     overflow: hidden;
     pointer-events: none;
   }
   .star {
     position: absolute;
-    background: #fff;
+    background: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
     border-radius: 50%;
     opacity: 0;
     animation: starTwinkle ease-in-out infinite;
-    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+    box-shadow: 0 0 4px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.6);
   }
   @keyframes starTwinkle {
     0%, 100% { opacity: 0; }
     50% { opacity: var(--s-op); }
+  }
+
+  .ship {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
+    box-shadow: 0 0 8px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 1), 0 0 16px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.6);
+    transform: translate(-50%, -50%);
+  }
+  .ship::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9));
+    transform-origin: right center;
+    transform: translate(-100%, -50%) rotate(var(--trail-angle, 0deg));
   }
 
   #spotlight {
@@ -352,7 +372,6 @@
     perspective: 1000px;
   }
 
-  /* ---- pic-frame: outer wrapper hosting fold animation + border effects ---- */
   .pic-frame {
     position: relative;
     width: 36vw;
@@ -453,6 +472,7 @@
   }
 
   .title {
+    font-family: 'Terminus TTF', monospace;
     font-size: clamp(28px, 7vw, 46px);
     font-weight: 500;
     text-transform: lowercase;
@@ -505,6 +525,7 @@
   }
 
   .handle {
+    font-family: 'Terminus TTF', monospace;
     margin-top: 2.2vh;
     font-size: clamp(15px, 3.6vw, 19px);
     font-weight: 500;
@@ -515,7 +536,6 @@
     transition: color 0.6s ease;
   }
 
-  /* ---- Username text effects ---- */
   .handle.fx-rainbow {
     animation: rainbowCycle 4s linear infinite;
   }
@@ -569,6 +589,7 @@
   }
 
   .scroll-indicator {
+    font-family: 'Terminus TTF', monospace;
     position: absolute;
     bottom: 5vh;
     left: 0;
@@ -595,32 +616,39 @@
     50% { transform: translateY(7px); opacity: 0.9; }
   }
 
+  /* ---- Quote: elegant italic serif, distinct from UI font ---- */
   .quote-section {
     width: 100%;
     min-height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10vh 9vw;
+    padding: 10vh 10vw;
     position: relative;
   }
 
   .quote-mark {
-    font-size: 60px;
-    line-height: 0.5;
-    color: rgba(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b), 0.25);
-    text-shadow: 0 0 20px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 76px;
+    line-height: 0.4;
+    color: rgba(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b), 0.3);
+    text-shadow: 0 0 22px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.35);
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
     transition: color 0.6s ease;
   }
 
   .quote-text {
-    font-size: clamp(18px, 5vw, 26px);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
     font-weight: 500;
-    line-height: 1.6;
+    font-size: clamp(20px, 5.6vw, 30px);
+    line-height: 1.85;
+    letter-spacing: 0.3px;
     color: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
-    text-shadow: 0 0 14px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
+    text-shadow: 0 0 16px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
     text-align: center;
     max-width: 600px;
     transition: color 0.6s ease;
@@ -636,6 +664,7 @@
   }
 
   .social-line {
+    font-family: 'Terminus TTF', monospace;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -780,6 +809,7 @@
     const cursorEl = document.getElementById('cursorEl');
     const bgContainer = document.getElementById('bgText');
     const particleContainer = document.getElementById('particles');
+    const starfieldContainer = document.getElementById('starfield');
     const pic = document.getElementById('profilePicImg');
     const picWrap = document.getElementById('picWrap');
     const picFrame = document.getElementById('picFrame');
@@ -933,7 +963,6 @@
 
     function createStarfield() {
       if (fx.background.starfield !== true) return;
-      const container = document.getElementById('starfield');
       for (let i = 0; i < 35; i++) {
         const star = document.createElement('div');
         star.className = 'star';
@@ -945,8 +974,63 @@
         star.style.setProperty('--s-op', (0.3 + Math.random() * 0.5).toFixed(2));
         star.style.animationDuration = (2 + Math.random() * 4) + 's';
         star.style.animationDelay = '-' + (Math.random() * 6).toFixed(1) + 's';
-        container.appendChild(star);
+        starfieldContainer.appendChild(star);
       }
+      startShipSystem();
+    }
+
+    let activeShips = 0;
+    const MAX_SHIPS = 3;
+    let shipSystemStarted = false;
+
+    function spawnShip() {
+      if (fx.background.starfield !== true) return;
+      if (activeShips >= MAX_SHIPS) return;
+      activeShips++;
+
+      const ship = document.createElement('div');
+      ship.className = 'ship';
+
+      const edge = Math.floor(Math.random() * 4);
+      let x1, y1, x2, y2;
+      const jitter = () => Math.random() * 30 - 15;
+
+      if (edge === 0) { x1 = -5; y1 = Math.random() * 100; x2 = 105; y2 = Math.min(100, Math.max(0, y1 + jitter() * 2)); }
+      else if (edge === 1) { x1 = 105; y1 = Math.random() * 100; x2 = -5; y2 = Math.min(100, Math.max(0, y1 + jitter() * 2)); }
+      else if (edge === 2) { x1 = Math.random() * 100; y1 = -5; x2 = Math.min(100, Math.max(0, x1 + jitter() * 2)); y2 = 105; }
+      else { x1 = Math.random() * 100; y1 = 105; x2 = Math.min(100, Math.max(0, x1 + jitter() * 2)); y2 = -5; }
+
+      const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      ship.style.setProperty('--trail-angle', angle + 'deg');
+
+      starfieldContainer.appendChild(ship);
+
+      const duration = 2200 + Math.random() * 600;
+
+      const anim = ship.animate([
+        { left: x1 + '%', top: y1 + '%', opacity: 0 },
+        { left: (x1 + (x2 - x1) * 0.08) + '%', top: (y1 + (y2 - y1) * 0.08) + '%', opacity: 1, offset: 0.06 },
+        { left: (x1 + (x2 - x1) * 0.88) + '%', top: (y1 + (y2 - y1) * 0.88) + '%', opacity: 1, offset: 0.88 },
+        { left: x2 + '%', top: y2 + '%', opacity: 0 }
+      ], { duration, easing: 'linear' });
+
+      anim.onfinish = () => {
+        ship.remove();
+        activeShips--;
+      };
+    }
+
+    function maintainShips() {
+      if (fx.background.starfield !== true) return;
+      const target = 1 + Math.floor(Math.random() * MAX_SHIPS);
+      if (activeShips < target) spawnShip();
+    }
+
+    function startShipSystem() {
+      if (shipSystemStarted) return;
+      shipSystemStarted = true;
+      setInterval(maintainShips, 700);
+      spawnShip();
     }
 
     const spotlight = document.getElementById('spotlight');
