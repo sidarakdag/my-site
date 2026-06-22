@@ -2,8 +2,8 @@
   "telegram": "https://t.me/katalyshop",
   "discord": "#",
   "instagram": "https://instagram.com/kkataly",
-  "music": "music.mp3",
-  "profilePic": "IMG_3066.png",
+  "music": "assets/audio/music.mp3",
+  "profilePic": "assets/images/profile.png",
   "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
   "titleWords": ["yin", "yang"],
   "handleText": "kataly",
@@ -15,26 +15,9 @@
     "b": { "background": "#ffffff", "foreground": "#000000" }
   },
   "effects": {
-    "background": {
-      "grain": true,
-      "particles": true,
-      "scanlines": true,
-      "ambientGlow": true,
-      "bgShine": true,
-      "spotlight": true,
-      "bgText": true
-    },
-    "profile": {
-      "invertOnThemeChange": true,
-      "tilt": true,
-      "foldReveal": true
-    },
-    "username": {
-      "typing": true,
-      "cursorBlink": true
-    },
-    "title": {
-      "shimmer": true
-    }
+    "background": { "grain": true, "particles": true, "scanlines": true, "ambientGlow": true, "bgShine": true, "spotlight": true, "bgText": true },
+    "profile": { "invertOnThemeChange": true, "tilt": true, "foldReveal": true },
+    "username": { "typing": true, "cursorBlink": true },
+    "title": { "shimmer": true }
   }
 }
