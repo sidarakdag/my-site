@@ -16,12 +16,12 @@
   "neonColor": "#ff1a00",
   "theme": {
     "a": {
-      "background": "#ff0000",
-      "foreground": "#000000"
-    },
-    "b": {
       "background": "#000000",
       "foreground": "#ff0000"
+    },
+    "b": {
+      "background": "#ff0000",
+      "foreground": "#000000"
     }
   },
   "effects": {
