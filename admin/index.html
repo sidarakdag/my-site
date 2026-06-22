@@ -130,34 +130,34 @@
     to { transform: translateY(115vh) translateX(var(--drift)); }
   }
 
+  /* ---- Starfield: raised above texture layers so ships/stars stay visible ---- */
   #starfield {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: 6;
     overflow: hidden;
     pointer-events: none;
   }
   .star {
     position: absolute;
-    background: #fff;
+    background: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
     border-radius: 50%;
     opacity: 0;
     animation: starTwinkle ease-in-out infinite;
-    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+    box-shadow: 0 0 4px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.6);
   }
   @keyframes starTwinkle {
     0%, 100% { opacity: 0; }
     50% { opacity: var(--s-op); }
   }
 
-  /* ---- Tiny dot-ships with fading trail ---- */
   .ship {
     position: absolute;
-    width: 3px;
-    height: 3px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 5px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.95);
+    background: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
+    box-shadow: 0 0 8px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 1), 0 0 16px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.6);
     transform: translate(-50%, -50%);
   }
   .ship::before {
@@ -165,9 +165,9 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 46px;
-    height: 1.4px;
-    background: linear-gradient(90deg, transparent, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.85));
+    width: 70px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9));
     transform-origin: right center;
     transform: translate(-100%, -50%) rotate(var(--trail-angle, 0deg));
   }
@@ -967,7 +967,6 @@
       startShipSystem();
     }
 
-    /* ---- Tiny dot-ships with fading trail, max 3 at once ---- */
     let activeShips = 0;
     const MAX_SHIPS = 3;
     let shipSystemStarted = false;
@@ -980,7 +979,6 @@
       const ship = document.createElement('div');
       ship.className = 'ship';
 
-      // pick two opposite-ish edge points for a diagonal pass
       const edge = Math.floor(Math.random() * 4);
       let x1, y1, x2, y2;
       const jitter = () => Math.random() * 30 - 15;
@@ -995,7 +993,7 @@
 
       starfieldContainer.appendChild(ship);
 
-      const duration = 2400 + Math.random() * 500; // max ~2.9s, under the 3s cap
+      const duration = 2200 + Math.random() * 600;
 
       const anim = ship.animate([
         { left: x1 + '%', top: y1 + '%', opacity: 0 },
@@ -1019,7 +1017,7 @@
     function startShipSystem() {
       if (shipSystemStarted) return;
       shipSystemStarted = true;
-      setInterval(maintainShips, 900);
+      setInterval(maintainShips, 700);
       spawnShip();
     }
 
