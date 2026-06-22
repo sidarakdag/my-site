@@ -231,7 +231,7 @@
     margin: 16px 0 7px;
   }
 
-  input[type="text"], input[type="password"], input[type="file"], textarea {
+  input[type="text"], input[type="password"], input[type="file"], textarea, select {
     width: 100%;
     padding: 13px 14px;
     background: rgba(255,255,255,0.04);
@@ -242,13 +242,17 @@
     font-size: 14px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
+  select option {
+    background: #111;
+    color: #fff;
+  }
   textarea {
     resize: vertical;
     min-height: 90px;
     line-height: 1.5;
   }
   input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); }
-  input:focus, textarea:focus {
+  input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: rgba(255,255,255,0.4);
     box-shadow: 0 0 14px rgba(255,255,255,0.12);
@@ -336,7 +340,7 @@
     margin-top: 10px;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 10px;
-    padding: 2px 12px;
+    padding: 10px 12px;
     background: rgba(255,255,255,0.015);
   }
   .group-title {
@@ -345,6 +349,13 @@
     text-transform: uppercase;
     color: rgba(255,255,255,0.35);
     padding: 10px 0 2px;
+  }
+
+  .group-box label {
+    margin-top: 10px;
+  }
+  .group-box select {
+    margin-bottom: 4px;
   }
 
   .toggle-row {
@@ -357,6 +368,7 @@
     text-transform: none;
     letter-spacing: 0.3px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-top: 0;
   }
   .toggle-row:last-child { border-bottom: none; }
 
@@ -524,397 +536,12 @@
           <label class="toggle-row">Background floating text
             <span class="switch"><input type="checkbox" id="fxBgText"><span class="slider"></span></span>
           </label>
-        </div>
-
-        <div class="group-title">Profile Picture</div>
-        <div class="group-box">
-          <label class="toggle-row">Invert colors on theme change
-            <span class="switch"><input type="checkbox" id="fxPicInvert"><span class="slider"></span></span>
+          <label class="toggle-row">Matrix-style falling code
+            <span class="switch"><input type="checkbox" id="fxMatrixRain"><span class="slider"></span></span>
           </label>
-          <label class="toggle-row">Touch tilt effect
-            <span class="switch"><input type="checkbox" id="fxPicTilt"><span class="slider"></span></span>
+          <label class="toggle-row">Snowfall
+            <span class="switch"><input type="checkbox" id="fxSnowfall"><span class="slider"></span></span>
           </label>
-          <label class="toggle-row">Fold-out reveal animation
-            <span class="switch"><input type="checkbox" id="fxPicFold"><span class="slider"></span></span>
-          </label>
-        </div>
-
-        <div class="group-title">Username</div>
-        <div class="group-box">
-          <label class="toggle-row">Typing animation
-            <span class="switch"><input type="checkbox" id="fxTyping"><span class="slider"></span></span>
-          </label>
-          <label class="toggle-row">Blinking cursor
-            <span class="switch"><input type="checkbox" id="fxCursor"><span class="slider"></span></span>
-          </label>
-        </div>
-
-        <div class="group-title">Title</div>
-        <div class="group-box">
-          <label class="toggle-row">Shimmer effect
-            <span class="switch"><input type="checkbox" id="fxShimmer"><span class="slider"></span></span>
-          </label>
-        </div>
-
-        <div class="divider"></div>
-        <div class="section-label">Profile Picture</div>
-
-        <label>Upload new profile photo (optional)</label>
-        <input type="file" id="profilePicFile" accept="image/*">
-        <div class="hint">New uploads keep their original background — send it to me first for the seamless cutout look.</div>
-
-        <div class="divider"></div>
-        <div class="section-label">Music</div>
-
-        <label>Upload new background music (optional)</label>
-        <input type="file" id="musicFile" accept=".mp3,.m4a,.wav,audio/*">
-
-        <button id="saveBtn">Save Changes</button>
-        <div id="status"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const ADMIN_USER = 'kataly';
-    const ADMIN_PASS = '$$$';
-
-    document.getElementById('unlockBtn').addEventListener('click', () => {
-      const u = document.getElementById('loginUser').value.trim();
-      const p = document.getElementById('loginPass').value;
-      const lockScreen = document.getElementById('lockScreen');
-      const card = lockScreen.querySelector('.card');
-      const readout = document.getElementById('statusReadout');
-      const scanLine = document.getElementById('scanLine');
-
-      readout.className = 'status-readout';
-      readout.textContent = 'verifying...';
-      scanLine.classList.remove('run');
-      void scanLine.offsetWidth;
-      scanLine.classList.add('run');
-
-      const isCorrect = (u === ADMIN_USER && p === ADMIN_PASS);
-
-      setTimeout(() => {
-        if (isCorrect) {
-          card.classList.add('success');
-          readout.classList.add('granted');
-          readout.textContent = 'access granted';
-
-          const ring1 = document.getElementById('ring1');
-          const ring2 = document.getElementById('ring2');
-          ring1.classList.add('go');
-          ring2.classList.add('go');
-
-          const thumbs = document.getElementById('thumbsUp');
-          setTimeout(() => thumbs.classList.add('show'), 120);
-
-          setTimeout(() => { lockScreen.classList.add('falling'); }, 800);
-
-          setTimeout(() => {
-            lockScreen.style.display = 'none';
-            const panel = document.getElementById('panel');
-            panel.style.display = 'block';
-            requestAnimationFrame(() => panel.classList.add('unfolded'));
-            loadConfig();
-          }, 1450);
-        } else {
-          card.classList.add('denied');
-          readout.classList.add('denied');
-          readout.textContent = 'access denied';
-          lockScreen.classList.remove('shake');
-          void lockScreen.offsetWidth;
-          lockScreen.classList.add('shake');
-
-          setTimeout(() => {
-            card.classList.remove('denied');
-            readout.textContent = '';
-            readout.className = 'status-readout';
-          }, 1600);
-        }
-      }, 650);
-    });
-
-    const OWNER = 'sidarakdag';
-    const REPO = 'my-site';
-    const BRANCH = 'main';
-
-    const statusEl = document.getElementById('status');
-    function log(msg) { statusEl.textContent += msg + '\n'; }
-
-    let currentProfilePic = 'assets/images/profile.png';
-
-    async function loadConfig() {
-      try {
-        const res = await fetch(`../config.json?t=${Date.now()}`);
-        const config = await res.json();
-
-        document.getElementById('telegram').value = config.telegram || '';
-        document.getElementById('discord').value = config.discord || '';
-        document.getElementById('instagram').value = config.instagram || '';
-        document.getElementById('quoteText').value = config.quote || '';
-        currentProfilePic = config.profilePic || 'assets/images/profile.png';
-
-        document.getElementById('logoTextInput').value = config.logoText || 'kataly';
-        document.getElementById('titleWords').value = Array.isArray(config.titleWords) ? config.titleWords.join(', ') : 'yin, yang';
-        document.getElementById('handleTextInput').value = config.handleText || 'kataly';
-        document.getElementById('pageTitleInput').value = config.pageTitle || 'realization';
-        document.getElementById('bgWordInput').value = config.bgWord || 'her eyes';
-        document.getElementById('neonColorInput').value = config.neonColor || '#ffffff';
-
-        const theme = config.theme || {};
-        const a = theme.a || { background: '#000000', foreground: '#ffffff' };
-        const b = theme.b || { background: '#ffffff', foreground: '#000000' };
-        document.getElementById('themeABg').value = a.background || '#000000';
-        document.getElementById('themeAFg').value = a.foreground || '#ffffff';
-        document.getElementById('themeBBg').value = b.background || '#ffffff';
-        document.getElementById('themeBFg').value = b.foreground || '#000000';
-
-        const fx = config.effects || {};
-        const bg = fx.background || {};
-        const prof = fx.profile || {};
-        const user = fx.username || {};
-        const ttl = fx.title || {};
-
-        document.getElementById('fxGrain').checked = bg.grain !== false;
-        document.getElementById('fxParticles').checked = bg.particles !== false;
-        document.getElementById('fxScanlines').checked = bg.scanlines !== false;
-        document.getElementById('fxAmbientGlow').checked = bg.ambientGlow !== false;
-        document.getElementById('fxBgShine').checked = bg.bgShine !== false;
-        document.getElementById('fxSpotlight').checked = bg.spotlight !== false;
-        document.getElementById('fxBgText').checked = bg.bgText !== false;
-
-        document.getElementById('fxPicInvert').checked = prof.invertOnThemeChange !== false;
-        document.getElementById('fxPicTilt').checked = prof.tilt !== false;
-        document.getElementById('fxPicFold').checked = prof.foldReveal !== false;
-
-        document.getElementById('fxTyping').checked = user.typing !== false;
-        document.getElementById('fxCursor').checked = user.cursorBlink !== false;
-
-        document.getElementById('fxShimmer').checked = ttl.shimmer !== false;
-      } catch (e) {
-        log('Could not load current config (might not exist yet) — fill in fresh values.');
-        document.getElementById('logoTextInput').value = 'kataly';
-        document.getElementById('titleWords').value = 'yin, yang';
-        document.getElementById('handleTextInput').value = 'kataly';
-        document.getElementById('pageTitleInput').value = 'realization';
-        document.getElementById('bgWordInput').value = 'her eyes';
-        document.getElementById('neonColorInput').value = '#ffffff';
-        document.getElementById('themeABg').value = '#000000';
-        document.getElementById('themeAFg').value = '#ffffff';
-        document.getElementById('themeBBg').value = '#ffffff';
-        document.getElementById('themeBFg').value = '#000000';
-        ['fxGrain','fxParticles','fxScanlines','fxAmbientGlow','fxBgShine','fxSpotlight','fxBgText',
-         'fxPicInvert','fxPicTilt','fxPicFold','fxTyping','fxCursor','fxShimmer'].forEach(id => {
-          document.getElementById(id).checked = true;
-        });
-      }
-    }
-
-    function getHeaders(token) {
-      return {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json'
-      };
-    }
-
-    async function getBranchCommitSha(token) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
-        headers: getHeaders(token)
-      });
-      if (!res.ok) throw new Error('Could not read branch reference. Check token permissions.');
-      const data = await res.json();
-      return data.object.sha;
-    }
-
-    async function getCommitTreeSha(token, commitSha) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/commits/${commitSha}`, {
-        headers: getHeaders(token)
-      });
-      if (!res.ok) throw new Error('Could not read commit.');
-      const data = await res.json();
-      return data.tree.sha;
-    }
-
-    async function createBlob(token, base64Content) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
-        method: 'POST',
-        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: base64Content, encoding: 'base64' })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error('Blob upload failed: ' + (err.message || 'unknown error'));
-      }
-      const data = await res.json();
-      return data.sha;
-    }
-
-    async function createTree(token, baseTreeSha, entries) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/trees`, {
-        method: 'POST',
-        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base_tree: baseTreeSha, tree: entries })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error('Tree creation failed: ' + (err.message || 'unknown error'));
-      }
-      const data = await res.json();
-      return data.sha;
-    }
-
-    async function createCommit(token, message, treeSha, parentSha) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/commits`, {
-        method: 'POST',
-        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, tree: treeSha, parents: [parentSha] })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error('Commit creation failed: ' + (err.message || 'unknown error'));
-      }
-      const data = await res.json();
-      return data.sha;
-    }
-
-    async function updateRef(token, newCommitSha) {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
-        method: 'PATCH',
-        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sha: newCommitSha })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error('Branch update failed: ' + (err.message || 'unknown error'));
-      }
-    }
-
-    async function commitFiles(token, files, message) {
-      const parentCommitSha = await getBranchCommitSha(token);
-      const baseTreeSha = await getCommitTreeSha(token, parentCommitSha);
-
-      const treeEntries = [];
-      for (const f of files) {
-        log(`Uploading ${f.path}...`);
-        const blobSha = await createBlob(token, f.base64);
-        treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blobSha });
-      }
-
-      const newTreeSha = await createTree(token, baseTreeSha, treeEntries);
-      const newCommitSha = await createCommit(token, message, newTreeSha, parentCommitSha);
-      await updateRef(token, newCommitSha);
-    }
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function textToBase64(text) {
-      return btoa(unescape(encodeURIComponent(text)));
-    }
-
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      statusEl.textContent = '';
-      const saveBtn = document.getElementById('saveBtn');
-      const token = document.getElementById('token').value.trim();
-      if (!token) {
-        log('⚠️ Paste your GitHub token first.');
-        return;
-      }
-
-      saveBtn.disabled = true;
-      const musicFile = document.getElementById('musicFile').files[0];
-      const profileFile = document.getElementById('profilePicFile').files[0];
-
-      let profilePicPath = currentProfilePic;
-      if (profileFile) {
-        const ext = (profileFile.name.split('.').pop() || 'png').toLowerCase();
-        profilePicPath = `assets/images/profile.${ext}`;
-      }
-
-      const titleWordsArr = document.getElementById('titleWords').value
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
-
-      const config = {
-        telegram: document.getElementById('telegram').value.trim(),
-        discord: document.getElementById('discord').value.trim(),
-        instagram: document.getElementById('instagram').value.trim(),
-        music: 'assets/audio/music.mp3',
-        profilePic: profilePicPath,
-        quote: document.getElementById('quoteText').value,
-        logoText: document.getElementById('logoTextInput').value.trim() || 'kataly',
-        titleWords: titleWordsArr.length ? titleWordsArr : ['yin', 'yang'],
-        handleText: document.getElementById('handleTextInput').value.trim() || 'kataly',
-        pageTitle: document.getElementById('pageTitleInput').value.trim() || 'realization',
-        bgWord: document.getElementById('bgWordInput').value.trim() || 'her eyes',
-        neonColor: document.getElementById('neonColorInput').value || '#ffffff',
-        theme: {
-          a: {
-            background: document.getElementById('themeABg').value || '#000000',
-            foreground: document.getElementById('themeAFg').value || '#ffffff'
-          },
-          b: {
-            background: document.getElementById('themeBBg').value || '#ffffff',
-            foreground: document.getElementById('themeBFg').value || '#000000'
-          }
-        },
-        effects: {
-          background: {
-            grain: document.getElementById('fxGrain').checked,
-            particles: document.getElementById('fxParticles').checked,
-            scanlines: document.getElementById('fxScanlines').checked,
-            ambientGlow: document.getElementById('fxAmbientGlow').checked,
-            bgShine: document.getElementById('fxBgShine').checked,
-            spotlight: document.getElementById('fxSpotlight').checked,
-            bgText: document.getElementById('fxBgText').checked
-          },
-          profile: {
-            invertOnThemeChange: document.getElementById('fxPicInvert').checked,
-            tilt: document.getElementById('fxPicTilt').checked,
-            foldReveal: document.getElementById('fxPicFold').checked
-          },
-          username: {
-            typing: document.getElementById('fxTyping').checked,
-            cursorBlink: document.getElementById('fxCursor').checked
-          },
-          title: {
-            shimmer: document.getElementById('fxShimmer').checked
-          }
-        }
-      };
-
-      try {
-        const files = [
-          { path: 'config.json', base64: textToBase64(JSON.stringify(config, null, 2)) }
-        ];
-
-        if (profileFile) {
-          files.push({ path: profilePicPath, base64: await fileToBase64(profileFile) });
-        }
-        if (musicFile) {
-          files.push({ path: 'assets/audio/music.mp3', base64: await fileToBase64(musicFile) });
-        }
-
-        log('Committing changes...');
-        await commitFiles(token, files, 'Update site via admin panel');
-        log('✅ All changes saved.');
-        log('\nLive in about 30-60 seconds.');
-      } catch (e) {
-        log('❌ Error: ' + e.message);
-        log('Double check your token has Contents: Read and write permission for this repo.');
-      } finally {
-        saveBtn.disabled = false;
-      }
-    });
-  </script>
-
-</body>
-</html>
+          <label class="toggle-row">Starfield
+            <span class="switch"><input type="checkbox" id="fxStarfield"><span class="slider"></span></span>
+          
