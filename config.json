@@ -6,20 +6,45 @@
   "profilePic": "assets/images/profile.png",
   "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
   "logoText": "kataly",
-  "titleWords": ["yin", "yang"],
+  "titleWords": [
+    "her",
+    "drugs"
+  ],
   "handleText": "kataly",
   "pageTitle": "realization",
   "bgWord": "her eyes",
-  "neonColor": "#ffffff",
+  "neonColor": "#ff1a00",
   "theme": {
-    "a": { "background": "#000000", "foreground": "#ffffff" },
-    "b": { "background": "#ffffff", "foreground": "#000000" }
+    "a": {
+      "background": "#ff0000",
+      "foreground": "#000000"
+    },
+    "b": {
+      "background": "#000000",
+      "foreground": "#ff0000"
+    }
   },
   "effects": {
-    "background": { "grain": true, "particles": true, "scanlines": true, "ambientGlow": true, "bgShine": true, "spotlight": true, "bgText": true },
-    "profile": { "invertOnThemeChange": true, "tilt": true, "foldReveal": true },
-    "username": { "typing": true, "cursorBlink": true },
-    "title": { "shimmer": true }
+    "background": {
+      "grain": true,
+      "particles": true,
+      "scanlines": true,
+      "ambientGlow": true,
+      "bgShine": true,
+      "spotlight": true,
+      "bgText": true
+    },
+    "profile": {
+      "invertOnThemeChange": false,
+      "tilt": true,
+      "foldReveal": true
+    },
+    "username": {
+      "typing": true,
+      "cursorBlink": true
+    },
+    "title": {
+      "shimmer": true
+    }
   }
 }
-
