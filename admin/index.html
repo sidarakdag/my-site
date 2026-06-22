@@ -50,70 +50,6 @@
   }
   @keyframes rotateGlow { to { transform: rotate(360deg); } }
 
-  /* ---- Door open/close intro animation ---- */
-  .door {
-    position: fixed;
-    top: 0;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(180deg, #0a0a0a, #000);
-    z-index: 100;
-    box-shadow: 0 0 30px rgba(255,255,255,0.08) inset;
-  }
-  .door-left {
-    left: 0;
-    border-right: 1px solid rgba(255,255,255,0.15);
-    animation: doorLeft 2.2s ease-in-out forwards;
-  }
-  .door-right {
-    right: 0;
-    border-left: 1px solid rgba(255,255,255,0.15);
-    animation: doorRight 2.2s ease-in-out forwards;
-  }
-  @keyframes doorLeft {
-    0% { transform: translateX(-100%); }
-    35% { transform: translateX(0); }
-    65% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-  }
-  @keyframes doorRight {
-    0% { transform: translateX(100%); }
-    35% { transform: translateX(0); }
-    65% { transform: translateX(0); }
-    100% { transform: translateX(100%); }
-  }
-
-  #doorLabel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 101;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: lowercase;
-    color: rgba(255,255,255,0.55);
-    text-shadow: 0 0 10px rgba(255,255,255,0.4);
-    opacity: 0;
-    animation: doorLabelFade 2.2s ease-in-out forwards;
-  }
-  @keyframes doorLabelFade {
-    0% { opacity: 0; }
-    35% { opacity: 1; }
-    65% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  .door-dot {
-    display: inline-block;
-    animation: dotPulse 1s infinite;
-  }
-  .door-dot:nth-child(2) { animation-delay: 0.15s; }
-  .door-dot:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes dotPulse {
-    0%, 100% { opacity: 0.2; }
-    50% { opacity: 1; }
-  }
-
   .screen {
     position: relative;
     z-index: 1;
@@ -122,6 +58,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
+    perspective: 1200px;
   }
 
   #lockScreen, #panel {
@@ -129,7 +66,23 @@
     max-width: 380px;
   }
 
-  #panel { display: none; }
+  #panel {
+    display: none;
+    opacity: 0;
+    transform: rotateX(-100deg);
+    transform-origin: top center;
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #panel.unfolded {
+    opacity: 1;
+    transform: rotateX(0deg);
+  }
+
+  #lockScreen.falling {
+    transition: transform 0.6s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.6s ease;
+    transform: translateY(120vh) rotate(8deg);
+    opacity: 0;
+  }
 
   .card {
     background: rgba(255,255,255,0.03);
@@ -138,6 +91,25 @@
     backdrop-filter: blur(16px);
     padding: 28px 22px;
     box-shadow: 0 0 40px rgba(255,255,255,0.04);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+  }
+  .card.success {
+    border-color: rgba(80,255,140,0.5);
+    box-shadow: 0 0 40px rgba(80,255,140,0.25);
+    background: rgba(80,255,140,0.04);
+  }
+
+  .thumbs-up {
+    font-size: 42px;
+    text-align: center;
+    margin-top: 16px;
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .thumbs-up.show {
+    opacity: 1;
+    transform: scale(1);
   }
 
   .title {
@@ -265,24 +237,12 @@
     margin-top: 22px;
     margin-bottom: 4px;
   }
-
-  .fade-in {
-    animation: fadeIn 0.5s ease forwards;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 </style>
 </head>
 <body>
 
   <div id="grain"></div>
   <div id="ambientGlow"></div>
-
-  <div class="door door-left"></div>
-  <div class="door door-right"></div>
-  <div id="doorLabel">accessing<span class="door-dot">.</span><span class="door-dot">.</span><span class="door-dot">.</span></div>
 
   <div class="screen">
     <div id="lockScreen">
@@ -302,7 +262,7 @@
     </div>
 
     <div id="panel">
-      <div class="card fade-in">
+      <div class="card">
         <div class="title">kataly admin</div>
         <div class="subtitle">site control panel</div>
 
@@ -337,8 +297,8 @@
         <div class="section-label">Music</div>
 
         <label>Upload new background music (optional)</label>
-        <input type="file" id="musicFile" accept="audio/*">
-        <div class="hint">Now supports files of any normal size (up to 100MB).</div>
+        <input type="file" id="musicFile" accept=".mp3,.m4a,.wav,audio/*">
+        <div class="hint">If the file still looks greyed out, try selecting "Browse" or "Files" instead of "Recents" in the picker — iOS sometimes mis-tags audio files from certain apps.</div>
 
         <button id="saveBtn">Save Changes</button>
         <div id="status"></div>
@@ -347,11 +307,6 @@
   </div>
 
   <script>
-    /* ---- Remove doors once animation finishes ---- */
-    setTimeout(() => {
-      document.querySelectorAll('.door, #doorLabel').forEach(el => el.style.display = 'none');
-    }, 2300);
-
     const ADMIN_USER = 'kataly';
     const ADMIN_PASS = '$$$';
 
@@ -359,11 +314,30 @@
       const u = document.getElementById('loginUser').value.trim();
       const p = document.getElementById('loginPass').value;
       const errEl = document.getElementById('loginError');
+      const lockScreen = document.getElementById('lockScreen');
+      const card = lockScreen.querySelector('.card');
 
       if (u === ADMIN_USER && p === ADMIN_PASS) {
-        document.getElementById('lockScreen').style.display = 'none';
-        document.getElementById('panel').style.display = 'block';
-        loadConfig();
+        errEl.textContent = '';
+        card.classList.add('success');
+
+        const thumbs = document.createElement('div');
+        thumbs.className = 'thumbs-up';
+        thumbs.textContent = '👍';
+        card.appendChild(thumbs);
+        requestAnimationFrame(() => thumbs.classList.add('show'));
+
+        setTimeout(() => {
+          lockScreen.classList.add('falling');
+        }, 700);
+
+        setTimeout(() => {
+          lockScreen.style.display = 'none';
+          const panel = document.getElementById('panel');
+          panel.style.display = 'block';
+          requestAnimationFrame(() => panel.classList.add('unfolded'));
+          loadConfig();
+        }, 1300);
       } else {
         errEl.textContent = 'incorrect username or password';
       }
@@ -399,7 +373,6 @@
       };
     }
 
-    /* ---- Git Data API: handles files of any normal size, unlike the simple Contents API ---- */
     async function getBranchCommitSha(token) {
       const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
         headers: getHeaders(token)
@@ -472,7 +445,6 @@
       }
     }
 
-    // files = [{ path: 'config.json', base64: '...' }, ...]
     async function commitFiles(token, files, message) {
       const parentCommitSha = await getBranchCommitSha(token);
       const baseTreeSha = await getCommitTreeSha(token, parentCommitSha);
