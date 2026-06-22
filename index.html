@@ -227,8 +227,8 @@
   .logo-wrap::before {
     content: '';
     position: absolute;
-    width: 140%;
-    height: 140%;
+    width: 160%;
+    height: 220%;
     background: radial-gradient(circle, rgba(255,126,179,0.18), rgba(124,58,237,0.12) 40%, transparent 70%);
     filter: blur(20px);
     animation: auraPulse 2.4s ease-in-out infinite;
@@ -239,12 +239,14 @@
     50% { transform: scale(1.15); opacity: 1; }
   }
 
-  #entrance img {
-    width: 62vw;
-    max-width: 320px;
-    filter: invert(1) grayscale(1) brightness(1.6)
-            drop-shadow(0 0 10px #fff)
-            drop-shadow(0 0 28px rgba(255,255,255,0.8));
+  .logo-text {
+    font-family: 'Terminus TTF', monospace;
+    font-weight: 500;
+    font-size: clamp(34px, 11vw, 64px);
+    text-transform: lowercase;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 10px #fff, 0 0 28px rgba(255,255,255,0.8);
     animation: pulse 1.8s infinite ease-in-out;
   }
   @keyframes pulse {
@@ -540,7 +542,7 @@
 
   <div id="entrance">
     <div class="logo-wrap">
-      <img src="assets/images/logo.png" alt="logo">
+      <span class="logo-text" id="logoText">kataly</span>
     </div>
   </div>
 
@@ -851,6 +853,7 @@
     });
 
     function initSite(config) {
+      if (config.logoText) document.getElementById('logoText').textContent = config.logoText;
       if (config.telegram) document.getElementById('tgLink').href = config.telegram;
       if (config.discord) document.getElementById('dcLink').href = config.discord;
       if (config.instagram) document.getElementById('igLink').href = config.instagram;
