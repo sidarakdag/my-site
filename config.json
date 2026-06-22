@@ -5,14 +5,23 @@
   "music": "music.mp3",
   "profilePic": "IMG_3066.png",
   "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
-  "titleWords": ["yin", "yang"],
+  "titleWords": [
+    "drugs",
+    "her"
+  ],
   "handleText": "kataly",
   "pageTitle": "realization",
   "bgWord": "her eyes",
   "neonColor": "#ffffff",
   "theme": {
-    "a": { "background": "#000000", "foreground": "#ffffff" },
-    "b": { "background": "#ffffff", "foreground": "#000000" }
+    "a": {
+      "background": "#000000",
+      "foreground": "#ff2400"
+    },
+    "b": {
+      "background": "#ff1a00",
+      "foreground": "#000000"
+    }
   },
   "effects": {
     "grain": true,
