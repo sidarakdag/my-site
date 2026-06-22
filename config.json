@@ -3,33 +3,38 @@
   "discord": "#",
   "instagram": "https://instagram.com/kkataly",
   "music": "music.mp3",
-  "profilePic": "profile.png",
+  "profilePic": "IMG_3066.png",
   "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
-  "titleWords": [
-    "drugs",
-    "her"
-  ],
+  "titleWords": ["yin", "yang"],
   "handleText": "kataly",
   "pageTitle": "realization",
-  "bgWord": "love you",
-  "neonColor": "#ff1a00",
+  "bgWord": "her eyes",
+  "neonColor": "#ffffff",
   "theme": {
-    "a": {
-      "background": "#000000",
-      "foreground": "#ff2400"
-    },
-    "b": {
-      "background": "#ff1a00",
-      "foreground": "#000000"
-    }
+    "a": { "background": "#000000", "foreground": "#ffffff" },
+    "b": { "background": "#ffffff", "foreground": "#000000" }
   },
   "effects": {
-    "grain": true,
-    "particles": true,
-    "scanlines": true,
-    "ambientGlow": true,
-    "bgShine": true,
-    "spotlight": true,
-    "bgText": true
+    "background": {
+      "grain": true,
+      "particles": true,
+      "scanlines": true,
+      "ambientGlow": true,
+      "bgShine": true,
+      "spotlight": true,
+      "bgText": true
+    },
+    "profile": {
+      "invertOnThemeChange": true,
+      "tilt": true,
+      "foldReveal": true
+    },
+    "username": {
+      "typing": true,
+      "cursorBlink": true
+    },
+    "title": {
+      "shimmer": true
+    }
   }
 }
