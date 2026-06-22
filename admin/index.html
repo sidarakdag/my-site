@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex, nofollow">
+<title>admin</title>
+<style>
+  @font-face {
+    font-family: 'Terminus TTF';
+    src: url('../Terminus.ttf') format('truetype');
+    font-weight: 500;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    background: radial-gradient(circle at 50% 20%, #0c0c0c 0%, #000 70%);
+    color: #fff;
+    font-family: 'Terminus TTF', monospace;
+    font-weight: 500;
+    overflow-x: hidden;
+  }
+
+  #grain {
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #ambientGlow {
+    position: fixed;
+    inset: -20%;
+    z-index: 0;
+    background: conic-gradient(from 0deg at 50% 50%,
+      rgba(255,126,179,0.04), rgba(124,58,237,0.045),
+      rgba(255,255,255,0.015), rgba(255,126,179,0.04));
+    filter: blur(70px);
+    animation: rotateGlow 30s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes rotateGlow { to { transform: rotate(360deg); } }
+
+  .screen {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  #lockScreen, #panel {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  #panel { display: none; }
+
+  .card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    backdrop-filter: blur(16px);
+    padding: 28px 22px;
+    box-shadow: 0 0 40px rgba(255,255,255,0.04);
+  }
+
+  .title {
+    font-size: 22px;
+    letter-spacing: 1px;
+    text-transform: lowercase;
+    text-shadow: 0 0 16px rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+    background: linear-gradient(110deg, #fff 30%, #999 50%, #fff 70%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 22px;
+    letter-spacing: 0.5px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: lowercase;
+    color: rgba(255,255,255,0.45);
+    margin: 16px 0 7px;
+  }
+
+  input[type="text"], input[type="password"], input[type="file"] {
+    width: 100%;
+    padding: 13px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    color: #fff;
+    font-family: 'Terminus TTF', monospace;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  input::placeholder { color: rgba(255,255,255,0.25); }
+  input:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.4);
+    box-shadow: 0 0 14px rgba(255,255,255,0.12);
+  }
+
+  input[type="file"] {
+    padding: 10px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 24px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Terminus TTF', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: lowercase;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 20px rgba(255,255,255,0.15);
+  }
+  button:active {
+    transform: scale(0.97);
+  }
+
+  .error {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #ff8080;
+    text-shadow: 0 0 8px rgba(255,80,80,0.4);
+    min-height: 16px;
+  }
+
+  #status {
+    margin-top: 18px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.55);
+    white-space: pre-wrap;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 22px 0 4px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-top: 22px;
+    margin-bottom: 4px;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+  <div id="grain"></div>
+  <div id="ambientGlow"></div>
+
+  <div class="screen">
+    <div id="lockScreen">
+      <div class="card">
+        <div class="title">kataly admin</div>
+        <div class="subtitle">restricted access</div>
+
+        <label>Username</label>
+        <input type="text" id="loginUser" autocomplete="off">
+
+        <label>Password</label>
+        <input type="password" id="loginPass">
+
+        <button id="unlockBtn">Unlock</button>
+        <div class="error" id="loginError"></div>
+      </div>
+    </div>
+
+    <div id="panel">
+      <div class="card fade-in">
+        <div class="title">kataly admin</div>
+        <div class="subtitle">site control panel</div>
+
+        <label>GitHub Token (paste each time, never saved)</label>
+        <input type="password" id="token" placeholder="github_pat_...">
+
+        <div class="section-label">Links</div>
+
+        <label>Telegram link</label>
+        <input type="text" id="telegram">
+
+        <label>Discord link</label>
+        <input type="text" id="discord">
+
+        <label>Instagram link</label>
+        <input type="text" id="instagram">
+
+        <div class="divider"></div>
+        <div class="section-label">Music</div>
+
+        <label>Upload new background music (optional)</label>
+        <input type="file" id="musicFile" accept="audio/*">
+
+        <button id="saveBtn">Save Changes</button>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_USER = 'kataly';
+    const ADMIN_PASS = '$$$';
+
+    document.getElementById('unlockBtn').addEventListener('click', () => {
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+      const errEl = document.getElementById('loginError');
+
+      if (u === ADMIN_USER && p === ADMIN_PASS) {
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('panel').style.display = 'block';
+        loadConfig();
+      } else {
+        errEl.textContent = 'incorrect username or password';
+      }
+    });
+
+    const OWNER = 'sidarakdag';
+    const REPO = 'my-site';
+    const BRANCH = 'main';
+
+    const statusEl = document.getElementById('status');
+    function log(msg) { statusEl.textContent += msg + '\n'; }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch(`../config.json?t=${Date.now()}`);
+        const config = await res.json();
+        document.getElementById('telegram').value = config.telegram || '';
+        document.getElementById('discord').value = config.discord || '';
+        document.getElementById('instagram').value = config.instagram || '';
+      } catch (e) {
+        log('Could not load current config (might not exist yet) — fill in fresh values.');
+      }
+    }
+
+    function getHeaders(token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json'
+      };
+    }
+
+    async function getSha(token, path) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`, {
+          headers: getHeaders(token)
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.sha;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function saveFile(token, path, base64Content, message) {
+      const sha = await getSha(token, path);
+      const body = { message, content: base64Content, branch: BRANCH };
+      if (sha) body.sha = sha;
+
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+        method: 'PUT',
+        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Unknown error');
+      }
+      return res.json();
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      statusEl.textContent = '';
+      const token = document.getElementById('token').value.trim();
+      if (!token) {
+        log('⚠️ Paste your GitHub token first.');
+        return;
+      }
+
+      const musicFile = document.getElementById('musicFile').files[0];
+
+      const config = {
+        telegram: document.getElementById('telegram').value.trim(),
+        discord: document.getElementById('discord').value.trim(),
+        instagram: document.getElementById('instagram').value.trim(),
+        music: 'music.mp3'
+      };
+
+      try {
+        log('Saving config.json...');
+        const configBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
+        await saveFile(token, 'config.json', configBase64, 'Update site config via admin panel');
+        log('✅ Config saved.');
+
+        if (musicFile) {
+          log('Uploading new music file...');
+          const musicBase64 = await fileToBase64(musicFile);
+          await saveFile(token, 'music.mp3', musicBase64, 'Update background music via admin panel');
+          log('✅ Music updated.');
+        }
+
+        log('\nAll done! Changes go live in about 30-60 seconds.');
+      } catch (e) {
+        log('❌ Error: ' + e.message);
+        log('Double check your token has Contents: Read and write permission for this repo.');
+      }
+    });
+  </script>
+
+</body>
+</html>
