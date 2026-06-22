@@ -87,6 +87,72 @@
     transition: color 0.6s ease;
   }
 
+  /* ---- Matrix rain ---- */
+  #matrixRain {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .matrix-col {
+    position: absolute;
+    top: -120%;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Terminus TTF', monospace;
+    font-size: 14px;
+    line-height: 16px;
+    color: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    text-shadow: 0 0 6px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.7);
+    animation: matrixFall linear infinite;
+  }
+  @keyframes matrixFall {
+    from { transform: translateY(0); }
+    to { transform: translateY(220%); }
+  }
+
+  /* ---- Snowfall ---- */
+  #snowfall {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .snowflake {
+    position: absolute;
+    top: -5%;
+    border-radius: 50%;
+    background: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
+    animation: snowFall linear infinite;
+  }
+  @keyframes snowFall {
+    from { transform: translateY(0) translateX(0); }
+    to { transform: translateY(115vh) translateX(var(--drift)); }
+  }
+
+  /* ---- Starfield ---- */
+  #starfield {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    animation: starTwinkle ease-in-out infinite;
+    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+  }
+  @keyframes starTwinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--s-op); }
+  }
+
   #spotlight {
     position: fixed;
     width: 380px;
@@ -286,49 +352,87 @@
     perspective: 1000px;
   }
 
-  #mainContent .pic-wrap {
+  /* ---- pic-frame: outer wrapper hosting fold animation + border effects ---- */
+  .pic-frame {
+    position: relative;
+    width: 36vw;
+    max-width: 210px;
+    aspect-ratio: 3/4;
+    flex-shrink: 0;
+  }
+  #mainContent .pic-frame {
     opacity: 0;
     transform: rotateX(-100deg);
     transform-origin: top center;
     transition: opacity 0.9s ease 0.15s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
   }
-  #mainContent.revealed .pic-wrap {
+  #mainContent.revealed .pic-frame {
     opacity: 1;
     transform: rotateX(0deg);
   }
-  #mainContent .pic-wrap.no-fold {
+  #mainContent .pic-frame.no-fold {
     transform: translateY(14px) !important;
   }
-  #mainContent.revealed .pic-wrap.no-fold {
+  #mainContent.revealed .pic-frame.no-fold {
     transform: translateY(0) !important;
   }
 
-  #mainContent .title-block {
+  .pic-frame::before, .pic-frame::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 6px;
+    z-index: -1;
     opacity: 0;
-    transform: translateY(14px);
-    transition: opacity 0.8s ease 0.45s, transform 0.8s ease 0.45s;
+    pointer-events: none;
   }
-  #mainContent.revealed .title-block {
+  .pic-frame.border-glow::before {
     opacity: 1;
-    transform: translateY(0);
+    background: conic-gradient(from 0deg, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9), transparent 60%, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9));
+    filter: blur(4px);
+    animation: rotateBorder 4s linear infinite;
   }
+  .pic-frame.border-rainbow::before {
+    opacity: 1;
+    background: conic-gradient(from 0deg, #ff3b3b, #ff9d3b, #f3ff3b, #3bff6e, #3bd7ff, #b03bff, #ff3b3b);
+    filter: blur(4px);
+    animation: rotateBorder 4s linear infinite;
+  }
+  .pic-frame.border-double::before {
+    inset: -5px;
+    opacity: 1;
+    background: conic-gradient(from 0deg, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9), transparent 50%, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9));
+    filter: blur(3px);
+    animation: rotateBorder 3s linear infinite;
+  }
+  .pic-frame.border-double::after {
+    inset: -11px;
+    opacity: 0.55;
+    background: conic-gradient(from 180deg, #ff3b3b, #ff9d3b, #f3ff3b, #3bff6e, #3bd7ff, #b03bff, #ff3b3b);
+    filter: blur(5px);
+    animation: rotateBorder 6s linear infinite reverse;
+  }
+  @keyframes rotateBorder { to { transform: rotate(360deg); } }
 
-  #mainContent .handle {
-    opacity: 0;
-    transition: opacity 0.8s ease 0.65s;
+  .tap-pulse-ring {
+    position: absolute;
+    inset: -6px;
+    border: 2px solid rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    border-radius: 6px;
+    opacity: 0.85;
+    pointer-events: none;
+    animation: tapPulseAnim 0.6s ease-out forwards;
   }
-  #mainContent.revealed .handle {
-    opacity: 1;
+  @keyframes tapPulseAnim {
+    to { transform: scale(1.3); opacity: 0; }
   }
 
   .pic-wrap {
-    width: 36vw;
-    max-width: 210px;
-    aspect-ratio: 3/4;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     position: relative;
     perspective: 800px;
-    flex-shrink: 0;
   }
 
   .profile-pic {
@@ -410,6 +514,53 @@
     text-shadow: 0 0 8px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5);
     transition: color 0.6s ease;
   }
+
+  /* ---- Username text effects ---- */
+  .handle.fx-rainbow {
+    animation: rainbowCycle 4s linear infinite;
+  }
+  @keyframes rainbowCycle {
+    0% { color: #ff3b3b; text-shadow: 0 0 8px #ff3b3b; }
+    16% { color: #ff9d3b; text-shadow: 0 0 8px #ff9d3b; }
+    33% { color: #f3ff3b; text-shadow: 0 0 8px #f3ff3b; }
+    50% { color: #3bff6e; text-shadow: 0 0 8px #3bff6e; }
+    66% { color: #3bd7ff; text-shadow: 0 0 8px #3bd7ff; }
+    83% { color: #b03bff; text-shadow: 0 0 8px #b03bff; }
+    100% { color: #ff3b3b; text-shadow: 0 0 8px #ff3b3b; }
+  }
+
+  .handle.fx-glitch {
+    animation: handleGlitch 2.4s infinite;
+  }
+  @keyframes handleGlitch {
+    0%, 89%, 100% { transform: translate(0,0); opacity: 1; }
+    90% { transform: translate(-2px,1px); opacity: 0.7; }
+    91% { transform: translate(2px,-1px); opacity: 1; }
+    93% { transform: translate(-1px,0); }
+    95% { transform: translate(1px,0); opacity: 0.85; }
+  }
+
+  .handle.fx-gradient {
+    background: linear-gradient(90deg, #ff6ec7, #7c3aed, #38bdf8, #ff6ec7);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientWave 5s linear infinite;
+  }
+  @keyframes gradientWave {
+    0% { background-position: 0% 0; }
+    100% { background-position: 300% 0; }
+  }
+
+  .handle.fx-pulse {
+    animation: handlePulseGlow 1.8s ease-in-out infinite;
+  }
+  @keyframes handlePulseGlow {
+    0%, 100% { text-shadow: 0 0 6px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.4); }
+    50% { text-shadow: 0 0 22px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 1); }
+  }
+
   .cursor {
     animation: blink 1s step-start infinite;
   }
@@ -532,6 +683,9 @@
   <div id="ambientGlow"></div>
   <div id="particles"></div>
   <div id="bgText"></div>
+  <div id="matrixRain"></div>
+  <div id="snowfall"></div>
+  <div id="starfield"></div>
   <div id="spotlight"></div>
   <div id="bgShine"></div>
   <div id="scanlines"></div>
@@ -549,8 +703,10 @@
   <div id="mainContent">
     <div class="container">
       <div class="top-row">
-        <div class="pic-wrap" id="picWrap">
-          <img class="profile-pic" id="profilePicImg" src="assets/images/profile.png" alt="profile">
+        <div class="pic-frame" id="picFrame">
+          <div class="pic-wrap" id="picWrap">
+            <img class="profile-pic" id="profilePicImg" src="assets/images/profile.png" alt="profile">
+          </div>
         </div>
         <div class="text-block">
           <div class="title-block">
@@ -559,7 +715,7 @@
             </div>
             <div class="title-underline" id="titleUnderline"></div>
           </div>
-          <div class="handle"><span id="handleText"></span><span class="cursor" id="cursorEl">|</span></div>
+          <div class="handle" id="handleWrap"><span id="handleText"></span><span class="cursor" id="cursorEl">|</span></div>
         </div>
       </div>
 
@@ -619,12 +775,14 @@
     const musicBtn = document.getElementById('musicToggle');
     const titleEl = document.getElementById('titleText');
     const titleUnderline = document.getElementById('titleUnderline');
+    const handleWrapEl = document.getElementById('handleWrap');
     const handleEl = document.getElementById('handleText');
     const cursorEl = document.getElementById('cursorEl');
     const bgContainer = document.getElementById('bgText');
     const particleContainer = document.getElementById('particles');
     const pic = document.getElementById('profilePicImg');
     const picWrap = document.getElementById('picWrap');
+    const picFrame = document.getElementById('picFrame');
     const flashEl = document.getElementById('themeFlash');
     const scanWipeEl = document.getElementById('scanWipe');
 
@@ -731,6 +889,66 @@
       }
     }
 
+    function createMatrixRain() {
+      if (fx.background.matrixRain !== true) return;
+      const container = document.getElementById('matrixRain');
+      const colWidth = 22;
+      const columns = Math.min(40, Math.ceil(window.innerWidth / colWidth));
+      const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789';
+      for (let i = 0; i < columns; i++) {
+        const col = document.createElement('div');
+        col.className = 'matrix-col';
+        col.style.left = (i * colWidth) + 'px';
+        const len = 10 + Math.floor(Math.random() * 8);
+        let html = '';
+        for (let j = 0; j < len; j++) {
+          const ch = chars[Math.floor(Math.random() * chars.length)];
+          const op = (j / len).toFixed(2);
+          html += `<span style="opacity:${op}">${ch}</span>`;
+        }
+        col.innerHTML = html;
+        col.style.animationDuration = (4 + Math.random() * 5) + 's';
+        col.style.animationDelay = '-' + (Math.random() * 8).toFixed(1) + 's';
+        container.appendChild(col);
+      }
+    }
+
+    function createSnowfall() {
+      if (fx.background.snowfall !== true) return;
+      const container = document.getElementById('snowfall');
+      for (let i = 0; i < 28; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'snowflake';
+        const size = 2 + Math.random() * 4;
+        flake.style.width = size + 'px';
+        flake.style.height = size + 'px';
+        flake.style.left = Math.random() * 100 + '%';
+        flake.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+        flake.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+        flake.style.animationDuration = (8 + Math.random() * 10) + 's';
+        flake.style.animationDelay = '-' + (Math.random() * 15).toFixed(1) + 's';
+        container.appendChild(flake);
+      }
+    }
+
+    function createStarfield() {
+      if (fx.background.starfield !== true) return;
+      const container = document.getElementById('starfield');
+      for (let i = 0; i < 35; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = 1 + Math.random() * 2;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.setProperty('--s-op', (0.3 + Math.random() * 0.5).toFixed(2));
+        star.style.animationDuration = (2 + Math.random() * 4) + 's';
+        star.style.animationDelay = '-' + (Math.random() * 6).toFixed(1) + 's';
+        container.appendChild(star);
+      }
+    }
+
     const spotlight = document.getElementById('spotlight');
     function moveSpotlight(x, y) {
       spotlight.style.left = `${x}px`;
@@ -758,6 +976,15 @@
     picWrap.addEventListener('mouseleave', resetTilt);
     picWrap.addEventListener('touchmove', tilt, { passive: true });
     picWrap.addEventListener('touchend', resetTilt);
+
+    function spawnTapPulse() {
+      if (fx.profile.pulseOnTap === false) return;
+      const ring = document.createElement('div');
+      ring.className = 'tap-pulse-ring';
+      picFrame.appendChild(ring);
+      setTimeout(() => ring.remove(), 650);
+    }
+    picFrame.addEventListener('click', spawnTapPulse);
 
     function swapTitle() {
       if (!entrance.classList.contains('hidden')) return;
@@ -909,7 +1136,15 @@
       setEffectVisibility('bgText', fx.background.bgText);
 
       if (fx.profile.foldReveal === false) {
-        picWrap.classList.add('no-fold');
+        picFrame.classList.add('no-fold');
+      }
+
+      if (config.profileBorder && config.profileBorder !== 'none') {
+        picFrame.classList.add('border-' + config.profileBorder);
+      }
+
+      if (config.usernameEffect && config.usernameEffect !== 'none') {
+        handleWrapEl.classList.add('fx-' + config.usernameEffect);
       }
 
       if (fx.title.shimmer !== false) {
@@ -922,6 +1157,9 @@
       }
 
       createParticles();
+      createMatrixRain();
+      createSnowfall();
+      createStarfield();
       typeLoop();
     }
 
