@@ -436,7 +436,7 @@
     max-width: 600px;
   }
 
-  /* ---- Bottom-left social corner: handle text + button row ---- */
+  /* ---- Bottom-left social corner: only visible once scrolled into view ---- */
   #socialCorner {
     position: fixed;
     bottom: 20px;
@@ -446,6 +446,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  #socialCorner.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .handle-text {
@@ -455,11 +462,6 @@
     color: rgba(255,255,255,0.6);
     text-shadow: 0 0 6px rgba(255,255,255,0.3);
     transition: color 0.5s ease;
-  }
-  .btn-inverted ~ .handle-text,
-  #socialCorner.btn-inverted .handle-text {
-    color: rgba(0,0,0,0.6);
-    text-shadow: 0 0 6px rgba(0,0,0,0.25);
   }
 
   .social-row {
@@ -595,7 +597,7 @@
         </div>
       </div>
 
-      <div class="quote-section">
+      <div class="quote-section" id="quoteSection">
         <div>
           <span class="quote-mark">"</span>
           <p class="quote-text">şiiri yazan benim kalemimdi<br>kalemin mürekkebi senin gözlerindi<br>gözlerine kanmak benim kaderimdi<br>kaderime oynayan senin sözlerindi.</p>
@@ -604,7 +606,7 @@
     </div>
   </div>
 
-  <!-- Social corner: handle text + Telegram/Discord/Instagram row -->
+  <!-- Social corner: only fades in once quote section is in view -->
   <div id="socialCorner">
     <div class="handle-text">dc : katalyy<br>ig : kkataly</div>
     <div class="social-row">
@@ -797,6 +799,18 @@
       titleLoopStarted = true;
       setInterval(swapTitle, 2000);
     }
+
+    /* ---- Reveal social corner only once quote section scrolls into view ---- */
+    const socialCorner = document.getElementById('socialCorner');
+    const quoteSection = document.getElementById('quoteSection');
+
+    const scrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        socialCorner.classList.toggle('visible', entry.isIntersecting);
+      });
+    }, { threshold: 0.3 });
+
+    scrollObserver.observe(quoteSection);
 
     entrance.addEventListener('click', () => {
       entrance.classList.add('hidden');
