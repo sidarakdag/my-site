@@ -313,6 +313,12 @@
     line-height: 1.4;
   }
 
+  .hint a, .link-action {
+    color: rgba(255,255,255,0.55);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   #status {
     margin-top: 18px;
     font-size: 12px;
@@ -445,8 +451,13 @@
         <div class="title">kataly admin</div>
         <div class="subtitle">site control panel</div>
 
-        <label>GitHub Token (paste each time, never saved)</label>
+        <label>GitHub Token</label>
         <input type="password" id="token" placeholder="github_pat_...">
+
+        <label class="toggle-row" style="margin-top:14px;">Remember token on this device
+          <span class="switch"><input type="checkbox" id="rememberToken"><span class="slider"></span></span>
+        </label>
+        <div class="hint">Stored only in this browser's local storage, sent only to GitHub. Anyone with access to this device while it's saved could see it — only use this on your own phone. <span class="link-action" id="clearTokenBtn">Clear saved token</span></div>
 
         <div class="section-label">Links</div>
 
@@ -676,6 +687,12 @@
       }, 650);
     });
 
+    document.getElementById('clearTokenBtn').addEventListener('click', () => {
+      localStorage.removeItem('katalyAdminToken');
+      document.getElementById('token').value = '';
+      document.getElementById('rememberToken').checked = false;
+    });
+
     const OWNER = 'sidarakdag';
     const REPO = 'my-site';
     const BRANCH = 'main';
@@ -686,6 +703,12 @@
     let currentProfilePic = 'assets/images/profile.png';
 
     async function loadConfig() {
+      const savedToken = localStorage.getItem('katalyAdminToken');
+      if (savedToken) {
+        document.getElementById('token').value = savedToken;
+        document.getElementById('rememberToken').checked = true;
+      }
+
       try {
         const res = await fetch(`../config.json?t=${Date.now()}`);
         const config = await res.json();
@@ -878,6 +901,12 @@
       if (!token) {
         log('⚠️ Paste your GitHub token first.');
         return;
+      }
+
+      if (document.getElementById('rememberToken').checked) {
+        localStorage.setItem('katalyAdminToken', token);
+      } else {
+        localStorage.removeItem('katalyAdminToken');
       }
 
       saveBtn.disabled = true;
