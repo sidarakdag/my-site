@@ -561,7 +561,7 @@
   </audio>
 
   <script>
-    /* ---- Load config.json and apply links + music ---- */
+    /* ---- Load config.json and apply links + music + photo + quote ---- */
     fetch(`config.json?t=${Date.now()}`)
       .then(res => res.json())
       .then(config => {
@@ -572,6 +572,16 @@
           const musicSource = document.getElementById('musicSource');
           musicSource.src = config.music;
           document.getElementById('bgMusic').load();
+        }
+        if (config.profilePic) {
+          document.getElementById('profilePicImg').src = config.profilePic;
+        }
+        if (config.quote) {
+          const escaped = config.quote
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          document.getElementById('quoteTextEl').innerHTML = escaped.split('\n').join('<br>');
         }
       })
       .catch(() => console.log('config.json not found, using defaults'));
