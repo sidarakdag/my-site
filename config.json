@@ -2,5 +2,21 @@
   "telegram": "https://t.me/katalyshop",
   "discord": "#",
   "instagram": "https://instagram.com/kkataly",
-  "music": "music.mp3"
+  "music": "music.mp3",
+  "profilePic": "IMG_3066.png",
+  "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
+  "titleWords": ["yin", "yang"],
+  "handleText": "kataly",
+  "pageTitle": "realization",
+  "bgWord": "her eyes",
+  "neonColor": "#ffffff",
+  "effects": {
+    "grain": true,
+    "particles": true,
+    "scanlines": true,
+    "ambientGlow": true,
+    "bgShine": true,
+    "spotlight": true,
+    "bgText": true
+  }
 }
