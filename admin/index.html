@@ -50,6 +50,70 @@
   }
   @keyframes rotateGlow { to { transform: rotate(360deg); } }
 
+  /* ---- Door open/close intro animation ---- */
+  .door {
+    position: fixed;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(180deg, #0a0a0a, #000);
+    z-index: 100;
+    box-shadow: 0 0 30px rgba(255,255,255,0.08) inset;
+  }
+  .door-left {
+    left: 0;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    animation: doorLeft 2.2s ease-in-out forwards;
+  }
+  .door-right {
+    right: 0;
+    border-left: 1px solid rgba(255,255,255,0.15);
+    animation: doorRight 2.2s ease-in-out forwards;
+  }
+  @keyframes doorLeft {
+    0% { transform: translateX(-100%); }
+    35% { transform: translateX(0); }
+    65% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  @keyframes doorRight {
+    0% { transform: translateX(100%); }
+    35% { transform: translateX(0); }
+    65% { transform: translateX(0); }
+    100% { transform: translateX(100%); }
+  }
+
+  #doorLabel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 101;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    color: rgba(255,255,255,0.55);
+    text-shadow: 0 0 10px rgba(255,255,255,0.4);
+    opacity: 0;
+    animation: doorLabelFade 2.2s ease-in-out forwards;
+  }
+  @keyframes doorLabelFade {
+    0% { opacity: 0; }
+    35% { opacity: 1; }
+    65% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .door-dot {
+    display: inline-block;
+    animation: dotPulse 1s infinite;
+  }
+  .door-dot:nth-child(2) { animation-delay: 0.15s; }
+  .door-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+
   .screen {
     position: relative;
     z-index: 1;
@@ -159,6 +223,10 @@
   button:active {
     transform: scale(0.97);
   }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 
   .error {
     margin-top: 14px;
@@ -212,6 +280,10 @@
   <div id="grain"></div>
   <div id="ambientGlow"></div>
 
+  <div class="door door-left"></div>
+  <div class="door door-right"></div>
+  <div id="doorLabel">accessing<span class="door-dot">.</span><span class="door-dot">.</span><span class="door-dot">.</span></div>
+
   <div class="screen">
     <div id="lockScreen">
       <div class="card">
@@ -259,13 +331,14 @@
 
         <label>Upload new profile photo (optional)</label>
         <input type="file" id="profilePicFile" accept="image/*">
-        <div class="hint">Heads up: new uploads keep whatever background the photo has — no automatic background removal here. Send it to me first if you want the seamless cutout look.</div>
+        <div class="hint">New uploads keep their original background — send it to me first if you want the seamless cutout look.</div>
 
         <div class="divider"></div>
         <div class="section-label">Music</div>
 
         <label>Upload new background music (optional)</label>
         <input type="file" id="musicFile" accept="audio/*">
+        <div class="hint">Now supports files of any normal size (up to 100MB).</div>
 
         <button id="saveBtn">Save Changes</button>
         <div id="status"></div>
@@ -274,6 +347,11 @@
   </div>
 
   <script>
+    /* ---- Remove doors once animation finishes ---- */
+    setTimeout(() => {
+      document.querySelectorAll('.door, #doorLabel').forEach(el => el.style.display = 'none');
+    }, 2300);
+
     const ADMIN_USER = 'kataly';
     const ADMIN_PASS = '$$$';
 
@@ -321,35 +399,94 @@
       };
     }
 
-    async function getSha(token, path) {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`, {
-          headers: getHeaders(token)
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.sha;
-      } catch (e) {
-        return null;
+    /* ---- Git Data API: handles files of any normal size, unlike the simple Contents API ---- */
+    async function getBranchCommitSha(token) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
+        headers: getHeaders(token)
+      });
+      if (!res.ok) throw new Error('Could not read branch reference. Check token permissions.');
+      const data = await res.json();
+      return data.object.sha;
+    }
+
+    async function getCommitTreeSha(token, commitSha) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/commits/${commitSha}`, {
+        headers: getHeaders(token)
+      });
+      if (!res.ok) throw new Error('Could not read commit.');
+      const data = await res.json();
+      return data.tree.sha;
+    }
+
+    async function createBlob(token, base64Content) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
+        method: 'POST',
+        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: base64Content, encoding: 'base64' })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error('Blob upload failed: ' + (err.message || 'unknown error'));
+      }
+      const data = await res.json();
+      return data.sha;
+    }
+
+    async function createTree(token, baseTreeSha, entries) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/trees`, {
+        method: 'POST',
+        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base_tree: baseTreeSha, tree: entries })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error('Tree creation failed: ' + (err.message || 'unknown error'));
+      }
+      const data = await res.json();
+      return data.sha;
+    }
+
+    async function createCommit(token, message, treeSha, parentSha) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/commits`, {
+        method: 'POST',
+        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, tree: treeSha, parents: [parentSha] })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error('Commit creation failed: ' + (err.message || 'unknown error'));
+      }
+      const data = await res.json();
+      return data.sha;
+    }
+
+    async function updateRef(token, newCommitSha) {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
+        method: 'PATCH',
+        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sha: newCommitSha })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error('Branch update failed: ' + (err.message || 'unknown error'));
       }
     }
 
-    async function saveFile(token, path, base64Content, message) {
-      const sha = await getSha(token, path);
-      const body = { message, content: base64Content, branch: BRANCH };
-      if (sha) body.sha = sha;
+    // files = [{ path: 'config.json', base64: '...' }, ...]
+    async function commitFiles(token, files, message) {
+      const parentCommitSha = await getBranchCommitSha(token);
+      const baseTreeSha = await getCommitTreeSha(token, parentCommitSha);
 
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
-        method: 'PUT',
-        headers: { ...getHeaders(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Unknown error');
+      const treeEntries = [];
+      for (const f of files) {
+        log(`Uploading ${f.path}...`);
+        const blobSha = await createBlob(token, f.base64);
+        treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blobSha });
       }
-      return res.json();
+
+      const newTreeSha = await createTree(token, baseTreeSha, treeEntries);
+      const newCommitSha = await createCommit(token, message, newTreeSha, parentCommitSha);
+      await updateRef(token, newCommitSha);
     }
 
     function fileToBase64(file) {
@@ -361,14 +498,20 @@
       });
     }
 
+    function textToBase64(text) {
+      return btoa(unescape(encodeURIComponent(text)));
+    }
+
     document.getElementById('saveBtn').addEventListener('click', async () => {
       statusEl.textContent = '';
+      const saveBtn = document.getElementById('saveBtn');
       const token = document.getElementById('token').value.trim();
       if (!token) {
         log('⚠️ Paste your GitHub token first.');
         return;
       }
 
+      saveBtn.disabled = true;
       const musicFile = document.getElementById('musicFile').files[0];
       const profileFile = document.getElementById('profilePicFile').files[0];
 
@@ -388,29 +531,26 @@
       };
 
       try {
+        const files = [
+          { path: 'config.json', base64: textToBase64(JSON.stringify(config, null, 2)) }
+        ];
+
         if (profileFile) {
-          log('Uploading new profile photo...');
-          const picBase64 = await fileToBase64(profileFile);
-          await saveFile(token, profilePicPath, picBase64, 'Update profile photo via admin panel');
-          log('✅ Profile photo updated.');
+          files.push({ path: profilePicPath, base64: await fileToBase64(profileFile) });
         }
-
         if (musicFile) {
-          log('Uploading new music file...');
-          const musicBase64 = await fileToBase64(musicFile);
-          await saveFile(token, 'music.mp3', musicBase64, 'Update background music via admin panel');
-          log('✅ Music updated.');
+          files.push({ path: 'music.mp3', base64: await fileToBase64(musicFile) });
         }
 
-        log('Saving config.json...');
-        const configBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
-        await saveFile(token, 'config.json', configBase64, 'Update site config via admin panel');
-        log('✅ Config saved.');
-
-        log('\nAll done! Changes go live in about 30-60 seconds.');
+        log('Committing changes...');
+        await commitFiles(token, files, 'Update site via admin panel');
+        log('✅ All changes saved.');
+        log('\nLive in about 30-60 seconds.');
       } catch (e) {
         log('❌ Error: ' + e.message);
         log('Double check your token has Contents: Read and write permission for this repo.');
+      } finally {
+        saveBtn.disabled = false;
       }
     });
   </script>
