@@ -92,6 +92,8 @@
     padding: 28px 22px;
     box-shadow: 0 0 40px rgba(255,255,255,0.04);
     transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+    max-height: 88vh;
+    overflow-y: auto;
   }
   .card.success {
     border-color: rgba(80,255,140,0.5);
@@ -175,6 +177,16 @@
     color: rgba(255,255,255,0.6);
   }
 
+  input[type="color"] {
+    width: 100%;
+    height: 44px;
+    padding: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    cursor: pointer;
+  }
+
   button {
     width: 100%;
     padding: 14px;
@@ -237,6 +249,58 @@
     margin-top: 22px;
     margin-bottom: 4px;
   }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 2px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    text-transform: none;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: rgba(255,255,255,0.12);
+    border-radius: 22px;
+    transition: background 0.25s ease;
+  }
+  .slider::before {
+    content: '';
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: #888;
+    border-radius: 50%;
+    transition: transform 0.25s ease, background 0.25s ease;
+  }
+  input:checked + .slider {
+    background: rgba(255,255,255,0.25);
+  }
+  input:checked + .slider::before {
+    transform: translateX(18px);
+    background: #fff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.6);
+  }
 </style>
 </head>
 <body>
@@ -281,10 +345,61 @@
         <input type="text" id="instagram">
 
         <div class="divider"></div>
-        <div class="section-label">Quote</div>
+        <div class="section-label">Text</div>
+
+        <label>Title words (comma separated, e.g. yin, yang)</label>
+        <input type="text" id="titleWords">
+
+        <label>Handle text (typing animation)</label>
+        <input type="text" id="handleTextInput">
+
+        <label>Browser tab title</label>
+        <input type="text" id="pageTitleInput">
+
+        <label>Background floating text</label>
+        <input type="text" id="bgWordInput">
 
         <label>Quote text (new line = new line on site)</label>
         <textarea id="quoteText"></textarea>
+
+        <div class="divider"></div>
+        <div class="section-label">Color</div>
+
+        <label>Neon glow tint</label>
+        <input type="color" id="neonColorInput">
+        <div class="hint">Tints the glow/shadow around text and icons. The logo aura and background ambient glow stay tied to your brand colors.</div>
+
+        <div class="divider"></div>
+        <div class="section-label">Effects</div>
+
+        <label class="toggle-row">
+          Grain texture
+          <span class="switch"><input type="checkbox" id="fxGrain"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Floating particles
+          <span class="switch"><input type="checkbox" id="fxParticles"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Scanlines
+          <span class="switch"><input type="checkbox" id="fxScanlines"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Ambient glow
+          <span class="switch"><input type="checkbox" id="fxAmbientGlow"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Background shine sweep
+          <span class="switch"><input type="checkbox" id="fxBgShine"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Touch spotlight
+          <span class="switch"><input type="checkbox" id="fxSpotlight"><span class="slider"></span></span>
+        </label>
+        <label class="toggle-row">
+          Background floating text
+          <span class="switch"><input type="checkbox" id="fxBgText"><span class="slider"></span></span>
+        </label>
 
         <div class="divider"></div>
         <div class="section-label">Profile Picture</div>
@@ -298,7 +413,6 @@
 
         <label>Upload new background music (optional)</label>
         <input type="file" id="musicFile" accept=".mp3,.m4a,.wav,audio/*">
-        <div class="hint">If the file still looks greyed out, try selecting "Browse" or "Files" instead of "Recents" in the picker — iOS sometimes mis-tags audio files from certain apps.</div>
 
         <button id="saveBtn">Save Changes</button>
         <div id="status"></div>
@@ -356,13 +470,37 @@
       try {
         const res = await fetch(`../config.json?t=${Date.now()}`);
         const config = await res.json();
+
         document.getElementById('telegram').value = config.telegram || '';
         document.getElementById('discord').value = config.discord || '';
         document.getElementById('instagram').value = config.instagram || '';
         document.getElementById('quoteText').value = config.quote || '';
         currentProfilePic = config.profilePic || 'IMG_3066.png';
+
+        document.getElementById('titleWords').value = Array.isArray(config.titleWords) ? config.titleWords.join(', ') : 'yin, yang';
+        document.getElementById('handleTextInput').value = config.handleText || 'kataly';
+        document.getElementById('pageTitleInput').value = config.pageTitle || 'realization';
+        document.getElementById('bgWordInput').value = config.bgWord || 'her eyes';
+        document.getElementById('neonColorInput').value = config.neonColor || '#ffffff';
+
+        const fx = config.effects || {};
+        document.getElementById('fxGrain').checked = fx.grain !== false;
+        document.getElementById('fxParticles').checked = fx.particles !== false;
+        document.getElementById('fxScanlines').checked = fx.scanlines !== false;
+        document.getElementById('fxAmbientGlow').checked = fx.ambientGlow !== false;
+        document.getElementById('fxBgShine').checked = fx.bgShine !== false;
+        document.getElementById('fxSpotlight').checked = fx.spotlight !== false;
+        document.getElementById('fxBgText').checked = fx.bgText !== false;
       } catch (e) {
         log('Could not load current config (might not exist yet) — fill in fresh values.');
+        document.getElementById('titleWords').value = 'yin, yang';
+        document.getElementById('handleTextInput').value = 'kataly';
+        document.getElementById('pageTitleInput').value = 'realization';
+        document.getElementById('bgWordInput').value = 'her eyes';
+        document.getElementById('neonColorInput').value = '#ffffff';
+        ['fxGrain','fxParticles','fxScanlines','fxAmbientGlow','fxBgShine','fxSpotlight','fxBgText'].forEach(id => {
+          document.getElementById(id).checked = true;
+        });
       }
     }
 
@@ -493,13 +631,32 @@
         profilePicPath = `profile.${ext}`;
       }
 
+      const titleWordsArr = document.getElementById('titleWords').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
       const config = {
         telegram: document.getElementById('telegram').value.trim(),
         discord: document.getElementById('discord').value.trim(),
         instagram: document.getElementById('instagram').value.trim(),
         music: 'music.mp3',
         profilePic: profilePicPath,
-        quote: document.getElementById('quoteText').value
+        quote: document.getElementById('quoteText').value,
+        titleWords: titleWordsArr.length ? titleWordsArr : ['yin', 'yang'],
+        handleText: document.getElementById('handleTextInput').value.trim() || 'kataly',
+        pageTitle: document.getElementById('pageTitleInput').value.trim() || 'realization',
+        bgWord: document.getElementById('bgWordInput').value.trim() || 'her eyes',
+        neonColor: document.getElementById('neonColorInput').value || '#ffffff',
+        effects: {
+          grain: document.getElementById('fxGrain').checked,
+          particles: document.getElementById('fxParticles').checked,
+          scanlines: document.getElementById('fxScanlines').checked,
+          ambientGlow: document.getElementById('fxAmbientGlow').checked,
+          bgShine: document.getElementById('fxBgShine').checked,
+          spotlight: document.getElementById('fxSpotlight').checked,
+          bgText: document.getElementById('fxBgText').checked
+        }
       };
 
       try {
