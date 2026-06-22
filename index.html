@@ -286,15 +286,18 @@
     100% { top: 104%; opacity: 0; }
   }
 
+  /* ---- Entrance: sonar pings, hint, divider, light-burst transition ---- */
   #entrance {
     position: fixed;
     inset: 0;
-    background: #000;
+    background: radial-gradient(circle at 50% 45%, #0c0c0c 0%, #000 70%);
     backdrop-filter: blur(24px);
     z-index: 999;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 14px;
     cursor: pointer;
     transition: opacity 0.7s ease, visibility 0.7s ease;
   }
@@ -302,6 +305,27 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+  }
+
+  .sonar-ring {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin: -25px 0 0 -25px;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    animation: sonarPing 3s ease-out infinite;
+  }
+  .sonar-ring.ring-delay {
+    animation-delay: 1.5s;
+  }
+  @keyframes sonarPing {
+    0% { transform: scale(0.4); opacity: 0.55; }
+    100% { transform: scale(3.6); opacity: 0; }
   }
 
   .logo-wrap {
@@ -338,6 +362,49 @@
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.45; transform: scale(0.94); }
+  }
+
+  .enter-divider {
+    width: 46px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    opacity: 0.6;
+  }
+
+  .enter-hint {
+    font-family: 'Terminus TTF', monospace;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: lowercase;
+    color: rgba(255,255,255,0.45);
+    text-shadow: 0 0 8px rgba(255,255,255,0.3);
+    animation: hintPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.75; }
+  }
+
+  .entrance-burst {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .entrance-burst.burst {
+    animation: entranceBurstAnim 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes entranceBurstAnim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0.95; }
+    55% { opacity: 0.3; }
+    100% { transform: translate(-50%, -50%) scale(70); opacity: 0; }
   }
 
   #mainContent {
@@ -616,7 +683,6 @@
     50% { transform: translateY(7px); opacity: 0.9; }
   }
 
-  /* ---- Quote: elegant italic serif, distinct from UI font ---- */
   .quote-section {
     width: 100%;
     min-height: 70vh;
@@ -724,10 +790,15 @@
   <div id="scanWipe"></div>
 
   <div id="entrance">
+    <div class="sonar-ring"></div>
+    <div class="sonar-ring ring-delay"></div>
     <div class="logo-wrap">
       <span class="logo-text" id="logoText">kataly</span>
     </div>
+    <div class="enter-divider"></div>
+    <div class="enter-hint">tap to enter</div>
   </div>
+  <div class="entrance-burst" id="entranceBurst"></div>
 
   <div id="mainContent">
     <div class="container">
@@ -799,6 +870,7 @@
     }
 
     const entrance = document.getElementById('entrance');
+    const entranceBurst = document.getElementById('entranceBurst');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
@@ -1141,6 +1213,10 @@
     }
 
     entrance.addEventListener('click', () => {
+      entranceBurst.classList.remove('burst');
+      void entranceBurst.offsetWidth;
+      entranceBurst.classList.add('burst');
+
       entrance.classList.add('hidden');
       mainContent.classList.add('revealed');
       music.play();
