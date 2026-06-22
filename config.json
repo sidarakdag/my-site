@@ -10,6 +10,10 @@
   "pageTitle": "realization",
   "bgWord": "her eyes",
   "neonColor": "#ffffff",
+  "theme": {
+    "a": { "background": "#000000", "foreground": "#ffffff" },
+    "b": { "background": "#ffffff", "foreground": "#000000" }
+  },
   "effects": {
     "grain": true,
     "particles": true,
