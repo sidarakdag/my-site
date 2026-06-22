@@ -10,7 +10,7 @@
 <style>
   @font-face {
     font-family: 'Terminus TTF';
-    src: url('Terminus.ttf') format('truetype');
+    src: url('assets/fonts/Terminus.ttf') format('truetype');
     font-weight: 500;
     font-style: normal;
   }
@@ -162,7 +162,6 @@
     pointer-events: none;
   }
 
-  /* ---- Futuristic theme-swap transition: scanning beam + ambient flash ---- */
   #themeFlash {
     position: fixed;
     inset: 0;
@@ -541,7 +540,7 @@
 
   <div id="entrance">
     <div class="logo-wrap">
-      <img src="434F5AAF-E87C-4F6E-B881-4000C4B49DE5.png" alt="logo">
+      <img src="assets/images/logo.png" alt="logo">
     </div>
   </div>
 
@@ -549,7 +548,7 @@
     <div class="container">
       <div class="top-row">
         <div class="pic-wrap" id="picWrap">
-          <img class="profile-pic" id="profilePicImg" src="IMG_3066.png" alt="profile">
+          <img class="profile-pic" id="profilePicImg" src="assets/images/profile.png" alt="profile">
         </div>
         <div class="text-block">
           <div class="title-block">
@@ -596,7 +595,7 @@
   <button class="music-btn-fixed" id="musicToggle">🔇</button>
 
   <audio id="bgMusic" loop>
-    <source id="musicSource" src="music.mp3" type="audio/mpeg">
+    <source id="musicSource" src="assets/audio/music.mp3" type="audio/mpeg">
   </audio>
 
   <script>
