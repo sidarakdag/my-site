@@ -14,7 +14,7 @@
   "pageTitle": "/",
   "bgWord": "her eyes",
   "neonColor": "#ff0000",
-  "usernameEffect": "glitch",
+  "usernameEffect": "none",
   "profileBorder": "none",
   "theme": {
     "a": {
