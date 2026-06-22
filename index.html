@@ -162,7 +162,7 @@
     pointer-events: none;
   }
 
-  /* ---- Theme swap flash ---- */
+  /* ---- Futuristic theme-swap transition: scanning beam + ambient flash ---- */
   #themeFlash {
     position: fixed;
     inset: 0;
@@ -172,12 +172,33 @@
     opacity: 0;
   }
   #themeFlash.flash {
-    animation: themeFlashAnim 0.7s ease-out;
+    animation: themeFlashAnim 0.6s ease-out;
   }
   @keyframes themeFlashAnim {
     0% { opacity: 0; }
-    12% { opacity: 0.22; }
+    10% { opacity: 0.16; }
     100% { opacity: 0; }
+  }
+
+  #scanWipe {
+    position: fixed;
+    left: 0;
+    top: -4%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgb(var(--neon-r), var(--neon-g), var(--neon-b)), transparent);
+    box-shadow: 0 0 24px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9), 0 0 60px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.4);
+    z-index: 51;
+    pointer-events: none;
+    opacity: 0;
+  }
+  #scanWipe.sweep {
+    animation: scanWipeAnim 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes scanWipeAnim {
+    0% { top: -4%; opacity: 1; }
+    88% { opacity: 1; }
+    100% { top: 104%; opacity: 0; }
   }
 
   #entrance {
@@ -274,6 +295,12 @@
     opacity: 1;
     transform: rotateX(0deg);
   }
+  #mainContent .pic-wrap.no-fold {
+    transform: translateY(14px) !important;
+  }
+  #mainContent.revealed .pic-wrap.no-fold {
+    transform: translateY(0) !important;
+  }
 
   #mainContent .title-block {
     opacity: 0;
@@ -336,8 +363,10 @@
     background-clip: text;
     color: transparent;
     text-shadow: 0 0 25px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.35);
-    animation: shimmer 3.5s linear infinite;
     transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+  .title.shimmer-on {
+    animation: shimmer 3.5s linear infinite;
   }
   .title.slide-out {
     transform: translateY(-16px);
@@ -348,14 +377,26 @@
     100% { background-position: -200% 0; }
   }
 
+  .title.title-glitch {
+    animation: titleGlitchAnim 0.28s steps(4);
+  }
+  @keyframes titleGlitchAnim {
+    0% { clip-path: inset(0 0 88% 0); transform: translateX(-3px); }
+    30% { clip-path: inset(35% 0 40% 0); transform: translateX(3px); }
+    60% { clip-path: inset(65% 0 8% 0); transform: translateX(-2px); }
+    100% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+  }
+
   .title-underline {
     width: 60px;
     height: 2px;
     margin-top: 8px;
     background: linear-gradient(90deg, transparent, rgb(var(--neon-r), var(--neon-g), var(--neon-b)), transparent);
     background-size: 200% 100%;
-    animation: shimmer 3.5s linear infinite;
     opacity: 0.6;
+  }
+  .title-underline.shimmer-on {
+    animation: shimmer 3.5s linear infinite;
   }
 
   .handle {
@@ -496,6 +537,7 @@
   <div id="grain"></div>
   <div id="vignette"></div>
   <div id="themeFlash"></div>
+  <div id="scanWipe"></div>
 
   <div id="entrance">
     <div class="logo-wrap">
@@ -506,7 +548,7 @@
   <div id="mainContent">
     <div class="container">
       <div class="top-row">
-        <div class="pic-wrap">
+        <div class="pic-wrap" id="picWrap">
           <img class="profile-pic" id="profilePicImg" src="IMG_3066.png" alt="profile">
         </div>
         <div class="text-block">
@@ -514,9 +556,9 @@
             <div class="title-row">
               <span class="title" id="titleText">yang</span>
             </div>
-            <div class="title-underline"></div>
+            <div class="title-underline" id="titleUnderline"></div>
           </div>
-          <div class="handle"><span id="handleText"></span><span class="cursor">|</span></div>
+          <div class="handle"><span id="handleText"></span><span class="cursor" id="cursorEl">|</span></div>
         </div>
       </div>
 
@@ -575,11 +617,15 @@
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
     const titleEl = document.getElementById('titleText');
+    const titleUnderline = document.getElementById('titleUnderline');
     const handleEl = document.getElementById('handleText');
+    const cursorEl = document.getElementById('cursorEl');
     const bgContainer = document.getElementById('bgText');
     const particleContainer = document.getElementById('particles');
     const pic = document.getElementById('profilePicImg');
+    const picWrap = document.getElementById('picWrap');
     const flashEl = document.getElementById('themeFlash');
+    const scanWipeEl = document.getElementById('scanWipe');
 
     let playing = false;
     let words = ['yin', 'yang'];
@@ -589,17 +635,17 @@
     let activeWords = 0;
     const MAX_WORDS = 5;
     let bgTextStarted = false;
-    let effects = {};
+    let fx = { background: {}, profile: {}, username: {}, title: {} };
     let themeA = { background: '#000000', foreground: '#ffffff' };
     let themeB = { background: '#ffffff', foreground: '#000000' };
 
     function applyTheme(theme) {
       const bg = hexToRgb(theme.background);
-      const fg = hexToRgb(theme.foreground);
+      const fgc = hexToRgb(theme.foreground);
       document.documentElement.style.setProperty('--theme-bg', `rgb(${bg.r},${bg.g},${bg.b})`);
-      document.documentElement.style.setProperty('--theme-fg-r', fg.r);
-      document.documentElement.style.setProperty('--theme-fg-g', fg.g);
-      document.documentElement.style.setProperty('--theme-fg-b', fg.b);
+      document.documentElement.style.setProperty('--theme-fg-r', fgc.r);
+      document.documentElement.style.setProperty('--theme-fg-g', fgc.g);
+      document.documentElement.style.setProperty('--theme-fg-b', fgc.b);
     }
 
     function applyImageInvert(invert) {
@@ -607,14 +653,18 @@
       pic.style.filter = invert ? `invert(1) ${base}` : base;
     }
 
-    function triggerFlash() {
+    function triggerTransitionFx() {
       flashEl.classList.remove('flash');
       void flashEl.offsetWidth;
       flashEl.classList.add('flash');
+
+      scanWipeEl.classList.remove('sweep');
+      void scanWipeEl.offsetWidth;
+      scanWipeEl.classList.add('sweep');
     }
 
     function spawnWord() {
-      if (effects.bgText === false) return;
+      if (fx.background.bgText === false) return;
       if (activeWords >= MAX_WORDS) return;
       activeWords++;
 
@@ -656,7 +706,7 @@
     }
 
     function startBgText() {
-      if (effects.bgText === false) return;
+      if (fx.background.bgText === false) return;
       if (bgTextStarted) return;
       bgTextStarted = true;
       setInterval(maintainWords, 400);
@@ -664,7 +714,7 @@
     }
 
     function createParticles() {
-      if (effects.particles === false) return;
+      if (fx.background.particles === false) return;
       for (let i = 0; i < 12; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
@@ -691,8 +741,8 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
-    const picWrap = document.querySelector('.pic-wrap');
     function tilt(e) {
+      if (fx.profile.tilt === false) return;
       const rect = picWrap.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -723,10 +773,16 @@
         titleEl.style.transform = '';
         titleEl.style.opacity = '';
 
+        titleEl.classList.remove('title-glitch');
+        void titleEl.offsetWidth;
+        titleEl.classList.add('title-glitch');
+
         const isThemeB = wordIndex % 2 === 1;
         applyTheme(isThemeB ? themeB : themeA);
-        applyImageInvert(isThemeB);
-        triggerFlash();
+        if (fx.profile.invertOnThemeChange !== false) {
+          applyImageInvert(isThemeB);
+        }
+        triggerTransitionFx();
       }, 350);
     }
 
@@ -741,6 +797,10 @@
     let isTyping = true;
 
     function typeLoop() {
+      if (fx.username.typing === false) {
+        handleEl.textContent = fullText;
+        return;
+      }
       if (isTyping) {
         if (charIndex <= fullText.length) {
           handleEl.textContent = fullText.slice(0, charIndex);
@@ -827,16 +887,37 @@
       if (config.theme && config.theme.a) themeA = config.theme.a;
       if (config.theme && config.theme.b) themeB = config.theme.b;
       applyTheme(themeA);
+
+      const cfgFx = config.effects || {};
+      fx = {
+        background: cfgFx.background || {},
+        profile: cfgFx.profile || {},
+        username: cfgFx.username || {},
+        title: cfgFx.title || {}
+      };
+
       applyImageInvert(false);
 
-      effects = config.effects || {};
-      setEffectVisibility('grain', effects.grain);
-      setEffectVisibility('particles', effects.particles);
-      setEffectVisibility('scanlines', effects.scanlines);
-      setEffectVisibility('ambientGlow', effects.ambientGlow);
-      setEffectVisibility('bgShine', effects.bgShine);
-      setEffectVisibility('spotlight', effects.spotlight);
-      setEffectVisibility('bgText', effects.bgText);
+      setEffectVisibility('grain', fx.background.grain);
+      setEffectVisibility('particles', fx.background.particles);
+      setEffectVisibility('scanlines', fx.background.scanlines);
+      setEffectVisibility('ambientGlow', fx.background.ambientGlow);
+      setEffectVisibility('bgShine', fx.background.bgShine);
+      setEffectVisibility('spotlight', fx.background.spotlight);
+      setEffectVisibility('bgText', fx.background.bgText);
+
+      if (fx.profile.foldReveal === false) {
+        picWrap.classList.add('no-fold');
+      }
+
+      if (fx.title.shimmer !== false) {
+        titleEl.classList.add('shimmer-on');
+        titleUnderline.classList.add('shimmer-on');
+      }
+
+      if (fx.username.cursorBlink === false) {
+        cursorEl.style.display = 'none';
+      }
 
       createParticles();
       typeLoop();
