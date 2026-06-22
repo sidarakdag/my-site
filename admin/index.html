@@ -450,6 +450,9 @@
         <div class="divider"></div>
         <div class="section-label">Text</div>
 
+        <label>Entrance logo text</label>
+        <input type="text" id="logoTextInput">
+
         <label>Title words (comma separated, e.g. yin, yang)</label>
         <input type="text" id="titleWords">
 
@@ -652,6 +655,7 @@
         document.getElementById('quoteText').value = config.quote || '';
         currentProfilePic = config.profilePic || 'assets/images/profile.png';
 
+        document.getElementById('logoTextInput').value = config.logoText || 'kataly';
         document.getElementById('titleWords').value = Array.isArray(config.titleWords) ? config.titleWords.join(', ') : 'yin, yang';
         document.getElementById('handleTextInput').value = config.handleText || 'kataly';
         document.getElementById('pageTitleInput').value = config.pageTitle || 'realization';
@@ -690,6 +694,7 @@
         document.getElementById('fxShimmer').checked = ttl.shimmer !== false;
       } catch (e) {
         log('Could not load current config (might not exist yet) — fill in fresh values.');
+        document.getElementById('logoTextInput').value = 'kataly';
         document.getElementById('titleWords').value = 'yin, yang';
         document.getElementById('handleTextInput').value = 'kataly';
         document.getElementById('pageTitleInput').value = 'realization';
@@ -845,6 +850,7 @@
         music: 'assets/audio/music.mp3',
         profilePic: profilePicPath,
         quote: document.getElementById('quoteText').value,
+        logoText: document.getElementById('logoTextInput').value.trim() || 'kataly',
         titleWords: titleWordsArr.length ? titleWordsArr : ['yin', 'yang'],
         handleText: document.getElementById('handleTextInput').value.trim() || 'kataly',
         pageTitle: document.getElementById('pageTitleInput').value.trim() || 'realization',
