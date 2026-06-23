@@ -20,15 +20,15 @@
   "bgWord": "her eyes",
   "neonColor": "#ffffff",
   "usernameEffect": "none",
-  "profileBorder": "glow",
+  "profileBorder": "none",
   "theme": {
     "a": {
       "background": "#000000",
       "foreground": "#ffffff"
     },
     "b": {
-      "background": "#ffffff",
-      "foreground": "#000000"
+      "background": "#000000",
+      "foreground": "#ffffff"
     }
   },
   "effects": {
@@ -45,7 +45,7 @@
       "starfield": true
     },
     "profile": {
-      "invertOnThemeChange": true,
+      "invertOnThemeChange": false,
       "tilt": true,
       "foldReveal": true,
       "pulseOnTap": true
