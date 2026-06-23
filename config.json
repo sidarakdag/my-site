@@ -6,7 +6,10 @@
   "profilePic": "assets/images/profile.png",
   "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
   "logoText": "kataly",
-  "titleWords": ["yin", "yang"],
+  "titleWords": [
+    "yin",
+    "yang"
+  ],
   "handleText": "kataly",
   "pageTitle": "realization",
   "bgWord": "her eyes",
@@ -14,13 +17,41 @@
   "usernameEffect": "none",
   "profileBorder": "none",
   "theme": {
-    "a": { "background": "#000000", "foreground": "#ffffff" },
-    "b": { "background": "#ffffff", "foreground": "#000000" }
+    "a": {
+      "background": "#000000",
+      "foreground": "#ffffff"
+    },
+    "b": {
+      "background": "#ffffff",
+      "foreground": "#000000"
+    }
   },
   "effects": {
-    "background": { "grain": true, "particles": true, "scanlines": true, "ambientGlow": true, "bgShine": true, "spotlight": true, "bgText": true, "matrixRain": false, "snowfall": false, "starfield": false },
-    "profile": { "invertOnThemeChange": true, "tilt": true, "foldReveal": true, "pulseOnTap": true },
-    "username": { "typing": true, "cursorBlink": true },
-    "title": { "shimmer": true, "themeSwap": true }
+    "background": {
+      "grain": true,
+      "particles": true,
+      "scanlines": true,
+      "ambientGlow": true,
+      "bgShine": true,
+      "spotlight": true,
+      "bgText": true,
+      "matrixRain": false,
+      "snowfall": false,
+      "starfield": true
+    },
+    "profile": {
+      "invertOnThemeChange": true,
+      "tilt": true,
+      "foldReveal": true,
+      "pulseOnTap": true
+    },
+    "username": {
+      "typing": true,
+      "cursorBlink": true
+    },
+    "title": {
+      "shimmer": true,
+      "themeSwap": true
+    }
   }
 }
