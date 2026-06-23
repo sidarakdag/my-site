@@ -642,6 +642,34 @@
     transition: color 0.6s ease;
   }
 
+  /* ---- Fixed word + cycling prefix word with blur-reveal ---- */
+  .handle.cycle-mode {
+    font-weight: 700;
+    font-size: clamp(18px, 4.4vw, 23px);
+    letter-spacing: 0.2px;
+  }
+  .cycle-word {
+    display: inline-block;
+    margin-right: 0.35em;
+    opacity: 0;
+    filter: blur(8px);
+    color: rgba(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b), 0.4);
+  }
+  .cycle-word.enter {
+    animation: cycleWordIn 0.5s ease forwards;
+  }
+  .cycle-word.exit {
+    animation: cycleWordOut 0.25s ease forwards;
+  }
+  @keyframes cycleWordIn {
+    0% { opacity: 0; filter: blur(8px); color: rgba(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b), 0.35); }
+    60% { opacity: 1; filter: blur(2px); color: rgba(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b), 0.75); }
+    100% { opacity: 1; filter: blur(0); color: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b)); }
+  }
+  @keyframes cycleWordOut {
+    to { opacity: 0; filter: blur(6px); }
+  }
+
   .handle-prefix {
     opacity: 0.45;
     margin-right: 1px;
@@ -927,7 +955,9 @@
             <div class="title-underline" id="titleUnderline"></div>
             <div class="word-dots" id="wordDots"></div>
           </div>
-          <div class="handle" id="handleWrap"><span class="handle-prefix">@</span><span id="handleText"></span><span class="cursor" id="cursorEl">|</span></div>
+          <div class="handle" id="handleWrap">
+            <span class="handle-prefix" id="handlePrefix">@</span><span id="handleText"></span><span class="cursor" id="cursorEl">|</span><span class="cycle-word" id="cycleWordEl"></span><span id="fixedWordEl"></span>
+          </div>
         </div>
       </div>
 
@@ -996,8 +1026,11 @@
     const titleUnderline = document.getElementById('titleUnderline');
     const wordDotsEl = document.getElementById('wordDots');
     const handleWrapEl = document.getElementById('handleWrap');
+    const handlePrefixEl = document.getElementById('handlePrefix');
     const handleEl = document.getElementById('handleText');
     const cursorEl = document.getElementById('cursorEl');
+    const cycleWordEl = document.getElementById('cycleWordEl');
+    const fixedWordEl = document.getElementById('fixedWordEl');
     const bgContainer = document.getElementById('bgText');
     const particleContainer = document.getElementById('particles');
     const starfieldContainer = document.getElementById('starfield');
@@ -1349,6 +1382,49 @@
       }
     }
 
+    let handleFixedWord = 'kataly';
+    let handleCycleWords = [];
+
+    function startCycleWords() {
+      let idx = 0;
+      function showNext() {
+        cycleWordEl.textContent = handleCycleWords[idx];
+        cycleWordEl.classList.remove('enter', 'exit');
+        void cycleWordEl.offsetWidth;
+        cycleWordEl.classList.add('enter');
+        setTimeout(() => {
+          cycleWordEl.classList.remove('enter');
+          cycleWordEl.classList.add('exit');
+          setTimeout(() => {
+            idx = (idx + 1) % handleCycleWords.length;
+            showNext();
+          }, 280);
+        }, 1700);
+      }
+      showNext();
+    }
+
+    function startHandleDisplay() {
+      if (handleCycleWords.length > 0) {
+        handleWrapEl.classList.add('cycle-mode');
+        handlePrefixEl.style.display = 'none';
+        handleEl.style.display = 'none';
+        cursorEl.style.display = 'none';
+        fixedWordEl.style.display = '';
+        cycleWordEl.style.display = '';
+        fixedWordEl.textContent = handleFixedWord;
+        startCycleWords();
+      } else {
+        handleWrapEl.classList.remove('cycle-mode');
+        fixedWordEl.style.display = 'none';
+        cycleWordEl.style.display = 'none';
+        handleEl.style.display = '';
+        if (fx.username.cursorBlink !== false) cursorEl.style.display = '';
+        fullText = handleFixedWord || 'kataly';
+        typeLoop();
+      }
+    }
+
     entrance.addEventListener('click', () => {
       entranceBurst.classList.remove('burst');
       void entranceBurst.offsetWidth;
@@ -1388,8 +1464,8 @@
       }
       if (config.profilePic) pic.src = config.profilePic;
       if (config.quote) {
-        const escaped = config.quote.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        document.getElementById('quoteTextEl').innerHTML = escaped.split('\n').join('<br>');
+        const escapedQuote = config.quote.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById('quoteTextEl').innerHTML = escapedQuote.split('\n').join('<br>');
       }
 
       if (Array.isArray(config.titleWords) && config.titleWords.length >= 1) {
@@ -1399,7 +1475,11 @@
       wordIndex = 0;
       renderWordDots();
 
-      if (config.handleText) fullText = config.handleText;
+      handleFixedWord = config.handleFixedWord || config.handleText || 'kataly';
+      handleCycleWords = Array.isArray(config.handleCycleWords)
+        ? config.handleCycleWords.filter(Boolean).slice(0, 3)
+        : [];
+
       if (config.pageTitle) {
         document.title = config.pageTitle;
         document.getElementById('pageTitleTag').textContent = config.pageTitle;
@@ -1450,15 +1530,11 @@
         titleUnderline.classList.add('shimmer-on');
       }
 
-      if (fx.username.cursorBlink === false) {
-        cursorEl.style.display = 'none';
-      }
-
       createParticles();
       createMatrixRain();
       createSnowfall();
       createStarfield();
-      typeLoop();
+      startHandleDisplay();
     }
 
     fetch(`config.json?t=${Date.now()}`)
