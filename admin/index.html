@@ -479,9 +479,6 @@
         <label>Title words (comma separated, e.g. yin, yang)</label>
         <input type="text" id="titleWords">
 
-        <label>Handle text (typing animation)</label>
-        <input type="text" id="handleTextInput">
-
         <label>Browser tab title</label>
         <input type="text" id="pageTitleInput">
 
@@ -584,7 +581,7 @@
 
         <div class="group-title">🏷️ Username</div>
         <div class="group-box">
-          <label>Text effect style</label>
+          <label>Text effect style (color/motion)</label>
           <select id="usernameEffectSelect">
             <option value="none">None</option>
             <option value="rainbow">Rainbow color cycle</option>
@@ -593,10 +590,24 @@
             <option value="pulse">Pulse glow</option>
           </select>
 
-          <label class="toggle-row">Typing animation
+          <label>Fixed word (always shown, e.g. "me.")</label>
+          <input type="text" id="handleFixedWordInput" placeholder="kataly">
+
+          <label>Cycling word 1 (appears before the fixed word, blur-reveals in)</label>
+          <input type="text" id="handleCycleWord1" placeholder="e.g. ignore">
+
+          <label>Cycling word 2 (optional)</label>
+          <input type="text" id="handleCycleWord2" placeholder="e.g. love">
+
+          <label>Cycling word 3 (optional)</label>
+          <input type="text" id="handleCycleWord3" placeholder="e.g. hate">
+
+          <div class="hint">Leave all 3 cycling words blank to just type out the fixed word like before. Fill in 1-3 and they'll cycle in front of the fixed word with a blur reveal, like a caption gif.</div>
+
+          <label class="toggle-row">Typing animation (only used when no cycling words set)
             <span class="switch"><input type="checkbox" id="fxTyping"><span class="slider"></span></span>
           </label>
-          <label class="toggle-row">Blinking cursor
+          <label class="toggle-row">Blinking cursor (only used when no cycling words set)
             <span class="switch"><input type="checkbox" id="fxCursor"><span class="slider"></span></span>
           </label>
         </div>
@@ -725,12 +736,17 @@
 
         document.getElementById('logoTextInput').value = config.logoText || 'kataly';
         document.getElementById('titleWords').value = Array.isArray(config.titleWords) ? config.titleWords.join(', ') : 'yin, yang';
-        document.getElementById('handleTextInput').value = config.handleText || 'kataly';
         document.getElementById('pageTitleInput').value = config.pageTitle || 'realization';
         document.getElementById('bgWordInput').value = config.bgWord || 'her eyes';
         document.getElementById('neonColorInput').value = config.neonColor || '#ffffff';
         document.getElementById('usernameEffectSelect').value = config.usernameEffect || 'none';
         document.getElementById('profileBorderSelect').value = config.profileBorder || 'none';
+
+        document.getElementById('handleFixedWordInput').value = config.handleFixedWord || config.handleText || 'kataly';
+        const cycleWords = Array.isArray(config.handleCycleWords) ? config.handleCycleWords : [];
+        document.getElementById('handleCycleWord1').value = cycleWords[0] || '';
+        document.getElementById('handleCycleWord2').value = cycleWords[1] || '';
+        document.getElementById('handleCycleWord3').value = cycleWords[2] || '';
 
         const theme = config.theme || {};
         const a = theme.a || { background: '#000000', foreground: '#ffffff' };
@@ -771,12 +787,15 @@
         log('Could not load current config (might not exist yet) — fill in fresh values.');
         document.getElementById('logoTextInput').value = 'kataly';
         document.getElementById('titleWords').value = 'yin, yang';
-        document.getElementById('handleTextInput').value = 'kataly';
         document.getElementById('pageTitleInput').value = 'realization';
         document.getElementById('bgWordInput').value = 'her eyes';
         document.getElementById('neonColorInput').value = '#ffffff';
         document.getElementById('usernameEffectSelect').value = 'none';
         document.getElementById('profileBorderSelect').value = 'none';
+        document.getElementById('handleFixedWordInput').value = 'kataly';
+        document.getElementById('handleCycleWord1').value = '';
+        document.getElementById('handleCycleWord2').value = '';
+        document.getElementById('handleCycleWord3').value = '';
         document.getElementById('themeABg').value = '#000000';
         document.getElementById('themeAFg').value = '#ffffff';
         document.getElementById('themeBBg').value = '#ffffff';
@@ -929,6 +948,12 @@
         .map(s => s.trim())
         .filter(Boolean);
 
+      const handleCycleWordsArr = [
+        document.getElementById('handleCycleWord1').value.trim(),
+        document.getElementById('handleCycleWord2').value.trim(),
+        document.getElementById('handleCycleWord3').value.trim()
+      ].filter(Boolean);
+
       const config = {
         telegram: document.getElementById('telegram').value.trim(),
         discord: document.getElementById('discord').value.trim(),
@@ -938,7 +963,8 @@
         quote: document.getElementById('quoteText').value,
         logoText: document.getElementById('logoTextInput').value.trim() || 'kataly',
         titleWords: titleWordsArr.length ? titleWordsArr : ['yin', 'yang'],
-        handleText: document.getElementById('handleTextInput').value.trim() || 'kataly',
+        handleFixedWord: document.getElementById('handleFixedWordInput').value.trim() || 'kataly',
+        handleCycleWords: handleCycleWordsArr,
         pageTitle: document.getElementById('pageTitleInput').value.trim() || 'realization',
         bgWord: document.getElementById('bgWordInput').value.trim() || 'her eyes',
         neonColor: document.getElementById('neonColorInput').value || '#ffffff',
