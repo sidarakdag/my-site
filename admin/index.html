@@ -459,7 +459,7 @@
         </label>
         <div class="hint">Stored only in this browser's local storage, sent only to GitHub. Anyone with access to this device while it's saved could see it — only use this on your own phone. <span class="link-action" id="clearTokenBtn">Clear saved token</span></div>
 
-        <div class="section-label">Links</div>
+        <div class="section-label">🔗 Links</div>
 
         <label>Telegram link</label>
         <input type="text" id="telegram">
@@ -471,7 +471,7 @@
         <input type="text" id="instagram">
 
         <div class="divider"></div>
-        <div class="section-label">Text</div>
+        <div class="section-label">📝 Text</div>
 
         <label>Entrance logo text</label>
         <input type="text" id="logoTextInput">
@@ -492,7 +492,7 @@
         <textarea id="quoteText"></textarea>
 
         <div class="divider"></div>
-        <div class="section-label">Theme Colors</div>
+        <div class="section-label">🎨 Theme Colors</div>
         <div class="hint" style="margin-bottom:4px;">Theme A shows first. Theme B is what it flips to with each title word change.</div>
 
         <div class="color-pair">
@@ -522,9 +522,9 @@
         <div class="hint">Logo aura and ambient background glow stay tied to brand colors.</div>
 
         <div class="divider"></div>
-        <div class="section-label">Effects</div>
+        <div class="section-label">⚡ Effects</div>
 
-        <div class="group-title">Background</div>
+        <div class="group-title">🌌 Background</div>
         <div class="group-box">
           <label class="toggle-row">Grain texture
             <span class="switch"><input type="checkbox" id="fxGrain"><span class="slider"></span></span>
@@ -558,7 +558,7 @@
           </label>
         </div>
 
-        <div class="group-title">Profile Picture</div>
+        <div class="group-title">🖼️ Profile Picture</div>
         <div class="group-box">
           <label>Border style</label>
           <select id="profileBorderSelect">
@@ -582,7 +582,7 @@
           </label>
         </div>
 
-        <div class="group-title">Username</div>
+        <div class="group-title">🏷️ Username</div>
         <div class="group-box">
           <label>Text effect style</label>
           <select id="usernameEffectSelect">
@@ -601,22 +601,26 @@
           </label>
         </div>
 
-        <div class="group-title">Title</div>
+        <div class="group-title">🔠 Title</div>
         <div class="group-box">
           <label class="toggle-row">Shimmer effect
             <span class="switch"><input type="checkbox" id="fxShimmer"><span class="slider"></span></span>
           </label>
+          <label class="toggle-row">Background color swap
+            <span class="switch"><input type="checkbox" id="fxThemeSwap"><span class="slider"></span></span>
+          </label>
+          <div class="hint">When on, every title word change also flips the page's background/text colors and inverts the photo. Turn this off to keep colors static while the title still cycles.</div>
         </div>
 
         <div class="divider"></div>
-        <div class="section-label">Profile Picture</div>
+        <div class="section-label">📷 Profile Picture</div>
 
         <label>Upload new profile photo (optional)</label>
         <input type="file" id="profilePicFile" accept="image/*">
         <div class="hint">New uploads keep their original background — send it to me first for the seamless cutout look.</div>
 
         <div class="divider"></div>
-        <div class="section-label">Music</div>
+        <div class="section-label">🎵 Music</div>
 
         <label>Upload new background music (optional)</label>
         <input type="file" id="musicFile" accept=".mp3,.m4a,.wav,audio/*">
@@ -762,6 +766,7 @@
         document.getElementById('fxCursor').checked = user.cursorBlink !== false;
 
         document.getElementById('fxShimmer').checked = ttl.shimmer !== false;
+        document.getElementById('fxThemeSwap').checked = ttl.themeSwap !== false;
       } catch (e) {
         log('Could not load current config (might not exist yet) — fill in fresh values.');
         document.getElementById('logoTextInput').value = 'kataly';
@@ -777,7 +782,7 @@
         document.getElementById('themeBBg').value = '#ffffff';
         document.getElementById('themeBFg').value = '#000000';
         ['fxGrain','fxParticles','fxScanlines','fxAmbientGlow','fxBgShine','fxSpotlight','fxBgText',
-         'fxPicInvert','fxPicTilt','fxPicFold','fxPicPulseTap','fxTyping','fxCursor','fxShimmer'].forEach(id => {
+         'fxPicInvert','fxPicTilt','fxPicFold','fxPicPulseTap','fxTyping','fxCursor','fxShimmer','fxThemeSwap'].forEach(id => {
           document.getElementById(id).checked = true;
         });
         ['fxMatrixRain','fxSnowfall','fxStarfield'].forEach(id => {
@@ -973,7 +978,8 @@
             cursorBlink: document.getElementById('fxCursor').checked
           },
           title: {
-            shimmer: document.getElementById('fxShimmer').checked
+            shimmer: document.getElementById('fxShimmer').checked,
+            themeSwap: document.getElementById('fxThemeSwap').checked
           }
         }
       };
