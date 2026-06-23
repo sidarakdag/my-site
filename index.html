@@ -727,7 +727,6 @@
     50% { transform: translateY(7px); opacity: 0.9; }
   }
 
-  /* ---- Quote: scroll-reveal, matching open/close marks ---- */
   .quote-section {
     width: 100%;
     min-height: 65vh;
@@ -1020,7 +1019,6 @@
     let themeA = { background: '#000000', foreground: '#ffffff' };
     let themeB = { background: '#ffffff', foreground: '#000000' };
 
-    /* ---- Scroll-reveal for quote + social sections ---- */
     const revealTargets = document.querySelectorAll('.quote-content, .social-content');
     const revealObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -1298,12 +1296,14 @@
 
         renderWordDots();
 
-        const isThemeB = wordIndex % 2 === 1;
-        applyTheme(isThemeB ? themeB : themeA);
-        if (fx.profile.invertOnThemeChange !== false) {
-          applyImageInvert(isThemeB);
+        if (fx.title.themeSwap !== false) {
+          const isThemeB = wordIndex % 2 === 1;
+          applyTheme(isThemeB ? themeB : themeA);
+          if (fx.profile.invertOnThemeChange !== false) {
+            applyImageInvert(isThemeB);
+          }
+          triggerTransitionFx();
         }
-        triggerTransitionFx();
       }, 350);
     }
 
