@@ -10,12 +10,17 @@
     "yin",
     "yang"
   ],
-  "handleText": "kataly",
+  "handleFixedWord": "me.",
+  "handleCycleWords": [
+    "kiss",
+    "touch",
+    "feel"
+  ],
   "pageTitle": "realization",
   "bgWord": "her eyes",
   "neonColor": "#ffffff",
   "usernameEffect": "none",
-  "profileBorder": "none",
+  "profileBorder": "glow",
   "theme": {
     "a": {
       "background": "#000000",
@@ -35,7 +40,7 @@
       "bgShine": true,
       "spotlight": true,
       "bgText": true,
-      "matrixRain": false,
+      "matrixRain": true,
       "snowfall": false,
       "starfield": true
     },
