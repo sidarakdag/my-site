@@ -341,7 +341,6 @@
     transform: scale(1);
   }
 
-  /* ---- Shop header ---- */
   .shop-page {
     width: 100%;
     min-height: 100dvh;
@@ -425,7 +424,10 @@
     white-space: nowrap;
   }
 
-  /* ---- Product grid ---- */
+  .shop-section {
+    margin-bottom: 7vh;
+  }
+
   .product-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -491,15 +493,14 @@
   .empty-shop {
     grid-column: 1 / -1;
     text-align: center;
-    padding: 8vh 0;
+    padding: 5vh 0;
     color: rgba(255,255,255,0.3);
     font-size: 12px;
     letter-spacing: 1px;
   }
 
-  /* ---- Footer ---- */
   .shop-footer {
-    margin-top: 8vh;
+    margin-top: 2vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -530,7 +531,6 @@
     stroke-width: 1.6;
   }
 
-  /* ---- Hero flight image (the FLIP transition piece) ---- */
   #heroImg {
     position: fixed;
     object-fit: cover;
@@ -540,7 +540,6 @@
     display: block;
   }
 
-  /* ---- Product modal ---- */
   .product-modal {
     position: fixed;
     inset: 0;
@@ -699,13 +698,23 @@
         <div class="shop-header-divider"></div>
       </div>
 
-      <div class="section-label-row">
-        <span class="line"></span>
-        <span class="section-label-text">all items</span>
-        <span class="line right"></span>
+      <div class="shop-section">
+        <div class="section-label-row">
+          <span class="line"></span>
+          <span class="section-label-text">gaming goods</span>
+          <span class="line right"></span>
+        </div>
+        <div class="product-grid" id="gamingGrid"></div>
       </div>
 
-      <div class="product-grid" id="productGrid"></div>
+      <div class="shop-section">
+        <div class="section-label-row">
+          <span class="line"></span>
+          <span class="section-label-text">accounts</span>
+          <span class="line right"></span>
+        </div>
+        <div class="product-grid" id="accountsGrid"></div>
+      </div>
 
       <div class="shop-footer">
         <div class="section-label-row" style="width:100%;">
@@ -773,7 +782,8 @@
     const mainContent = document.getElementById('mainContent');
     const particleContainer = document.getElementById('particles');
     const starfieldContainer = document.getElementById('starfield');
-    const productGrid = document.getElementById('productGrid');
+    const gamingGrid = document.getElementById('gamingGrid');
+    const accountsGrid = document.getElementById('accountsGrid');
     const productModal = document.getElementById('productModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const modalCard = document.getElementById('modalCard');
@@ -1009,11 +1019,11 @@
     modalBackdrop.addEventListener('click', closeProduct);
     modalClose.addEventListener('click', closeProduct);
 
-    function renderProducts(products) {
-      productGrid.innerHTML = '';
+    function renderGrid(gridEl, products) {
+      gridEl.innerHTML = '';
 
       if (!products.length) {
-        productGrid.innerHTML = '<div class="empty-shop">no items listed yet</div>';
+        gridEl.innerHTML = '<div class="empty-shop">no items listed yet</div>';
         return;
       }
 
@@ -1029,8 +1039,15 @@
         `;
         const imgEl = card.querySelector('img');
         card.addEventListener('click', () => openProduct(product, imgEl));
-        productGrid.appendChild(card);
+        gridEl.appendChild(card);
       });
+    }
+
+    function renderProducts(products) {
+      const gaming = products.filter(p => p.category === 'gaming');
+      const accounts = products.filter(p => p.category === 'accounts');
+      renderGrid(gamingGrid, gaming);
+      renderGrid(accountsGrid, accounts);
     }
 
     entrance.addEventListener('click', () => {
