@@ -269,37 +269,43 @@
     pointer-events: none;
   }
 
-  .logo-img-wrap {
-    position: relative;
-    width: 44vw;
-    max-width: 240px;
-    animation: idleFall 3.6s ease-in infinite;
+  #entranceFallBg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
   }
-  @keyframes idleFall {
-    0% { transform: translateY(-34vh) scale(0.82); opacity: 0; }
-    12% { opacity: 1; }
-    78% { opacity: 1; }
-    100% { transform: translateY(36vh) scale(1.08); opacity: 0; }
+  .fall-streak {
+    position: absolute;
+    top: -12%;
+    width: 1.5px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.75));
+    filter: blur(0.4px);
+    animation: fallStreakAnim linear infinite;
+  }
+  @keyframes fallStreakAnim {
+    from { transform: translateY(0); }
+    to { transform: translateY(125vh); }
   }
 
-  .logo-img-wrap::after {
-    content: '';
-    position: absolute;
-    top: -64px;
-    left: 50%;
-    width: 2px;
-    height: 76px;
-    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.45));
-    transform: translateX(-50%);
-    filter: blur(2px);
-    pointer-events: none;
+  .logo-img-wrap {
+    position: relative;
+    z-index: 1;
+    width: 44vw;
+    max-width: 240px;
   }
 
   #logoImg {
     width: 100%;
     display: block;
     filter: drop-shadow(0 0 24px rgba(255,255,255,0.55)) drop-shadow(0 0 50px rgba(255,255,255,0.25));
+    animation: floatLogo 4.2s ease-in-out infinite;
     will-change: transform, opacity;
+  }
+  @keyframes floatLogo {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(-1.5deg); }
   }
 
   #logoImg.falling {
@@ -311,6 +317,8 @@
   }
 
   .enter-divider {
+    position: relative;
+    z-index: 1;
     width: 46px;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
@@ -319,6 +327,8 @@
   }
 
   .enter-hint {
+    position: relative;
+    z-index: 1;
     font-family: 'Terminus TTF', monospace;
     font-size: 11px;
     letter-spacing: 2.5px;
@@ -852,7 +862,8 @@
   <div id="vignette"></div>
 
   <div id="entrance">
-    <div class="logo-img-wrap" id="logoWrap">
+    <div id="entranceFallBg"></div>
+    <div class="logo-img-wrap">
       <img id="logoImg" src="assets/images/falling-figure.png" alt="logo">
     </div>
     <div class="enter-divider" id="enterDivider"></div>
@@ -943,7 +954,7 @@
     }
 
     const entrance = document.getElementById('entrance');
-    const logoWrap = document.getElementById('logoWrap');
+    const entranceFallBg = document.getElementById('entranceFallBg');
     const logoImg = document.getElementById('logoImg');
     const enterDivider = document.getElementById('enterDivider');
     const enterHint = document.getElementById('enterHint');
@@ -978,6 +989,20 @@
     let themeA = { background: '#000000', foreground: '#ffffff' };
     let themeB = { background: '#ffffff', foreground: '#000000' };
     let fallingTriggered = false;
+
+    function createEntranceFallStreaks() {
+      for (let i = 0; i < 22; i++) {
+        const s = document.createElement('div');
+        s.className = 'fall-streak';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.height = (36 + Math.random() * 60) + 'px';
+        s.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+        s.style.animationDuration = (1.6 + Math.random() * 2.4) + 's';
+        s.style.animationDelay = '-' + (Math.random() * 4).toFixed(2) + 's';
+        entranceFallBg.appendChild(s);
+      }
+    }
+    createEntranceFallStreaks();
 
     const revealTargets = document.querySelectorAll('.quote-content, .social-content');
     const revealObserver = new IntersectionObserver((entries) => {
@@ -1345,7 +1370,6 @@
       if (fallingTriggered) return;
       fallingTriggered = true;
 
-      logoWrap.style.animation = 'none';
       logoImg.classList.add('falling');
       enterDivider.classList.add('ui-fade-out');
       enterHint.classList.add('ui-fade-out');
