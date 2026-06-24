@@ -68,22 +68,6 @@
     50% { opacity: var(--p-op); }
   }
 
-  #bgText {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-  .bg-word {
-    position: absolute;
-    font-weight: 500;
-    white-space: nowrap;
-    user-select: none;
-    color: rgb(var(--theme-fg-r), var(--theme-fg-g), var(--theme-fg-b));
-    text-shadow: 0 0 4px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
-  }
-
   #matrixRain {
     position: fixed;
     inset: 0;
@@ -480,7 +464,6 @@
     stroke-width: 1.6;
   }
 
-  /* ---- Product modal ---- */
   .product-modal {
     position: fixed;
     inset: 0;
@@ -585,7 +568,6 @@
 
   <div id="ambientGlow"></div>
   <div id="particles"></div>
-  <div id="bgText"></div>
   <div id="matrixRain"></div>
   <div id="snowfall"></div>
   <div id="starfield"></div>
@@ -665,7 +647,6 @@
     const enterDivider = document.getElementById('enterDivider');
     const enterHint = document.getElementById('enterHint');
     const mainContent = document.getElementById('mainContent');
-    const bgContainer = document.getElementById('bgText');
     const particleContainer = document.getElementById('particles');
     const starfieldContainer = document.getElementById('starfield');
     const productGrid = document.getElementById('productGrid');
@@ -678,10 +659,6 @@
     const modalDesc = document.getElementById('modalDesc');
     const modalBuy = document.getElementById('modalBuy');
 
-    let bgWordText = 'her eyes';
-    let activeWords = 0;
-    const MAX_WORDS = 5;
-    let bgTextStarted = false;
     let fx = { background: {} };
     let fallingTriggered = false;
     let globalTelegram = '#';
@@ -707,56 +684,6 @@
       document.documentElement.style.setProperty('--theme-fg-r', fgc.r);
       document.documentElement.style.setProperty('--theme-fg-g', fgc.g);
       document.documentElement.style.setProperty('--theme-fg-b', fgc.b);
-    }
-
-    function spawnWord() {
-      if (fx.background.bgText === false) return;
-      if (activeWords >= MAX_WORDS) return;
-      activeWords++;
-
-      const word = document.createElement('div');
-      word.classList.add('bg-word');
-      word.textContent = bgWordText;
-
-      const top = Math.random() * 100;
-      const left = Math.random() * 100;
-      const size = 10 + Math.random() * 14;
-      const rotation = Math.random() * 360;
-      const peakOpacity = 0.05 + Math.random() * 0.1;
-      const holdTime = 1200 + Math.random() * 2800;
-      const fadeTime = 700;
-
-      word.style.top = `${top}%`;
-      word.style.left = `${left}%`;
-      word.style.fontSize = `${size}px`;
-      word.style.transform = `rotate(${rotation}deg)`;
-      word.style.opacity = '0';
-      word.style.transition = `opacity ${fadeTime}ms ease`;
-
-      bgContainer.appendChild(word);
-
-      requestAnimationFrame(() => { word.style.opacity = peakOpacity; });
-
-      setTimeout(() => {
-        word.style.opacity = '0';
-        setTimeout(() => {
-          word.remove();
-          activeWords--;
-        }, fadeTime);
-      }, holdTime);
-    }
-
-    function maintainWords() {
-      const target = 3 + Math.floor(Math.random() * 3);
-      if (activeWords < target) spawnWord();
-    }
-
-    function startBgText() {
-      if (fx.background.bgText === false) return;
-      if (bgTextStarted) return;
-      bgTextStarted = true;
-      setInterval(maintainWords, 400);
-      for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 250);
     }
 
     function createParticles() {
@@ -945,7 +872,6 @@
       setTimeout(() => {
         entrance.classList.add('hidden');
         mainContent.classList.add('revealed');
-        startBgText();
       }, 380);
     });
 
@@ -958,7 +884,6 @@
         document.title = config.pageTitle;
         document.getElementById('pageTitleTag').textContent = config.pageTitle;
       }
-      if (config.bgWord) bgWordText = config.bgWord;
 
       const neon = hexToRgb(config.neonColor || '#ffffff');
       document.documentElement.style.setProperty('--neon-r', neon.r);
@@ -976,7 +901,6 @@
       setEffectVisibility('ambientGlow', fx.background.ambientGlow);
       setEffectVisibility('bgShine', fx.background.bgShine);
       setEffectVisibility('spotlight', fx.background.spotlight);
-      setEffectVisibility('bgText', fx.background.bgText);
 
       createParticles();
       createMatrixRain();
