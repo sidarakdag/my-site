@@ -11,12 +11,12 @@
   "products": [
     {
       "id": "3",
-      "name": "Headless Account",
+      "name": "Headless + Korblox Account",
       "price": "$225",
       "image": "assets/images/headless.png",
-      "description": "Contact me on Telegram to purchase.",
+      "description": "Has OGE. PayPal + crypto only.",
+      "category": "accounts",
       "telegramLink": "https://t.me/katalyshop"
     }
   ]
 }
-
