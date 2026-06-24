@@ -402,36 +402,47 @@
     background: linear-gradient(90deg, transparent, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5), transparent);
   }
 
-  .section-label-row {
+  /* ---- Category tab buttons ---- */
+  .shop-tabs {
     display: flex;
-    align-items: center;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 4vh;
   }
-  .section-label-row .line {
+  .shop-tab {
     flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent);
-  }
-  .section-label-row .line.right {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12));
-  }
-  .section-label-text {
-    font-size: 10px;
-    letter-spacing: 3px;
+    text-align: center;
+    padding: 13px 8px;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.55);
+    font-family: 'Terminus TTF', monospace;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
-    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
   }
-
-  .shop-section {
-    margin-bottom: 7vh;
+  .shop-tab:active {
+    transform: scale(0.97);
+  }
+  .shop-tab.active {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+    box-shadow: 0 0 22px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
   }
 
   .product-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: gridFadeIn 0.4s ease forwards;
+  }
+  @keyframes gridFadeIn {
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .product-card {
@@ -493,18 +504,39 @@
   .empty-shop {
     grid-column: 1 / -1;
     text-align: center;
-    padding: 5vh 0;
+    padding: 8vh 0;
     color: rgba(255,255,255,0.3);
     font-size: 12px;
     letter-spacing: 1px;
   }
 
   .shop-footer {
-    margin-top: 2vh;
+    margin-top: 8vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 16px;
+  }
+  .section-label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-label-row .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent);
+  }
+  .section-label-row .line.right {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12));
+  }
+  .section-label-text {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
   }
   .social-line {
     font-family: 'Terminus TTF', monospace;
@@ -698,23 +730,13 @@
         <div class="shop-header-divider"></div>
       </div>
 
-      <div class="shop-section">
-        <div class="section-label-row">
-          <span class="line"></span>
-          <span class="section-label-text">gaming goods</span>
-          <span class="line right"></span>
-        </div>
-        <div class="product-grid" id="gamingGrid"></div>
+      <div class="shop-tabs" id="shopTabs">
+        <div class="shop-tab active" data-category="gaming">Gaming Goods</div>
+        <div class="shop-tab" data-category="accounts">Accounts</div>
       </div>
 
-      <div class="shop-section">
-        <div class="section-label-row">
-          <span class="line"></span>
-          <span class="section-label-text">accounts</span>
-          <span class="line right"></span>
-        </div>
-        <div class="product-grid" id="accountsGrid"></div>
-      </div>
+      <div class="product-grid" id="gamingGrid"></div>
+      <div class="product-grid" id="accountsGrid" style="display:none;"></div>
 
       <div class="shop-footer">
         <div class="section-label-row" style="width:100%;">
@@ -784,6 +806,7 @@
     const starfieldContainer = document.getElementById('starfield');
     const gamingGrid = document.getElementById('gamingGrid');
     const accountsGrid = document.getElementById('accountsGrid');
+    const shopTabs = document.getElementById('shopTabs');
     const productModal = document.getElementById('productModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const modalCard = document.getElementById('modalCard');
@@ -798,6 +821,8 @@
     let fx = { background: {} };
     let fallingTriggered = false;
     let globalTelegram = '#';
+
+    const gridByCategory = { gaming: gamingGrid, accounts: accountsGrid };
 
     function createEntranceFallStreaks() {
       for (let i = 0; i < 22; i++) {
@@ -962,6 +987,29 @@
     window.addEventListener('touchmove', (e) => {
       const t = e.touches[0];
       moveSpotlight(t.clientX, t.clientY);
+    });
+
+    function switchTab(category) {
+      document.querySelectorAll('.shop-tab').forEach((tab) => {
+        tab.classList.toggle('active', tab.dataset.category === category);
+      });
+      Object.keys(gridByCategory).forEach((key) => {
+        const grid = gridByCategory[key];
+        if (key === category) {
+          grid.style.display = 'grid';
+          grid.style.animation = 'none';
+          void grid.offsetWidth;
+          grid.style.animation = 'gridFadeIn 0.4s ease forwards';
+        } else {
+          grid.style.display = 'none';
+        }
+      });
+    }
+
+    shopTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.shop-tab');
+      if (!tab) return;
+      switchTab(tab.dataset.category);
     });
 
     let modalOpen = false;
