@@ -341,6 +341,7 @@
     transform: scale(1);
   }
 
+  /* ---- Shop header ---- */
   .shop-page {
     width: 100%;
     min-height: 100dvh;
@@ -351,52 +352,103 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 5vh;
+    gap: 10px;
+    margin-bottom: 6vh;
   }
 
+  .shop-logo-wrap {
+    position: relative;
+    width: 62px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+  .shop-logo-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.16), transparent 70%);
+    filter: blur(4px);
+  }
   .shop-logo {
-    width: 58px;
+    position: relative;
+    width: 100%;
     filter: drop-shadow(0 0 14px rgba(255,255,255,0.5));
-    margin-bottom: 4px;
   }
 
   .shop-title {
     font-family: 'Terminus TTF', monospace;
-    font-size: 19px;
-    letter-spacing: 3px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 4px;
     text-transform: uppercase;
     color: #fff;
-    text-shadow: 0 0 12px rgba(255,255,255,0.4);
+    text-shadow: 0 0 14px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.45);
   }
 
   .shop-sub {
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 10.5px;
+    letter-spacing: 2.5px;
     color: rgba(255,255,255,0.4);
-    text-transform: lowercase;
+    text-transform: uppercase;
   }
 
+  .shop-header-divider {
+    width: 70px;
+    height: 1px;
+    margin-top: 14px;
+    background: linear-gradient(90deg, transparent, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5), transparent);
+  }
+
+  .section-label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-label-row .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent);
+  }
+  .section-label-row .line.right {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12));
+  }
+  .section-label-text {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+  }
+
+  /* ---- Product grid ---- */
   .product-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    gap: 16px;
   }
 
   .product-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
+    position: relative;
+    background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.3s ease;
+    transition: transform 0.18s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .product-card:active {
-    transform: scale(0.96);
-    border-color: rgba(255,255,255,0.18);
+    transform: scale(0.95);
+    border-color: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.4);
+    box-shadow: 0 0 20px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.15);
   }
 
   .product-img-wrap {
+    position: relative;
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
@@ -407,38 +459,51 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    filter: grayscale(0.1) contrast(1.05);
+    filter: grayscale(0.08) contrast(1.06);
+  }
+  .product-img-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.55), transparent 55%);
+    pointer-events: none;
   }
 
   .product-info {
-    padding: 10px 12px 13px;
+    padding: 11px 13px 14px;
   }
   .product-name {
     font-size: 12.5px;
     color: #fff;
     letter-spacing: 0.3px;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
     line-height: 1.3;
   }
   .product-price {
-    font-size: 12px;
+    display: inline-block;
+    font-size: 11.5px;
     font-weight: 700;
     color: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
     text-shadow: 0 0 6px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5);
+    letter-spacing: 0.3px;
   }
 
+  .empty-shop {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 8vh 0;
+    color: rgba(255,255,255,0.3);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* ---- Footer ---- */
   .shop-footer {
-    margin-top: 7vh;
+    margin-top: 8vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-  }
-  .shop-footer-label {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    gap: 16px;
   }
   .social-line {
     font-family: 'Terminus TTF', monospace;
@@ -451,6 +516,7 @@
     font-size: 13px;
     letter-spacing: 0.5px;
     text-shadow: 0 0 6px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
+    transition: color 0.2s ease;
   }
   .social-icon {
     width: 16px;
@@ -464,6 +530,17 @@
     stroke-width: 1.6;
   }
 
+  /* ---- Hero flight image (the FLIP transition piece) ---- */
+  #heroImg {
+    position: fixed;
+    object-fit: cover;
+    z-index: 600;
+    opacity: 0;
+    pointer-events: none;
+    display: block;
+  }
+
+  /* ---- Product modal ---- */
   .product-modal {
     position: fixed;
     inset: 0;
@@ -474,7 +551,7 @@
     padding: 22px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.32s ease;
   }
   .product-modal.open {
     opacity: 1;
@@ -483,8 +560,8 @@
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.86);
-    backdrop-filter: blur(12px);
+    background: rgba(0,0,0,0.88);
+    backdrop-filter: blur(14px);
   }
   .modal-card {
     position: relative;
@@ -496,13 +573,6 @@
     background: #0a0a0a;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 16px;
-    transform: scale(0.82);
-    opacity: 0;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-  }
-  .product-modal.open .modal-card {
-    transform: scale(1);
-    opacity: 1;
   }
   .modal-close {
     position: absolute;
@@ -511,11 +581,12 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
     color: #fff;
-    border: none;
+    border: 1px solid rgba(255,255,255,0.12);
     font-size: 14px;
-    z-index: 2;
+    z-index: 3;
     cursor: pointer;
   }
   .modal-image {
@@ -525,42 +596,73 @@
     display: block;
   }
   .modal-body {
-    padding: 18px 20px 22px;
+    padding: 20px 20px 24px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .modal-card.content-ready .modal-body {
+    opacity: 1;
+    transform: translateY(0);
   }
   .modal-name {
     font-size: 18px;
     font-weight: 700;
     color: #fff;
     letter-spacing: 0.3px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .modal-price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
   }
   .modal-price {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
     text-shadow: 0 0 8px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5);
-    margin-bottom: 14px;
+  }
+  .modal-price-tag {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .modal-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 16px;
   }
   .modal-desc {
     font-size: 13.5px;
     line-height: 1.65;
-    color: rgba(255,255,255,0.65);
-    margin-bottom: 20px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 22px;
   }
   .modal-buy {
-    display: block;
-    text-align: center;
-    padding: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
     background: #fff;
     color: #000;
-    border-radius: 10px;
+    border-radius: 11px;
     text-decoration: none;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13.5px;
     letter-spacing: 0.3px;
+    transition: transform 0.15s ease;
   }
   .modal-buy:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+  }
+  .modal-buy svg {
+    width: 16px;
+    height: 16px;
+    fill: #000;
   }
 </style>
 </head>
@@ -589,15 +691,28 @@
   <div id="mainContent">
     <div class="shop-page">
       <div class="shop-header">
-        <img class="shop-logo" src="assets/images/falling-figure.png" alt="kataly">
+        <div class="shop-logo-wrap">
+          <img class="shop-logo" src="assets/images/falling-figure.png" alt="kataly">
+        </div>
         <div class="shop-title">kataly shop</div>
         <div class="shop-sub">digital goods · accounts</div>
+        <div class="shop-header-divider"></div>
+      </div>
+
+      <div class="section-label-row">
+        <span class="line"></span>
+        <span class="section-label-text">all items</span>
+        <span class="line right"></span>
       </div>
 
       <div class="product-grid" id="productGrid"></div>
 
       <div class="shop-footer">
-        <div class="shop-footer-label">contact</div>
+        <div class="section-label-row" style="width:100%;">
+          <span class="line"></span>
+          <span class="section-label-text">contact</span>
+          <span class="line right"></span>
+        </div>
         <a class="social-line" id="tgLink" href="#" target="_blank">
           <svg class="social-icon" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
           <span>tg : katalyshop</span>
@@ -614,6 +729,8 @@
     </div>
   </div>
 
+  <img id="heroImg" alt="">
+
   <div class="product-modal" id="productModal">
     <div class="modal-backdrop" id="modalBackdrop"></div>
     <div class="modal-card" id="modalCard">
@@ -621,9 +738,16 @@
       <img class="modal-image" id="modalImage" alt="">
       <div class="modal-body">
         <div class="modal-name" id="modalName"></div>
-        <div class="modal-price" id="modalPrice"></div>
+        <div class="modal-price-row">
+          <span class="modal-price" id="modalPrice"></span>
+          <span class="modal-price-tag">usd</span>
+        </div>
+        <div class="modal-divider"></div>
         <div class="modal-desc" id="modalDesc"></div>
-        <a class="modal-buy" id="modalBuy" target="_blank">Purchase via Telegram</a>
+        <a class="modal-buy" id="modalBuy" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+          <span>Purchase via Telegram</span>
+        </a>
       </div>
     </div>
   </div>
@@ -652,12 +776,14 @@
     const productGrid = document.getElementById('productGrid');
     const productModal = document.getElementById('productModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalCard = document.getElementById('modalCard');
     const modalClose = document.getElementById('modalClose');
     const modalImage = document.getElementById('modalImage');
     const modalName = document.getElementById('modalName');
     const modalPrice = document.getElementById('modalPrice');
     const modalDesc = document.getElementById('modalDesc');
     const modalBuy = document.getElementById('modalBuy');
+    const heroImg = document.getElementById('heroImg');
 
     let fx = { background: {} };
     let fallingTriggered = false;
@@ -828,17 +954,56 @@
       moveSpotlight(t.clientX, t.clientY);
     });
 
-    function openProduct(product) {
-      modalImage.src = product.image;
+    let modalOpen = false;
+
+    function openProduct(product, cardImgEl) {
+      if (modalOpen) return;
+      modalOpen = true;
+
+      const startRect = cardImgEl.getBoundingClientRect();
+
       modalName.textContent = product.name;
       modalPrice.textContent = product.price;
       modalDesc.textContent = product.description || '';
       modalBuy.href = product.telegramLink || globalTelegram;
+      modalImage.src = product.image;
+
       productModal.classList.add('open');
+      modalCard.classList.remove('content-ready');
+
+      requestAnimationFrame(() => {
+        const endRect = modalImage.getBoundingClientRect();
+
+        heroImg.src = product.image;
+        heroImg.style.transition = 'none';
+        heroImg.style.top = startRect.top + 'px';
+        heroImg.style.left = startRect.left + 'px';
+        heroImg.style.width = startRect.width + 'px';
+        heroImg.style.height = startRect.height + 'px';
+        heroImg.style.borderRadius = '14px';
+        heroImg.style.opacity = '1';
+
+        void heroImg.offsetWidth;
+
+        heroImg.style.transition = 'top 0.42s cubic-bezier(0.22,1,0.36,1), left 0.42s cubic-bezier(0.22,1,0.36,1), width 0.42s cubic-bezier(0.22,1,0.36,1), height 0.42s cubic-bezier(0.22,1,0.36,1), border-radius 0.42s ease';
+        heroImg.style.top = endRect.top + 'px';
+        heroImg.style.left = endRect.left + 'px';
+        heroImg.style.width = endRect.width + 'px';
+        heroImg.style.height = endRect.height + 'px';
+        heroImg.style.borderRadius = '0px';
+
+        setTimeout(() => {
+          heroImg.style.opacity = '0';
+          modalCard.classList.add('content-ready');
+        }, 420);
+      });
     }
 
     function closeProduct() {
+      if (!modalOpen) return;
+      modalOpen = false;
       productModal.classList.remove('open');
+      modalCard.classList.remove('content-ready');
     }
 
     modalBackdrop.addEventListener('click', closeProduct);
@@ -846,6 +1011,12 @@
 
     function renderProducts(products) {
       productGrid.innerHTML = '';
+
+      if (!products.length) {
+        productGrid.innerHTML = '<div class="empty-shop">no items listed yet</div>';
+        return;
+      }
+
       products.forEach((product) => {
         const card = document.createElement('div');
         card.className = 'product-card';
@@ -856,7 +1027,8 @@
             <div class="product-price">${product.price}</div>
           </div>
         `;
-        card.addEventListener('click', () => openProduct(product));
+        const imgEl = card.querySelector('img');
+        card.addEventListener('click', () => openProduct(product, imgEl));
         productGrid.appendChild(card);
       });
     }
@@ -918,4 +1090,3 @@
 
 </body>
 </html>
-
