@@ -260,6 +260,7 @@
     justify-content: center;
     gap: 14px;
     cursor: pointer;
+    overflow: hidden;
     transition: opacity 0.7s ease, visibility 0.7s ease;
   }
   #entrance.hidden {
@@ -289,40 +290,30 @@
     100% { transform: scale(3.6); opacity: 0; }
   }
 
-  .logo-wrap {
+  .logo-img-wrap {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .logo-wrap::before {
-    content: '';
-    position: absolute;
-    width: 160%;
-    height: 220%;
-    background: radial-gradient(circle, rgba(255,126,179,0.18), rgba(124,58,237,0.12) 40%, transparent 70%);
-    filter: blur(20px);
-    animation: auraPulse 2.4s ease-in-out infinite;
-    z-index: -1;
-  }
-  @keyframes auraPulse {
-    0%, 100% { transform: scale(0.9); opacity: 0.6; }
-    50% { transform: scale(1.15); opacity: 1; }
+    width: 44vw;
+    max-width: 240px;
   }
 
-  .logo-text {
-    font-family: 'Terminus TTF', monospace;
-    font-weight: 500;
-    font-size: clamp(34px, 11vw, 64px);
-    text-transform: lowercase;
-    letter-spacing: 2px;
-    color: #fff;
-    text-shadow: 0 0 10px #fff, 0 0 28px rgba(255,255,255,0.8);
-    animation: pulse 1.8s infinite ease-in-out;
+  #logoImg {
+    width: 100%;
+    display: block;
+    filter: drop-shadow(0 0 24px rgba(255,255,255,0.55)) drop-shadow(0 0 50px rgba(255,255,255,0.25));
+    animation: floatLogo 4.2s ease-in-out infinite;
+    will-change: transform, opacity;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.45; transform: scale(0.94); }
+  @keyframes floatLogo {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(-2deg); }
+  }
+
+  #logoImg.falling {
+    animation: fallAway 0.95s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+  @keyframes fallAway {
+    0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(160vh) scale(9) rotate(10deg); opacity: 0; }
   }
 
   .enter-divider {
@@ -330,6 +321,7 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
     opacity: 0.6;
+    transition: opacity 0.3s ease;
   }
 
   .enter-hint {
@@ -340,32 +332,15 @@
     color: rgba(255,255,255,0.45);
     text-shadow: 0 0 8px rgba(255,255,255,0.3);
     animation: hintPulse 2.2s ease-in-out infinite;
+    transition: opacity 0.3s ease;
   }
   @keyframes hintPulse {
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.75; }
   }
-
-  .entrance-burst {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.9);
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1000;
-  }
-  .entrance-burst.burst {
-    animation: entranceBurstAnim 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  @keyframes entranceBurstAnim {
-    0% { transform: translate(-50%, -50%) scale(0); opacity: 0.95; }
-    55% { opacity: 0.3; }
-    100% { transform: translate(-50%, -50%) scale(70); opacity: 0; }
+  .ui-fade-out {
+    opacity: 0 !important;
+    animation: none !important;
   }
 
   #mainContent {
@@ -885,13 +860,12 @@
   <div id="entrance">
     <div class="sonar-ring"></div>
     <div class="sonar-ring ring-delay"></div>
-    <div class="logo-wrap">
-      <span class="logo-text" id="logoText">kataly</span>
+    <div class="logo-img-wrap">
+      <img id="logoImg" src="assets/images/falling-figure.png" alt="logo">
     </div>
-    <div class="enter-divider"></div>
-    <div class="enter-hint">tap to enter</div>
+    <div class="enter-divider" id="enterDivider"></div>
+    <div class="enter-hint" id="enterHint">tap to enter</div>
   </div>
-  <div class="entrance-burst" id="entranceBurst"></div>
 
   <div id="mainContent">
     <div class="container">
@@ -977,7 +951,9 @@
     }
 
     const entrance = document.getElementById('entrance');
-    const entranceBurst = document.getElementById('entranceBurst');
+    const logoImg = document.getElementById('logoImg');
+    const enterDivider = document.getElementById('enterDivider');
+    const enterHint = document.getElementById('enterHint');
     const mainContent = document.getElementById('mainContent');
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
@@ -1008,6 +984,7 @@
     let fx = { background: {}, profile: {}, username: {}, title: {} };
     let themeA = { background: '#000000', foreground: '#ffffff' };
     let themeB = { background: '#ffffff', foreground: '#000000' };
+    let fallingTriggered = false;
 
     const revealTargets = document.querySelectorAll('.quote-content, .social-content');
     const revealObserver = new IntersectionObserver((entries) => {
@@ -1372,18 +1349,23 @@
     }
 
     entrance.addEventListener('click', () => {
-      entranceBurst.classList.remove('burst');
-      void entranceBurst.offsetWidth;
-      entranceBurst.classList.add('burst');
+      if (fallingTriggered) return;
+      fallingTriggered = true;
 
-      entrance.classList.add('hidden');
-      mainContent.classList.add('revealed');
-      music.play();
-      musicBtn.textContent = '🔊';
-      playing = true;
+      logoImg.classList.add('falling');
+      enterDivider.classList.add('ui-fade-out');
+      enterHint.classList.add('ui-fade-out');
 
-      startTitleLoop();
-      startBgText();
+      setTimeout(() => {
+        entrance.classList.add('hidden');
+        mainContent.classList.add('revealed');
+        music.play();
+        musicBtn.textContent = '🔊';
+        playing = true;
+
+        startTitleLoop();
+        startBgText();
+      }, 380);
     });
 
     musicBtn.addEventListener('click', (e) => {
@@ -1399,7 +1381,6 @@
     });
 
     function initSite(config) {
-      if (config.logoText) document.getElementById('logoText').textContent = config.logoText;
       if (config.telegram) document.getElementById('tgLink').href = config.telegram;
       if (config.discord) document.getElementById('dcLink').href = config.discord;
       if (config.instagram) document.getElementById('igLink').href = config.instagram;
