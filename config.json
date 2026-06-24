@@ -10,22 +10,6 @@
   },
   "products": [
     {
-      "id": "1",
-      "name": "Sample Item One",
-      "price": "$10",
-      "image": "assets/images/products/item1.png",
-      "description": "Replace this with your real product description.",
-      "telegramLink": "https://t.me/katalyshop"
-    },
-    {
-      "id": "2",
-      "name": "Sample Item Two",
-      "price": "$25",
-      "image": "assets/images/products/item2.png",
-      "description": "Replace this with your real product description.",
-      "telegramLink": "https://t.me/katalyshop"
-    },
-    {
       "id": "3",
       "name": "Headless Account",
       "price": "$225",
