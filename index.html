@@ -269,43 +269,37 @@
     pointer-events: none;
   }
 
-  .sonar-ring {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 50px;
-    height: 50px;
-    margin: -25px 0 0 -25px;
-    border: 1px solid rgba(255,255,255,0.45);
-    border-radius: 50%;
-    opacity: 0;
-    pointer-events: none;
-    animation: sonarPing 3s ease-out infinite;
-  }
-  .sonar-ring.ring-delay {
-    animation-delay: 1.5s;
-  }
-  @keyframes sonarPing {
-    0% { transform: scale(0.4); opacity: 0.55; }
-    100% { transform: scale(3.6); opacity: 0; }
-  }
-
   .logo-img-wrap {
     position: relative;
     width: 44vw;
     max-width: 240px;
+    animation: idleFall 3.6s ease-in infinite;
+  }
+  @keyframes idleFall {
+    0% { transform: translateY(-34vh) scale(0.82); opacity: 0; }
+    12% { opacity: 1; }
+    78% { opacity: 1; }
+    100% { transform: translateY(36vh) scale(1.08); opacity: 0; }
+  }
+
+  .logo-img-wrap::after {
+    content: '';
+    position: absolute;
+    top: -64px;
+    left: 50%;
+    width: 2px;
+    height: 76px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.45));
+    transform: translateX(-50%);
+    filter: blur(2px);
+    pointer-events: none;
   }
 
   #logoImg {
     width: 100%;
     display: block;
     filter: drop-shadow(0 0 24px rgba(255,255,255,0.55)) drop-shadow(0 0 50px rgba(255,255,255,0.25));
-    animation: floatLogo 4.2s ease-in-out infinite;
     will-change: transform, opacity;
-  }
-  @keyframes floatLogo {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-14px) rotate(-2deg); }
   }
 
   #logoImg.falling {
@@ -858,9 +852,7 @@
   <div id="vignette"></div>
 
   <div id="entrance">
-    <div class="sonar-ring"></div>
-    <div class="sonar-ring ring-delay"></div>
-    <div class="logo-img-wrap">
+    <div class="logo-img-wrap" id="logoWrap">
       <img id="logoImg" src="assets/images/falling-figure.png" alt="logo">
     </div>
     <div class="enter-divider" id="enterDivider"></div>
@@ -951,6 +943,7 @@
     }
 
     const entrance = document.getElementById('entrance');
+    const logoWrap = document.getElementById('logoWrap');
     const logoImg = document.getElementById('logoImg');
     const enterDivider = document.getElementById('enterDivider');
     const enterHint = document.getElementById('enterHint');
@@ -1352,6 +1345,7 @@
       if (fallingTriggered) return;
       fallingTriggered = true;
 
+      logoWrap.style.animation = 'none';
       logoImg.classList.add('falling');
       enterDivider.classList.add('ui-fade-out');
       enterHint.classList.add('ui-fade-out');
