@@ -2,61 +2,36 @@
   "telegram": "https://t.me/katalyshop",
   "discord": "#",
   "instagram": "https://instagram.com/kkataly",
-  "music": "assets/audio/music.mp3",
-  "profilePic": "assets/images/profile.png",
-  "quote": "şiiri yazan benim kalemimdi\nkalemin mürekkebi senin gözlerindi\ngözlerine kanmak benim kaderimdi\nkaderime oynayan senin sözlerindi.",
-  "logoText": "kataly",
-  "titleWords": [
-    "yin",
-    "yang"
-  ],
-  "handleFixedWord": "me.",
-  "handleCycleWords": [
-    "kiss",
-    "touch",
-    "feel"
-  ],
-  "pageTitle": "realization",
-  "bgWord": "her eyes",
+  "pageTitle": "kataly shop",
   "neonColor": "#ffffff",
-  "usernameEffect": "none",
-  "profileBorder": "none",
-  "theme": {
-    "a": {
-      "background": "#000000",
-      "foreground": "#ffffff"
-    },
-    "b": {
-      "background": "#000000",
-      "foreground": "#ffffff"
-    }
-  },
+  "theme": { "background": "#000000", "foreground": "#ffffff" },
   "effects": {
-    "background": {
-      "grain": true,
-      "particles": true,
-      "scanlines": true,
-      "ambientGlow": true,
-      "bgShine": true,
-      "spotlight": true,
-      "bgText": true,
-      "matrixRain": true,
-      "snowfall": false,
-      "starfield": true
+    "background": { "grain": true, "particles": true, "scanlines": true, "ambientGlow": true, "bgShine": true, "spotlight": true, "matrixRain": false, "snowfall": false, "starfield": false }
+  },
+  "products": [
+    {
+      "id": "1",
+      "name": "Sample Item One",
+      "price": "$10",
+      "image": "assets/images/products/item1.png",
+      "description": "Replace this with your real product description.",
+      "telegramLink": "https://t.me/katalyshop"
     },
-    "profile": {
-      "invertOnThemeChange": false,
-      "tilt": true,
-      "foldReveal": true,
-      "pulseOnTap": true
+    {
+      "id": "2",
+      "name": "Sample Item Two",
+      "price": "$25",
+      "image": "assets/images/products/item2.png",
+      "description": "Replace this with your real product description.",
+      "telegramLink": "https://t.me/katalyshop"
     },
-    "username": {
-      "typing": true,
-      "cursorBlink": true
-    },
-    "title": {
-      "shimmer": true,
-      "themeSwap": true
+    {
+      "id": "3",
+      "name": "Headless Account",
+      "price": "$225",
+      "image": "assets/images/headless.png",
+      "description": "Contact me on Telegram to purchase.",
+      "telegramLink": "https://t.me/katalyshop"
     }
-  }
+  ]
 }
