@@ -259,16 +259,7 @@
   }
   .shop-logo { position: relative; width: 100%; filter: drop-shadow(0 0 16px rgba(255,255,255,0.55)); }
 
-  .shop-title {
-    font-family: 'Terminus TTF', monospace;
-    font-size: clamp(26px, 8.5vw, 42px);
-    font-weight: 700;
-    letter-spacing: clamp(5px, 2vw, 10px);
-    text-transform: uppercase; color: #fff;
-    text-shadow: 0 0 30px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.65),
-                 0 0 70px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.2);
-    margin-bottom: 2px;
-  }
+  /* .shop-title defined below with shimmer */
   .shop-sub {
     font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
     color: rgba(255,255,255,0.3);
@@ -618,6 +609,179 @@
     box-shadow: 0 2px 10px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.25);
   }
   .modal-buy svg { width: 16px; height: 16px; fill: #000; }
+
+  /* ─── TITLE SHIMMER ─── */
+  .shop-title {
+    font-family: 'Terminus TTF', monospace;
+    font-size: clamp(26px, 8.5vw, 42px);
+    font-weight: 700;
+    letter-spacing: clamp(5px, 2vw, 10px);
+    text-transform: uppercase;
+    background: linear-gradient(90deg,
+      rgb(var(--neon-r), var(--neon-g), var(--neon-b)) 0%,
+      #ffffff 35%,
+      rgb(var(--neon-r), var(--neon-g), var(--neon-b)) 55%,
+      #ffffff 75%,
+      rgb(var(--neon-r), var(--neon-g), var(--neon-b)) 100%);
+    background-size: 250% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleShimmer 3.2s linear infinite;
+    margin-bottom: 2px;
+    filter: drop-shadow(0 0 18px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.35));
+  }
+  @keyframes titleShimmer { to { background-position: 250% center; } }
+
+  /* ─── HERO STRIP ─── */
+  .hero-strip {
+    width: 100%; position: relative; overflow: hidden;
+    background: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.06);
+    border: 1px solid rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.22);
+    border-radius: 12px; padding: 11px 18px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 3vh;
+  }
+  .hero-strip::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: stripShine 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes stripShine { 0%,100%{background-position:200% 0} 50%{background-position:-200% 0} }
+  .hero-strip-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    box-shadow: 0 0 8px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 1);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+  .hero-strip-text {
+    font-size: 9.5px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.9);
+    position: relative; z-index: 1;
+  }
+  .hero-strip-badge {
+    margin-left: auto; flex-shrink: 0;
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #000; font-weight: 700;
+    background: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    padding: 3px 9px; border-radius: 100px;
+    position: relative; z-index: 1;
+  }
+
+  /* ─── TRUST ROW ─── */
+  .trust-row {
+    display: flex; gap: 8px; margin-bottom: 4vh;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .trust-row::-webkit-scrollbar { display: none; }
+  .trust-pill {
+    flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 100px;
+    white-space: nowrap;
+    transition: border-color 0.25s ease, background 0.25s ease;
+  }
+  .trust-pill:hover {
+    border-color: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.28);
+    background: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.05);
+  }
+  .trust-pill-icon { font-size: 13px; line-height: 1; }
+  .trust-pill-label {
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* ─── CARD BADGE ─── */
+  .card-badge {
+    position: absolute; top: 9px; left: 9px; z-index: 5;
+    padding: 4px 9px; border-radius: 6px;
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700;
+    background: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    color: #000;
+    box-shadow: 0 2px 12px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.55);
+    animation: badgePop 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .card-badge.badge-hot { background: #ff3b30; box-shadow: 0 2px 12px rgba(255,59,48,0.6); color: #fff; }
+  .card-badge.badge-sale { background: #ff9f0a; box-shadow: 0 2px 12px rgba(255,159,10,0.6); color: #000; }
+  .card-badge.badge-new { background: rgb(var(--neon-r), var(--neon-g), var(--neon-b)); }
+  @keyframes badgePop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* ─── CARD BUY BUTTON ─── */
+  .card-buy-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: calc(100% - 24px); margin: 0 12px 12px;
+    padding: 10px;
+    background: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    color: #000; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.3);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    position: relative; z-index: 2;
+  }
+  .card-buy-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.48);
+  }
+  .card-buy-btn:active { transform: scale(0.97); }
+  .card-buy-btn svg { width: 13px; height: 13px; fill: #000; flex-shrink: 0; }
+
+  /* ─── CARD HOVER UPGRADE ─── */
+  .product-card:hover {
+    transform: translateY(-7px) scale(1.012);
+    border-color: rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.5);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.65),
+                0 0 35px rgba(var(--neon-r), var(--neon-g), var(--neon-b), 0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  /* ─── FAB CONTACT ─── */
+  .fab-contact {
+    position: fixed; bottom: 28px; right: 20px; z-index: 450;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgb(var(--neon-r), var(--neon-g), var(--neon-b));
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    animation: fabPulse 2.6s ease-out infinite;
+    transition: transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @keyframes fabPulse {
+    0%,100% { box-shadow: 0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),0.5), 0 0 0 0 rgba(var(--neon-r),var(--neon-g),var(--neon-b),0.35); }
+    55%     { box-shadow: 0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),0.5), 0 0 0 16px rgba(var(--neon-r),var(--neon-g),var(--neon-b),0); }
+  }
+  .fab-contact:hover { transform: scale(1.1); }
+  .fab-contact:active { transform: scale(0.94); }
+  .fab-contact svg { width: 22px; height: 22px; fill: #000; }
+  .fab-tooltip {
+    position: absolute; right: 64px; top: 50%; transform: translateY(-50%);
+    background: rgba(10,10,10,0.92); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    padding: 6px 12px; white-space: nowrap;
+    font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(255,255,255,0.8);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .fab-contact:hover .fab-tooltip { opacity: 1; }
+
+  /* ─── REDUCED MOTION ─── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.15ms !important;
+    }
+    .product-card { opacity: 1; transform: none !important; }
+    .shop-title { animation: none !important; }
+    #ambientGlow, #bgShine, #scanlines, #grain { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -664,6 +828,13 @@
         <div class="shop-header-divider"></div>
       </div>
 
+      <!-- Hero Strip -->
+      <div class="hero-strip">
+        <div class="hero-strip-dot"></div>
+        <span class="hero-strip-text">instant delivery · trusted seller · 24/7 support</span>
+        <span class="hero-strip-badge">verified</span>
+      </div>
+
       <!-- Ticker -->
       <div class="ticker-wrap" aria-hidden="true">
         <div class="ticker-track">
@@ -687,6 +858,26 @@
           <span class="ticker-dot">▸</span>
           <span>secure purchase</span>
           <span class="ticker-dot">▸</span>
+        </div>
+      </div>
+
+      <!-- Trust Row -->
+      <div class="trust-row" aria-label="Trust indicators">
+        <div class="trust-pill">
+          <span class="trust-pill-icon">⚡</span>
+          <span class="trust-pill-label">Instant Delivery</span>
+        </div>
+        <div class="trust-pill">
+          <span class="trust-pill-icon">🔒</span>
+          <span class="trust-pill-label">Secure</span>
+        </div>
+        <div class="trust-pill">
+          <span class="trust-pill-icon">✓</span>
+          <span class="trust-pill-label">Verified Seller</span>
+        </div>
+        <div class="trust-pill">
+          <span class="trust-pill-icon">💬</span>
+          <span class="trust-pill-label">24/7 Support</span>
         </div>
       </div>
 
@@ -743,6 +934,12 @@
 
     </div>
   </div>
+
+  <!-- FAB -->
+  <a class="fab-contact" id="fabLink" href="#" target="_blank" aria-label="Contact on Telegram">
+    <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+    <span class="fab-tooltip">buy now</span>
+  </a>
 
   <img id="heroImg" alt="">
 
@@ -1062,18 +1259,28 @@
         const card = document.createElement('div');
         card.className = 'product-card';
         card.style.animationDelay = (index * 0.07) + 's';
+        const badgeClass = product.badge ? ` badge-${product.badge.toLowerCase()}` : '';
+        const badgeHtml  = product.badge
+          ? `<div class="card-badge${badgeClass}">${product.badge}</div>` : '';
+        const buyLink = product.telegramLink || globalTelegram;
         card.innerHTML = `
           <div class="card-shimmer"></div>
           <div class="product-img-wrap">
             <img src="${product.image}" alt="${product.name}" loading="lazy">
+            ${badgeHtml}
             <div class="card-overlay"><div class="card-overlay-label">view</div></div>
           </div>
           <div class="product-info">
             <div class="product-name">${product.name}</div>
             <div class="product-price">${product.price}</div>
           </div>
+          <a class="card-buy-btn" href="${buyLink}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+            <span>Buy</span>
+          </a>
         `;
         const imgEl = card.querySelector('img');
+        card.querySelector('.card-buy-btn').addEventListener('click', e => e.stopPropagation());
         card.addEventListener('click', () => openProduct(product, imgEl));
         gridEl.appendChild(card);
       });
@@ -1104,6 +1311,7 @@
     function initSite(config) {
       globalTelegram = config.telegram || '#';
       if (config.telegram)  document.getElementById('tgLink').href  = config.telegram;
+      if (config.telegram)  document.getElementById('fabLink').href = config.telegram;
       if (config.discord)   document.getElementById('dcLink').href  = config.discord;
       if (config.instagram) document.getElementById('igLink').href  = config.instagram;
       if (config.pageTitle) {
