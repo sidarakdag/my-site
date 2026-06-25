@@ -8,843 +8,851 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>kataly shop</title>
 <style>
-  @font-face {
-    font-family:'Terminus TTF';
-    src:url('assets/fonts/Terminus.ttf') format('truetype');
-    font-weight:500; font-style:normal; font-display:swap;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  :root{
-    --neon-r:255;--neon-g:255;--neon-b:255;
-    --theme-bg:#000000;--theme-fg-r:255;--theme-fg-g:255;--theme-fg-b:255;
-  }
-  html,body{width:100%;overflow-x:hidden;background:#06060f;font-family:'Terminus TTF',monospace;font-weight:500;}
-  body::before{
-    content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-    background-image:linear-gradient(rgba(255,255,255,.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.016) 1px,transparent 1px);
-    background-size:48px 48px;
-  }
+@font-face{font-family:'Terminus TTF';src:url('assets/fonts/Terminus.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--neon-r:255;--neon-g:255;--neon-b:255;--theme-bg:#000;--theme-fg-r:255;--theme-fg-g:255;--theme-fg-b:255;}
+html,body{width:100%;overflow-x:hidden;background:#05050d;font-family:'Terminus TTF',monospace;font-weight:500;}
 
-  /* ── BG EFFECTS ── */
-  #ambientGlow{position:fixed;inset:-20%;z-index:0;pointer-events:none;background:conic-gradient(from 0deg at 50% 50%,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.045),rgba(80,20,180,.05),rgba(var(--neon-r),var(--neon-g),var(--neon-b),.02),rgba(20,80,200,.045),rgba(var(--neon-r),var(--neon-g),var(--neon-b),.045));filter:blur(60px);animation:ambientRotate 30s linear infinite;}
-  @keyframes ambientRotate{to{transform:rotate(360deg);}}
-  #particles{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .particle{position:absolute;border-radius:50%;opacity:0;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:twinkle ease-in-out infinite;box-shadow:0 0 4px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4);}
-  @keyframes twinkle{0%,100%{opacity:0}50%{opacity:var(--p-op)}}
-  #matrixRain{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .matrix-col{position:absolute;top:-120%;display:flex;flex-direction:column;font-family:'Terminus TTF',monospace;font-size:14px;line-height:16px;color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));text-shadow:0 0 6px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.7);animation:matrixFall linear infinite;}
-  @keyframes matrixFall{from{transform:translateY(0)}to{transform:translateY(220%)}}
-  #snowfall{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .snowflake{position:absolute;top:-5%;border-radius:50%;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:snowFall linear infinite;}
-  @keyframes snowFall{from{transform:translateY(0) translateX(0)}to{transform:translateY(115vh) translateX(var(--drift))}}
-  #starfield{position:fixed;inset:0;z-index:6;overflow:hidden;pointer-events:none;}
-  .star{position:absolute;border-radius:50%;opacity:0;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:starTwinkle ease-in-out infinite;box-shadow:0 0 4px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);}
-  @keyframes starTwinkle{0%,100%{opacity:0}50%{opacity:var(--s-op)}}
-  .ship{position:absolute;width:5px;height:5px;border-radius:50%;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));box-shadow:0 0 8px rgba(var(--neon-r),var(--neon-g),var(--neon-b),1),0 0 16px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);transform:translate(-50%,-50%);}
-  .ship::before{content:'';position:absolute;top:50%;left:50%;width:70px;height:2px;background:linear-gradient(90deg,transparent,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.9));transform-origin:right center;transform:translate(-100%,-50%) rotate(var(--trail-angle,0deg));}
-  #spotlight{position:fixed;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.05) 0%,transparent 70%);transform:translate(-50%,-50%);pointer-events:none;z-index:1;top:50%;left:50%;}
-  #bgShine{position:fixed;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(120deg,transparent,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.06),transparent);pointer-events:none;z-index:2;animation:bgShineSweep 7s ease-in-out infinite;}
-  @keyframes bgShineSweep{0%{left:-60%}25%{left:140%}100%{left:140%}}
-  #scanlines{position:fixed;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(128,128,128,.035) 0px,rgba(128,128,128,.035) 1px,transparent 1px,transparent 3px);animation:scanMove 6s linear infinite;}
-  @keyframes scanMove{from{background-position-y:0}to{background-position-y:100px}}
-  #grain{position:fixed;inset:-50%;width:200%;height:200%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");opacity:.03;mix-blend-mode:overlay;z-index:4;pointer-events:none;animation:grainShift .5s steps(2) infinite;}
-  @keyframes grainShift{0%{transform:translate(0,0)}50%{transform:translate(-2%,1%)}100%{transform:translate(1%,-2%)}}
-  #vignette{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(0,0,0,0) 40%,rgba(0,0,0,.5) 100%);z-index:5;pointer-events:none;}
+/* grid */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);background-size:52px 52px;}
 
-  /* ── ENTRANCE (unchanged) ── */
-  #entrance{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#060606 0%,#000 65%);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;cursor:pointer;overflow:hidden;transition:opacity .8s ease,visibility .8s ease;}
-  #entrance.hidden{opacity:0;visibility:hidden;pointer-events:none;}
-  #entranceFallBg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .fall-streak{position:absolute;top:-12%;width:1.5px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.7));filter:blur(.5px);animation:fallStreakAnim linear infinite;}
-  @keyframes fallStreakAnim{from{transform:translateY(0)}to{transform:translateY(125vh)}}
-  .entrance-logo-zone{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:44vw;max-width:220px;}
-  .pulse-ring{position:absolute;border-radius:50%;border:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.18);width:140%;height:140%;animation:ringExpand 2.6s ease-out infinite;pointer-events:none;}
-  .ring-2{animation-delay:.87s;}.ring-3{animation-delay:1.73s;}
-  @keyframes ringExpand{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(2.4)}}
-  #logoImg{position:relative;z-index:1;width:100%;display:block;filter:drop-shadow(0 0 28px rgba(255,255,255,.6)) drop-shadow(0 0 56px rgba(255,255,255,.22));animation:floatLogo 4.2s ease-in-out infinite;will-change:transform,opacity;}
-  @keyframes floatLogo{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(-1.8deg)}}
-  #logoImg.falling{animation:fallAway .95s cubic-bezier(.55,0,1,.45) forwards;}
-  @keyframes fallAway{0%{transform:translateY(0) scale(1) rotate(0deg);opacity:1}100%{transform:translateY(160vh) scale(9) rotate(10deg);opacity:0}}
-  .enter-divider{position:relative;z-index:1;width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transition:opacity .3s ease;}
-  .enter-hint{position:relative;z-index:1;font-family:'Terminus TTF',monospace;font-size:10px;letter-spacing:5px;text-transform:lowercase;color:rgba(255,255,255,.4);text-shadow:0 0 10px rgba(255,255,255,.25);animation:hintPulse 2.4s ease-in-out infinite;transition:opacity .3s ease;}
-  @keyframes hintPulse{0%,100%{opacity:.25}50%{opacity:.7}}
-  .ui-fade-out{opacity:0 !important;animation:none !important;}
+/* ── BG EFFECTS ── */
+#ambientGlow{position:fixed;inset:-20%;z-index:0;pointer-events:none;background:conic-gradient(from 0deg at 50% 50%,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.04),rgba(80,20,180,.05),rgba(var(--neon-r),var(--neon-g),var(--neon-b),.018),rgba(20,80,200,.04),rgba(var(--neon-r),var(--neon-g),var(--neon-b),.04));filter:blur(60px);animation:ambientRotate 30s linear infinite;}
+@keyframes ambientRotate{to{transform:rotate(360deg);}}
+#particles{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.particle{position:absolute;border-radius:50%;opacity:0;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:twinkle ease-in-out infinite;box-shadow:0 0 4px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4);}
+@keyframes twinkle{0%,100%{opacity:0}50%{opacity:var(--p-op)}}
+#matrixRain{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.matrix-col{position:absolute;top:-120%;display:flex;flex-direction:column;font-family:'Terminus TTF',monospace;font-size:14px;line-height:16px;color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));text-shadow:0 0 6px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.7);animation:matrixFall linear infinite;}
+@keyframes matrixFall{from{transform:translateY(0)}to{transform:translateY(220%)}}
+#snowfall{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.snowflake{position:absolute;top:-5%;border-radius:50%;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:snowFall linear infinite;}
+@keyframes snowFall{from{transform:translateY(0) translateX(0)}to{transform:translateY(115vh) translateX(var(--drift))}}
+#starfield{position:fixed;inset:0;z-index:6;overflow:hidden;pointer-events:none;}
+.star{position:absolute;border-radius:50%;opacity:0;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));animation:starTwinkle ease-in-out infinite;box-shadow:0 0 4px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);}
+@keyframes starTwinkle{0%,100%{opacity:0}50%{opacity:var(--s-op)}}
+.ship{position:absolute;width:5px;height:5px;border-radius:50%;background:rgb(var(--theme-fg-r),var(--theme-fg-g),var(--theme-fg-b));box-shadow:0 0 8px rgba(var(--neon-r),var(--neon-g),var(--neon-b),1),0 0 16px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);transform:translate(-50%,-50%);}
+.ship::before{content:'';position:absolute;top:50%;left:50%;width:70px;height:2px;background:linear-gradient(90deg,transparent,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.9));transform-origin:right center;transform:translate(-100%,-50%) rotate(var(--trail-angle,0deg));}
+#spotlight{position:fixed;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.05) 0%,transparent 70%);transform:translate(-50%,-50%);pointer-events:none;z-index:1;top:50%;left:50%;}
+#bgShine{position:fixed;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(120deg,transparent,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.06),transparent);pointer-events:none;z-index:2;animation:bgShineSweep 7s ease-in-out infinite;}
+@keyframes bgShineSweep{0%{left:-60%}25%{left:140%}100%{left:140%}}
+#scanlines{position:fixed;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(128,128,128,.03) 0px,rgba(128,128,128,.03) 1px,transparent 1px,transparent 3px);animation:scanMove 6s linear infinite;}
+@keyframes scanMove{from{background-position-y:0}to{background-position-y:100px}}
+#grain{position:fixed;inset:-50%;width:200%;height:200%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");opacity:.03;mix-blend-mode:overlay;z-index:4;pointer-events:none;animation:grainShift .5s steps(2) infinite;}
+@keyframes grainShift{0%{transform:translate(0,0)}50%{transform:translate(-2%,1%)}100%{transform:translate(1%,-2%)}}
+#vignette{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(0,0,0,0) 40%,rgba(0,0,0,.55) 100%);z-index:5;pointer-events:none;}
 
-  /* ── MAIN ── */
-  #mainContent{position:relative;z-index:10;width:100%;opacity:0;filter:blur(16px);transform:scale(.98);transition:opacity .9s ease,filter .9s ease,transform .9s ease;}
-  #mainContent.revealed{opacity:1;filter:blur(0);transform:scale(1);}
+/* ── COLOR ORBS (new depth layer) ── */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
+.orb-a{width:55vw;height:55vw;max-width:480px;max-height:480px;top:-8%;right:-12%;background:rgba(130,30,230,.1);animation:orbDrift 20s ease-in-out infinite;}
+.orb-b{width:45vw;height:45vw;max-width:400px;max-height:400px;bottom:-8%;left:-10%;background:rgba(15,60,200,.09);animation:orbDrift 26s ease-in-out infinite reverse;}
+.orb-c{width:35vw;height:35vw;max-width:320px;max-height:320px;top:45%;left:25%;background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.055);animation:orbDrift 17s ease-in-out infinite 3s;}
+@keyframes orbDrift{0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,30px)}}
 
-  /* ── STICKY NAV ── */
-  .shop-nav{
-    position:sticky;top:0;z-index:200;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:0 18px;height:62px;
-    background:rgba(5,5,13,.9);
-    backdrop-filter:blur(28px) saturate(160%);
-    -webkit-backdrop-filter:blur(28px) saturate(160%);
-    border-bottom:1px solid rgba(255,255,255,.06);
-  }
-  .nav-brand{display:flex;align-items:center;gap:11px;}
-  .nav-logo{width:32px;height:32px;filter:drop-shadow(0 0 10px rgba(255,255,255,.4));}
-  .nav-name{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:#fff;font-weight:700;}
-  .nav-status{display:flex;align-items:center;gap:7px;padding:6px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:100px;}
-  .nav-dot{width:6px;height:6px;border-radius:50%;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));box-shadow:0 0 6px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.9);animation:navDot 2s ease-in-out infinite;}
-  @keyframes navDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
-  .nav-status-text{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.38);}
+/* ── ENTRANCE (unchanged) ── */
+#entrance{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#060606 0%,#000 65%);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;cursor:pointer;overflow:hidden;transition:opacity .8s ease,visibility .8s ease;}
+#entrance.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+#entranceFallBg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.fall-streak{position:absolute;top:-12%;width:1.5px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.7));filter:blur(.5px);animation:fallStreakAnim linear infinite;}
+@keyframes fallStreakAnim{from{transform:translateY(0)}to{transform:translateY(125vh)}}
+.entrance-logo-zone{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:44vw;max-width:220px;}
+.pulse-ring{position:absolute;border-radius:50%;border:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.18);width:140%;height:140%;animation:ringExpand 2.6s ease-out infinite;pointer-events:none;}
+.ring-2{animation-delay:.87s;}.ring-3{animation-delay:1.73s;}
+@keyframes ringExpand{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(2.4)}}
+#logoImg{position:relative;z-index:1;width:100%;display:block;filter:drop-shadow(0 0 28px rgba(255,255,255,.6)) drop-shadow(0 0 56px rgba(255,255,255,.22));animation:floatLogo 4.2s ease-in-out infinite;will-change:transform,opacity;}
+@keyframes floatLogo{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(-1.8deg)}}
+#logoImg.falling{animation:fallAway .95s cubic-bezier(.55,0,1,.45) forwards;}
+@keyframes fallAway{0%{transform:translateY(0) scale(1) rotate(0deg);opacity:1}100%{transform:translateY(160vh) scale(9) rotate(10deg);opacity:0}}
+.enter-divider{position:relative;z-index:1;width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transition:opacity .3s;}
+.enter-hint{position:relative;z-index:1;font-family:'Terminus TTF',monospace;font-size:10px;letter-spacing:5px;text-transform:lowercase;color:rgba(255,255,255,.4);text-shadow:0 0 10px rgba(255,255,255,.25);animation:hintPulse 2.4s ease-in-out infinite;transition:opacity .3s;}
+@keyframes hintPulse{0%,100%{opacity:.25}50%{opacity:.7}}
+.ui-fade-out{opacity:0 !important;animation:none !important;}
 
-  /* ── HERO ── */
-  .shop-hero{
-    width:100%;padding:50px 20px 40px;
-    display:flex;flex-direction:column;align-items:center;text-align:center;
-    position:relative;overflow:hidden;
-  }
-  .shop-hero::before{
-    content:'';position:absolute;top:-30%;left:50%;transform:translateX(-50%);
-    width:80%;height:120%;
-    background:radial-gradient(ellipse at center top,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.09) 0%,transparent 65%);
-    pointer-events:none;
-  }
-  .hero-eyebrow{
-    font-size:9px;letter-spacing:5px;text-transform:uppercase;
-    color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.65);
-    margin-bottom:16px;display:flex;align-items:center;gap:12px;
-  }
-  .hero-eyebrow::before,.hero-eyebrow::after{
-    content:'';flex:0 0 32px;height:1px;
-    background:linear-gradient(90deg,transparent,rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4));
-  }
-  .hero-eyebrow::after{transform:scaleX(-1);}
-  .hero-title{
-    font-family:'Terminus TTF',monospace;
-    font-size:clamp(30px,10vw,54px);font-weight:700;
-    letter-spacing:clamp(5px,2vw,13px);text-transform:uppercase;line-height:1.06;
-    margin-bottom:14px;
-    background:linear-gradient(90deg,
-      rgb(var(--neon-r),var(--neon-g),var(--neon-b)) 0%,
-      #fff 35%,
-      rgb(var(--neon-r),var(--neon-g),var(--neon-b)) 55%,
-      #fff 75%,
-      rgb(var(--neon-r),var(--neon-g),var(--neon-b)) 100%);
-    background-size:250% auto;
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    animation:titleShimmer 3.2s linear infinite;
-    filter:drop-shadow(0 0 22px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.28));
-  }
-  @keyframes titleShimmer{to{background-position:250% center;}}
-  .hero-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:30px;}
-  .trust-row{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;max-width:100%;padding-bottom:2px;}
-  .trust-row::-webkit-scrollbar{display:none;}
-  .trust-pill{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:8px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:100px;white-space:nowrap;transition:border-color .25s,background .25s;}
-  .trust-pill:hover{border-color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.3);background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.05);}
-  .trust-pill svg{width:12px;height:12px;opacity:.7;fill:rgb(var(--neon-r),var(--neon-g),var(--neon-b));flex-shrink:0;}
-  .trust-pill-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.42);}
+/* ── MAIN ── */
+#mainContent{position:relative;z-index:10;width:100%;opacity:0;filter:blur(16px);transform:scale(.98);transition:opacity .9s ease,filter .9s ease,transform .9s ease;}
+#mainContent.revealed{opacity:1;filter:blur(0);transform:scale(1);}
 
-  /* ── TICKER ── */
-  .ticker-wrap{width:100%;overflow:hidden;border-top:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.1);border-bottom:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.1);background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.03);padding:9px 0;}
-  .ticker-track{display:inline-flex;gap:24px;white-space:nowrap;animation:tickerScroll 22s linear infinite;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);}
-  .ticker-sep{color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.25);}
-  @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* ───────────────────────────────────────────────
+   SHOP PAGE — completely new layout
+─────────────────────────────────────────────── */
 
-  /* ── SHOP BODY ── */
-  .shop-body{padding:28px 16px 110px;max-width:720px;margin:0 auto;}
+/* FLOATING PILL NAV — centered top, not full-width */
+.float-nav{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:200;
+  display:inline-flex;align-items:center;gap:12px;
+  padding:10px 18px;
+  background:rgba(6,6,16,.82);
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:100px;
+  white-space:nowrap;
+}
+.float-nav-logo{width:24px;height:24px;filter:drop-shadow(0 0 8px rgba(255,255,255,.35));}
+.float-nav-name{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.9);font-weight:700;}
+.float-nav-sep{color:rgba(255,255,255,.2);font-size:11px;}
+.float-nav-status{display:flex;align-items:center;gap:6px;}
+.float-nav-dot{width:5px;height:5px;border-radius:50%;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));box-shadow:0 0 5px rgba(var(--neon-r),var(--neon-g),var(--neon-b),1);animation:dotBlink 2s ease-in-out infinite;}
+@keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.25}}
+.float-nav-open{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.8);}
 
-  /* ── TABS ── */
-  .shop-tabs{position:relative;display:flex;gap:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:5px;margin-bottom:22px;}
-  .tab-indicator{position:absolute;top:5px;left:5px;height:calc(100% - 10px);border-radius:12px;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));box-shadow:0 0 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4);transition:left .32s cubic-bezier(.22,1,.36,1),width .32s cubic-bezier(.22,1,.36,1);pointer-events:none;}
-  .shop-tab{flex:1;position:relative;z-index:1;text-align:center;padding:13px 8px;border-radius:11px;color:rgba(255,255,255,.38);font-family:'Terminus TTF',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:color .25s;-webkit-tap-highlight-color:transparent;user-select:none;}
-  .shop-tab:active{opacity:.8;}
-  .shop-tab.active{color:#000;}
+/* EDITORIAL TITLE BLOCK — left-aligned, massive */
+.brand-block{
+  padding:calc(16px + 56px + 44px) 20px 0;
+  position:relative;
+}
+.brand-label{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:9px;letter-spacing:4px;text-transform:uppercase;
+  color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);
+  margin-bottom:12px;
+}
+.brand-label::before{
+  content:'';display:block;width:22px;height:1px;
+  background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);
+}
+.brand-title{
+  font-family:'Terminus TTF',monospace;font-weight:700;
+  font-size:clamp(52px,17vw,128px);line-height:.92;
+  letter-spacing:-.01em;text-transform:uppercase;
+  color:#fff;
+  text-shadow:0 0 60px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.2),0 0 120px rgba(80,20,200,.15);
+}
+.brand-title-row2{
+  font-family:'Terminus TTF',monospace;font-weight:700;
+  font-size:clamp(52px,17vw,128px);line-height:.92;
+  letter-spacing:-.01em;text-transform:uppercase;
+  /* outlined text */
+  color:transparent;
+  -webkit-text-stroke:1.5px rgba(255,255,255,.22);
+  display:block;margin-top:4px;
+}
+.brand-meta{
+  display:flex;align-items:center;gap:16px;
+  margin-top:20px;padding-bottom:32px;
+}
+.brand-meta-text{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.22);}
+.brand-meta-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.1),transparent);}
 
-  /* ── PRODUCT GRID ── */
-  .product-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
-  @media(min-width:560px){.product-grid{grid-template-columns:repeat(3,1fr);}}
+/* CATEGORY CHIPS — horizontal scroll, no background pill */
+.cat-row{
+  padding:0 20px 28px;
+  display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.cat-row::-webkit-scrollbar{display:none;}
+/* Keep required IDs/classes for JS but style as chips */
+.shop-tabs{display:contents;} /* transparent wrapper, chips are direct children in visual sense */
+.tab-indicator{display:none;} /* hidden — we use chip active state instead */
+.shop-tab{
+  flex-shrink:0;
+  padding:10px 20px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:100px;
+  font-family:'Terminus TTF',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;
+  color:rgba(255,255,255,.4);
+  cursor:pointer;
+  transition:all .22s ease;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  white-space:nowrap;
+  background:rgba(255,255,255,.03);
+}
+.shop-tab:hover{border-color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4);color:rgba(255,255,255,.8);}
+.shop-tab.active{
+  background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));
+  border-color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));
+  color:#000;font-weight:700;
+  box-shadow:0 0 20px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.4);
+}
+.shop-tab:active{transform:scale(.95);}
 
-  @keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+/* BENTO GRID */
+.product-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:0 14px;
+}
+@media(min-width:600px){.product-grid{grid-template-columns:repeat(3,1fr);padding:0 20px;}}
 
-  /* ── PRODUCT CARD ── */
-  .product-card{
-    position:relative;
-    background:rgba(10,10,22,.92);
-    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:20px;overflow:hidden;cursor:pointer;
-    opacity:0;animation:cardIn .5s cubic-bezier(.22,1,.36,1) both;
-    transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .3s,box-shadow .3s;
-    will-change:transform;-webkit-tap-highlight-color:transparent;
-  }
-  /* inner glass gloss */
-  .product-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none;z-index:1;}
-  /* neon top border on hover */
-  .product-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));box-shadow:0 0 18px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.8);opacity:0;transition:opacity .3s;z-index:2;}
-  .product-card:hover{transform:translateY(-8px) scale(1.015);border-color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45);box-shadow:0 24px 60px rgba(0,0,0,.72),0 0 44px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.16),inset 0 1px 0 rgba(255,255,255,.09);}
-  .product-card:hover::after{opacity:1;}
-  .product-card:active{transform:scale(.96);}
+/* featured first card — always 2 cols wide */
+.product-grid .product-card:first-child{grid-column:span 2;}
+.product-grid .product-card:first-child .card-img-wrap{aspect-ratio:16/8;}
 
-  /* ── CARD IMAGE ── */
-  .product-img-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:#080814;}
-  .product-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s cubic-bezier(.22,1,.36,1),filter .3s;filter:contrast(1.05);}
-  .product-card:hover .product-img-wrap img{transform:scale(1.09);filter:contrast(1.1) brightness(1.05);}
-  /* deep gradient for text legibility */
-  .product-img-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 40%,rgba(0,0,0,.0) 70%);}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
-  /* name + price overlaid on image */
-  .card-caption{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:10px 12px 12px;}
-  .card-name{font-size:12px;font-weight:700;color:#fff;letter-spacing:.2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .card-price{margin-top:4px;font-size:12.5px;font-weight:700;color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));text-shadow:0 0 10px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.65);letter-spacing:.4px;}
+/* CARDS — portrait 3:4, full-bleed image, everything overlaid */
+.product-card{
+  position:relative;border-radius:18px;overflow:hidden;cursor:pointer;
+  background:#0a0a18;
+  opacity:0;animation:cardIn .48s cubic-bezier(.22,1,.36,1) both;
+  will-change:transform;-webkit-tap-highlight-color:transparent;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+}
+.product-card:hover{
+  transform:translateY(-6px) scale(1.018);
+  box-shadow:0 20px 55px rgba(0,0,0,.7),0 0 0 1px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45),0 0 40px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.15);
+}
+.product-card:active{transform:scale(.96);}
 
-  /* view overlay */
-  .card-overlay{position:absolute;inset:0;z-index:4;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .22s;background:rgba(0,0,0,.28);backdrop-filter:blur(2px);}
-  .product-card:hover .card-overlay{opacity:1;}
-  .card-overlay-label{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.32);padding:7px 16px;border-radius:8px;background:rgba(255,255,255,.07);backdrop-filter:blur(6px);}
+.card-img-wrap{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;}
+.card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s cubic-bezier(.22,1,.36,1),filter .3s;filter:contrast(1.06);}
+.product-card:hover .card-img-wrap img{transform:scale(1.1);filter:contrast(1.1) brightness(1.04);}
 
-  /* ── BADGE ── */
-  .card-badge{position:absolute;top:9px;left:9px;z-index:6;padding:4px 9px;border-radius:7px;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));color:#000;box-shadow:0 2px 12px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.55);animation:badgePop .4s cubic-bezier(.22,1,.36,1) both;}
-  .card-badge.badge-hot{background:#ff3b30;box-shadow:0 2px 12px rgba(255,59,48,.6);color:#fff;}
-  .card-badge.badge-sale{background:#ff9f0a;box-shadow:0 2px 12px rgba(255,159,10,.6);color:#000;}
-  @keyframes badgePop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+/* gradient overlay */
+.card-img-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.94) 0%,rgba(0,0,0,.45) 38%,rgba(0,0,0,.0) 65%);}
 
-  /* ── CARD BUY BUTTON ── */
-  .card-buy-btn{
-    display:flex;align-items:center;justify-content:center;gap:7px;
-    width:100%;padding:13px 12px;min-height:48px;
-    background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));
-    color:#000;font-family:'Terminus TTF',monospace;
-    font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-    text-decoration:none;
-    box-shadow:0 0 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.2);
-    transition:filter .15s,box-shadow .2s;
-    -webkit-tap-highlight-color:transparent;position:relative;z-index:2;
-  }
-  .card-buy-btn:hover{filter:brightness(1.1);box-shadow:0 0 40px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45);}
-  .card-buy-btn:active{filter:brightness(.9);}
-  .card-buy-btn svg{width:13px;height:13px;fill:#000;flex-shrink:0;}
+/* price floating pill — top right */
+.card-price-pill{
+  position:absolute;top:10px;right:10px;z-index:5;
+  padding:5px 12px;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(10px);
+  border:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.3);
+  border-radius:100px;
+  font-size:12px;font-weight:700;
+  color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));
+  text-shadow:0 0 8px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);
+  letter-spacing:.3px;
+}
 
-  .empty-shop{grid-column:1/-1;text-align:center;padding:10vh 0;color:rgba(255,255,255,.22);font-size:11px;letter-spacing:2px;}
+/* badge top left */
+.card-badge{position:absolute;top:10px;left:10px;z-index:6;padding:4px 10px;border-radius:7px;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));color:#000;box-shadow:0 2px 12px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);animation:badgePop .4s cubic-bezier(.22,1,.36,1) both;}
+.card-badge.badge-hot{background:#ff3b30;color:#fff;box-shadow:0 2px 12px rgba(255,59,48,.55);}
+.card-badge.badge-sale{background:#ff9f0a;color:#000;box-shadow:0 2px 12px rgba(255,159,10,.55);}
+@keyframes badgePop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 
-  /* ── FOOTER ── */
-  .shop-footer{margin-top:60px;}
-  .section-label{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
-  .section-label .line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent);}
-  .section-label .line.r{background:linear-gradient(90deg,transparent,rgba(255,255,255,.07));}
-  .section-label-text{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.25);white-space:nowrap;}
-  .social-cards{display:flex;flex-direction:column;gap:9px;}
-  .social-card{display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:62px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:16px;text-decoration:none;color:rgba(255,255,255,.72);transition:background .22s,border-color .22s,transform .18s;-webkit-tap-highlight-color:transparent;}
-  .social-card:hover{background:rgba(255,255,255,.05);border-color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.28);transform:translateX(5px);}
-  .social-card:active{transform:scale(.98);}
-  .social-card-icon{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;}
-  .social-icon{width:18px;height:18px;fill:currentColor;opacity:.8;}
-  .ig-icon{fill:none;stroke:currentColor;stroke-width:1.6;}
-  .social-card-info{flex:1;min-width:0;}
-  .social-card-platform{font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px;}
-  .social-card-handle{font-size:11px;color:rgba(255,255,255,.32);margin-top:3px;}
-  .social-card-arrow{width:16px;height:16px;opacity:.18;flex-shrink:0;transition:opacity .2s,transform .2s;}
-  .social-card:hover .social-card-arrow{opacity:.8;transform:translateX(3px);}
+/* name at bottom of image */
+.card-caption{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:12px 13px 14px;}
+.card-name{font-size:13px;font-weight:700;color:#fff;line-height:1.3;letter-spacing:.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
-  /* ── HERO IMG (shared-element) ── */
-  #heroImg{position:fixed;object-fit:cover;z-index:600;opacity:0;pointer-events:none;display:block;}
+/* buy overlay — appears on hover */
+.card-buy-overlay{
+  position:absolute;inset:0;z-index:4;
+  display:flex;align-items:flex-end;justify-content:stretch;
+  opacity:0;transition:opacity .22s;
+  background:rgba(0,0,0,.22);backdrop-filter:blur(1px);
+}
+.product-card:hover .card-buy-overlay{opacity:1;}
+.card-buy-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;margin:0 0 0;padding:14px;
+  background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));
+  color:#000;font-family:'Terminus TTF',monospace;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  text-decoration:none;
+  box-shadow:0 -4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.25);
+  -webkit-tap-highlight-color:transparent;position:relative;z-index:2;
+  transition:filter .15s;
+}
+.card-buy-btn:hover{filter:brightness(1.1);}
+.card-buy-btn:active{filter:brightness(.9);}
+.card-buy-btn svg{width:13px;height:13px;fill:#000;flex-shrink:0;}
 
-  /* ── MODAL ── */
-  .product-modal{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;opacity:0;pointer-events:none;transition:opacity .3s;}
-  @media(min-width:480px){.product-modal{align-items:center;padding:20px;}}
-  .product-modal.open{opacity:1;pointer-events:auto;}
-  .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(22px);}
-  .modal-card{position:relative;z-index:1;width:100%;max-width:420px;max-height:92dvh;overflow-y:auto;background:linear-gradient(160deg,#0d0d1e 0%,#08080f 100%);border:1px solid rgba(255,255,255,.1);border-top:2px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.6);border-radius:24px 24px 0 0;transform:translateY(100%);transition:transform .44s cubic-bezier(.22,1,.36,1);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
-  @media(min-width:480px){.modal-card{border-radius:24px;transform:translateY(20px) scale(.97);}}
-  .modal-card::-webkit-scrollbar{width:4px;}
-  .modal-card::-webkit-scrollbar-track{background:transparent;}
-  .modal-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}
-  .product-modal.open .modal-card{transform:translateY(0) scale(1);}
-  .modal-handle{width:36px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin:13px auto 0;}
-  .modal-close{position:absolute;top:10px;right:12px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);color:rgba(255,255,255,.65);font-size:15px;z-index:3;cursor:pointer;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
-  .modal-close:hover{background:rgba(255,255,255,.1);color:#fff;}
-  .modal-image{width:100%;aspect-ratio:1;object-fit:cover;display:block;}
-  .modal-image-overlay{position:relative;}
-  .modal-image-overlay::after{content:'';position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,#08080f,transparent);pointer-events:none;}
-  .modal-body{padding:18px 22px 32px;opacity:0;transform:translateY(10px);transition:opacity .38s,transform .38s;}
-  .modal-card.content-ready .modal-body{opacity:1;transform:translateY(0);}
-  .modal-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
-  .modal-name{font-size:19px;font-weight:700;color:#fff;letter-spacing:.2px;line-height:1.25;flex:1;}
-  .modal-price-badge{flex-shrink:0;padding:7px 12px;background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.1);border:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.25);border-radius:12px;display:flex;flex-direction:column;align-items:flex-end;}
-  .modal-price{font-size:17px;font-weight:700;line-height:1.1;color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));text-shadow:0 0 10px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);}
-  .modal-price-tag{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45);margin-top:2px;}
-  .modal-divider{height:1px;background:rgba(255,255,255,.07);margin-bottom:16px;}
-  .modal-desc{font-size:13px;line-height:1.75;color:rgba(255,255,255,.48);margin-bottom:24px;}
-  .modal-buy{display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));color:#000;border-radius:16px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.5px;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.35);-webkit-tap-highlight-color:transparent;}
-  .modal-buy:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);}
-  .modal-buy:active{transform:scale(.97);}
-  .modal-buy svg{width:16px;height:16px;fill:#000;}
+.empty-shop{grid-column:1/-1;text-align:center;padding:10vh 0;color:rgba(255,255,255,.2);font-size:11px;letter-spacing:2px;}
 
-  /* ── FAB ── */
-  .fab-contact{position:fixed;bottom:28px;right:20px;z-index:450;width:58px;height:58px;border-radius:50%;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));display:flex;align-items:center;justify-content:center;text-decoration:none;animation:fabPulse 2.6s ease-out infinite;transition:transform .15s;-webkit-tap-highlight-color:transparent;}
-  @keyframes fabPulse{0%,100%{box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5),0 0 0 0 rgba(var(--neon-r),var(--neon-g),var(--neon-b),.35);}55%{box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5),0 0 0 18px rgba(var(--neon-r),var(--neon-g),var(--neon-b),0);}}
-  .fab-contact:hover{transform:scale(1.1);}
-  .fab-contact:active{transform:scale(.93);}
-  .fab-contact svg{width:22px;height:22px;fill:#000;}
-  .fab-tooltip{position:absolute;right:68px;top:50%;transform:translateY(-50%);background:rgba(6,6,14,.96);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 14px;white-space:nowrap;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.8);opacity:0;pointer-events:none;transition:opacity .2s;}
-  .fab-contact:hover .fab-tooltip{opacity:1;}
+/* GRID SPACER */
+.grid-spacer{height:60px;}
 
-  /* ── REDUCED MOTION ── */
-  @media(prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.15ms !important;}
-    .product-card{opacity:1;transform:none !important;}
-    .hero-title{animation:none !important;}
-    #ambientGlow,#bgShine,#scanlines,#grain{display:none !important;}
-  }
+/* SOCIAL STRIP — horizontal chips, not vertical cards */
+.social-section{padding:0 20px 100px;}
+.social-label{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+}
+.social-label-line{flex:1;height:1px;background:rgba(255,255,255,.07);}
+.social-label-text{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.22);}
+.social-chips{display:flex;gap:10px;flex-wrap:wrap;}
+.social-chip{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:12px 18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;text-decoration:none;
+  transition:background .2s,border-color .2s,transform .18s;
+  -webkit-tap-highlight-color:transparent;
+  min-height:52px;flex:1;min-width:140px;
+}
+.social-chip:hover{background:rgba(255,255,255,.06);border-color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.3);transform:translateY(-3px);}
+.social-chip:active{transform:scale(.97);}
+.social-chip-icon{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.s-icon{width:16px;height:16px;fill:currentColor;opacity:.8;}
+.ig-s{fill:none;stroke:currentColor;stroke-width:1.7;}
+.social-chip-info{min-width:0;}
+.soc-name{font-size:12px;font-weight:700;color:#fff;letter-spacing:.2px;}
+.soc-handle{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;letter-spacing:.2px;}
+
+/* HERO IMG (shared-element) */
+#heroImg{position:fixed;object-fit:cover;z-index:600;opacity:0;pointer-events:none;display:block;}
+
+/* MODAL — centered with scale-in animation */
+.product-modal{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .28s;}
+.product-modal.open{opacity:1;pointer-events:auto;}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(24px);}
+.modal-card{
+  position:relative;z-index:1;
+  width:100%;max-width:400px;max-height:90dvh;overflow-y:auto;
+  background:#0c0c1e;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:24px;
+  transform:scale(.88) translateY(16px);opacity:0;
+  transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .35s ease;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;
+}
+.modal-card::-webkit-scrollbar{width:4px;}
+.modal-card::-webkit-scrollbar-track{background:transparent;}
+.modal-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}
+.product-modal.open .modal-card{transform:scale(1) translateY(0);opacity:1;}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin:13px auto 0;}
+.modal-close{position:absolute;top:10px;right:12px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);color:rgba(255,255,255,.65);font-size:15px;z-index:3;cursor:pointer;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
+.modal-close:hover{background:rgba(255,255,255,.1);color:#fff;}
+.modal-image{width:100%;aspect-ratio:1;object-fit:cover;display:block;border-radius:24px 24px 0 0;}
+.modal-image-overlay{position:relative;}
+.modal-image-overlay::after{content:'';position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,#0c0c1e,transparent);pointer-events:none;}
+.modal-body{padding:18px 22px 30px;opacity:0;transform:translateY(10px);transition:opacity .38s,transform .38s;}
+.modal-card.content-ready .modal-body{opacity:1;transform:translateY(0);}
+.modal-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.modal-name{font-size:19px;font-weight:700;color:#fff;letter-spacing:.1px;line-height:1.25;flex:1;}
+.modal-price-badge{flex-shrink:0;padding:7px 12px;background:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.1);border:1px solid rgba(var(--neon-r),var(--neon-g),var(--neon-b),.25);border-radius:12px;display:flex;flex-direction:column;align-items:flex-end;}
+.modal-price{font-size:17px;font-weight:700;line-height:1.1;color:rgb(var(--neon-r),var(--neon-g),var(--neon-b));text-shadow:0 0 10px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45);}
+.modal-price-tag{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(var(--neon-r),var(--neon-g),var(--neon-b),.45);margin-top:2px;}
+.modal-divider{height:1px;background:rgba(255,255,255,.07);margin-bottom:16px;}
+.modal-desc{font-size:13px;line-height:1.75;color:rgba(255,255,255,.48);margin-bottom:24px;}
+.modal-buy{display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));color:#000;border-radius:16px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.5px;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.35);-webkit-tap-highlight-color:transparent;}
+.modal-buy:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5);}
+.modal-buy:active{transform:scale(.97);}
+.modal-buy svg{width:16px;height:16px;fill:#000;}
+
+/* FAB */
+.fab-contact{position:fixed;bottom:28px;right:20px;z-index:450;width:58px;height:58px;border-radius:50%;background:rgb(var(--neon-r),var(--neon-g),var(--neon-b));display:flex;align-items:center;justify-content:center;text-decoration:none;animation:fabPulse 2.6s ease-out infinite;transition:transform .15s;-webkit-tap-highlight-color:transparent;}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5),0 0 0 0 rgba(var(--neon-r),var(--neon-g),var(--neon-b),.35);}55%{box-shadow:0 4px 24px rgba(var(--neon-r),var(--neon-g),var(--neon-b),.5),0 0 0 18px rgba(var(--neon-r),var(--neon-g),var(--neon-b),0);}}
+.fab-contact:hover{transform:scale(1.1);}.fab-contact:active{transform:scale(.93);}
+.fab-contact svg{width:22px;height:22px;fill:#000;}
+.fab-tooltip{position:absolute;right:68px;top:50%;transform:translateY(-50%);background:rgba(5,5,13,.96);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 14px;white-space:nowrap;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.8);opacity:0;pointer-events:none;transition:opacity .2s;}
+.fab-contact:hover .fab-tooltip{opacity:1;}
+
+/* REDUCED MOTION */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.15ms !important;}
+  .product-card{opacity:1;transform:none !important;}
+  .brand-title{text-shadow:none;}
+  #ambientGlow,#bgShine,#scanlines,#grain,.orb{display:none !important;}
+}
 </style>
 </head>
 <body>
 
-  <div id="ambientGlow"></div>
-  <div id="particles"></div>
-  <div id="matrixRain"></div>
-  <div id="snowfall"></div>
-  <div id="starfield"></div>
-  <div id="spotlight"></div>
-  <div id="bgShine"></div>
-  <div id="scanlines"></div>
-  <div id="grain"></div>
-  <div id="vignette"></div>
+<div id="ambientGlow"></div>
+<div id="particles"></div>
+<div id="matrixRain"></div>
+<div id="snowfall"></div>
+<div id="starfield"></div>
+<div id="spotlight"></div>
+<div id="bgShine"></div>
+<div id="scanlines"></div>
+<div id="grain"></div>
+<div id="vignette"></div>
 
-  <!-- ── Entrance (unchanged) ── -->
-  <div id="entrance">
-    <div id="entranceFallBg"></div>
-    <div class="entrance-logo-zone">
-      <div class="pulse-ring"></div>
-      <div class="pulse-ring ring-2"></div>
-      <div class="pulse-ring ring-3"></div>
-      <img id="logoImg" src="assets/images/falling-figure.png" alt="logo">
-    </div>
-    <div class="enter-divider" id="enterDivider"></div>
-    <div class="enter-hint" id="enterHint">— enter —</div>
+<!-- color depth orbs -->
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
+<div class="orb orb-c"></div>
+
+<!-- ── Entrance (unchanged) ── -->
+<div id="entrance">
+  <div id="entranceFallBg"></div>
+  <div class="entrance-logo-zone">
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring ring-2"></div>
+    <div class="pulse-ring ring-3"></div>
+    <img id="logoImg" src="assets/images/falling-figure.png" alt="logo">
   </div>
+  <div class="enter-divider" id="enterDivider"></div>
+  <div class="enter-hint" id="enterHint">— enter —</div>
+</div>
 
-  <!-- ── Main Content ── -->
-  <div id="mainContent">
+<!-- ── Main Content ── -->
+<div id="mainContent">
 
-    <!-- Sticky Nav -->
-    <nav class="shop-nav">
-      <div class="nav-brand">
-        <img class="nav-logo" src="assets/images/falling-figure.png" alt="kataly">
-        <span class="nav-name">kataly</span>
-      </div>
-      <div class="nav-status">
-        <span class="nav-dot"></span>
-        <span class="nav-status-text">open</span>
-      </div>
-    </nav>
+  <!-- floating pill nav -->
+  <nav class="float-nav">
+    <img class="float-nav-logo" src="assets/images/falling-figure.png" alt="">
+    <span class="float-nav-name">kataly</span>
+    <span class="float-nav-sep">·</span>
+    <span class="float-nav-status">
+      <span class="float-nav-dot"></span>
+      <span class="float-nav-open">open</span>
+    </span>
+  </nav>
 
-    <!-- Hero -->
-    <section class="shop-hero">
-      <div class="hero-eyebrow">digital goods store</div>
-      <h1 class="hero-title" id="pageTitleTag">kataly shop</h1>
-      <p class="hero-sub">gaming items · accounts · instant delivery</p>
-      <div class="trust-row" aria-label="Trust indicators">
-        <div class="trust-pill">
-          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span class="trust-pill-label">Instant</span>
-        </div>
-        <div class="trust-pill">
-          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-          <span class="trust-pill-label">Secure</span>
-        </div>
-        <div class="trust-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="rgb(var(--neon-r),var(--neon-g),var(--neon-b))" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span class="trust-pill-label">Verified</span>
-        </div>
-        <div class="trust-pill">
-          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-          <span class="trust-pill-label">24/7 Support</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Ticker -->
-    <div class="ticker-wrap" aria-hidden="true">
-      <div class="ticker-track">
-        <span>gaming goods</span><span class="ticker-sep"> · </span>
-        <span>game accounts</span><span class="ticker-sep"> · </span>
-        <span>instant delivery</span><span class="ticker-sep"> · </span>
-        <span>digital items</span><span class="ticker-sep"> · </span>
-        <span>secure purchase</span><span class="ticker-sep"> · </span>
-        <span>gaming goods</span><span class="ticker-sep"> · </span>
-        <span>game accounts</span><span class="ticker-sep"> · </span>
-        <span>instant delivery</span><span class="ticker-sep"> · </span>
-        <span>digital items</span><span class="ticker-sep"> · </span>
-        <span>secure purchase</span><span class="ticker-sep"> · </span>
-      </div>
-    </div>
-
-    <!-- Shop Body -->
-    <div class="shop-body">
-
-      <!-- Tabs -->
-      <div class="shop-tabs" id="shopTabs">
-        <div class="tab-indicator" id="tabIndicator"></div>
-        <div class="shop-tab active" data-category="gaming">Gaming Goods</div>
-        <div class="shop-tab" data-category="accounts">Accounts</div>
-      </div>
-
-      <div class="product-grid" id="gamingGrid"></div>
-      <div class="product-grid" id="accountsGrid" style="display:none;"></div>
-
-      <!-- Footer -->
-      <div class="shop-footer">
-        <div class="section-label">
-          <span class="line"></span>
-          <span class="section-label-text">contact</span>
-          <span class="line r"></span>
-        </div>
-        <div class="social-cards">
-          <a class="social-card" id="tgLink" href="#" target="_blank">
-            <div class="social-card-icon">
-              <svg class="social-icon" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-            </div>
-            <div class="social-card-info">
-              <div class="social-card-platform">Telegram</div>
-              <div class="social-card-handle">@katalyshop</div>
-            </div>
-            <svg class="social-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a class="social-card" id="dcLink" href="#" target="_blank">
-            <div class="social-card-icon">
-              <svg class="social-icon" viewBox="0 0 24 24"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.369a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.073.073 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.031-.03Z"/></svg>
-            </div>
-            <div class="social-card-info">
-              <div class="social-card-platform">Discord</div>
-              <div class="social-card-handle">katalyy</div>
-            </div>
-            <svg class="social-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a class="social-card" id="igLink" href="#" target="_blank">
-            <div class="social-card-icon">
-              <svg class="social-icon ig-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
-            </div>
-            <div class="social-card-info">
-              <div class="social-card-platform">Instagram</div>
-              <div class="social-card-handle">@kkataly</div>
-            </div>
-            <svg class="social-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-
+  <!-- editorial title -->
+  <div class="brand-block">
+    <div class="brand-label">digital goods</div>
+    <div class="brand-title" id="pageTitleTag">kataly shop</div>
+    <span class="brand-title-row2">store</span>
+    <div class="brand-meta">
+      <span class="brand-meta-text">gaming · accounts · instant</span>
+      <span class="brand-meta-line"></span>
     </div>
   </div>
 
-  <!-- FAB -->
-  <a class="fab-contact" id="fabLink" href="#" target="_blank" aria-label="Contact on Telegram">
-    <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-    <span class="fab-tooltip">buy now</span>
-  </a>
-
-  <img id="heroImg" alt="">
-
-  <!-- Modal -->
-  <div class="product-modal" id="productModal">
-    <div class="modal-backdrop" id="modalBackdrop"></div>
-    <div class="modal-card" id="modalCard">
-      <div class="modal-handle"></div>
-      <button class="modal-close" id="modalClose">✕</button>
-      <div class="modal-image-overlay">
-        <img class="modal-image" id="modalImage" alt="">
-      </div>
-      <div class="modal-body">
-        <div class="modal-top-row">
-          <div class="modal-name" id="modalName"></div>
-          <div class="modal-price-badge">
-            <span class="modal-price" id="modalPrice"></span>
-            <span class="modal-price-tag">usd</span>
-          </div>
-        </div>
-        <div class="modal-divider"></div>
-        <div class="modal-desc" id="modalDesc"></div>
-        <a class="modal-buy" id="modalBuy" target="_blank">
-          <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-          <span>Purchase via Telegram</span>
-        </a>
-      </div>
+  <!-- category chips -->
+  <div class="cat-row">
+    <div class="shop-tabs" id="shopTabs">
+      <div class="tab-indicator" id="tabIndicator"></div>
+      <div class="shop-tab active" data-category="gaming">Gaming Goods</div>
+      <div class="shop-tab" data-category="accounts">Accounts</div>
     </div>
   </div>
 
-  <script>
-    function hexToRgb(hex) {
-      hex = (hex || '#ffffff').replace('#', '');
-      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-      const num = parseInt(hex, 16);
-      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  <!-- product grids -->
+  <div class="product-grid" id="gamingGrid"></div>
+  <div class="product-grid" id="accountsGrid" style="display:none;"></div>
+
+  <div class="grid-spacer"></div>
+
+  <!-- social section -->
+  <div class="social-section">
+    <div class="social-label">
+      <span class="social-label-line"></span>
+      <span class="social-label-text">find us</span>
+      <span class="social-label-line"></span>
+    </div>
+    <div class="social-chips">
+      <a class="social-chip" id="tgLink" href="#" target="_blank">
+        <div class="social-chip-icon">
+          <svg class="s-icon" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+        </div>
+        <div class="social-chip-info">
+          <div class="soc-name">Telegram</div>
+          <div class="soc-handle">@katalyshop</div>
+        </div>
+      </a>
+      <a class="social-chip" id="dcLink" href="#" target="_blank">
+        <div class="social-chip-icon">
+          <svg class="s-icon" viewBox="0 0 24 24"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.369a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.073.073 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.031-.03Z"/></svg>
+        </div>
+        <div class="social-chip-info">
+          <div class="soc-name">Discord</div>
+          <div class="soc-handle">katalyy</div>
+        </div>
+      </a>
+      <a class="social-chip" id="igLink" href="#" target="_blank">
+        <div class="social-chip-icon">
+          <svg class="s-icon ig-s" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="social-chip-info">
+          <div class="soc-name">Instagram</div>
+          <div class="soc-handle">@kkataly</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- FAB -->
+<a class="fab-contact" id="fabLink" href="#" target="_blank" aria-label="Contact on Telegram">
+  <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+  <span class="fab-tooltip">buy now</span>
+</a>
+
+<img id="heroImg" alt="">
+
+<!-- Modal -->
+<div class="product-modal" id="productModal">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-card" id="modalCard">
+    <div class="modal-handle"></div>
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-image-overlay">
+      <img class="modal-image" id="modalImage" alt="">
+    </div>
+    <div class="modal-body">
+      <div class="modal-top-row">
+        <div class="modal-name" id="modalName"></div>
+        <div class="modal-price-badge">
+          <span class="modal-price" id="modalPrice"></span>
+          <span class="modal-price-tag">usd</span>
+        </div>
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <a class="modal-buy" id="modalBuy" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+        <span>Purchase via Telegram</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function hexToRgb(hex) {
+    hex = (hex || '#ffffff').replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const num = parseInt(hex, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
+  function setEffectVisibility(id, enabled) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (enabled === false) ? 'none' : '';
+  }
+
+  const entrance       = document.getElementById('entrance');
+  const entranceFallBg = document.getElementById('entranceFallBg');
+  const logoImg        = document.getElementById('logoImg');
+  const enterDivider   = document.getElementById('enterDivider');
+  const enterHint      = document.getElementById('enterHint');
+  const mainContent    = document.getElementById('mainContent');
+  const particleContainer  = document.getElementById('particles');
+  const starfieldContainer = document.getElementById('starfield');
+  const gamingGrid     = document.getElementById('gamingGrid');
+  const accountsGrid   = document.getElementById('accountsGrid');
+  const shopTabs       = document.getElementById('shopTabs');
+  const tabIndicator   = document.getElementById('tabIndicator');
+  const productModal   = document.getElementById('productModal');
+  const modalBackdrop  = document.getElementById('modalBackdrop');
+  const modalCard      = document.getElementById('modalCard');
+  const modalClose     = document.getElementById('modalClose');
+  const modalImage     = document.getElementById('modalImage');
+  const modalName      = document.getElementById('modalName');
+  const modalPrice     = document.getElementById('modalPrice');
+  const modalDesc      = document.getElementById('modalDesc');
+  const modalBuy       = document.getElementById('modalBuy');
+  const heroImg        = document.getElementById('heroImg');
+
+  let fx = { background: {} };
+  let fallingTriggered = false;
+  let globalTelegram = '#';
+
+  const gridByCategory = { gaming: gamingGrid, accounts: accountsGrid };
+
+  /* ── Entrance fall streaks ── */
+  function createEntranceFallStreaks() {
+    for (let i = 0; i < 32; i++) {
+      const s = document.createElement('div');
+      s.className = 'fall-streak';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.height = (30 + Math.random() * 70) + 'px';
+      s.style.opacity = (0.25 + Math.random() * 0.5).toFixed(2);
+      s.style.animationDuration = (1.4 + Math.random() * 2.6) + 's';
+      s.style.animationDelay = '-' + (Math.random() * 4).toFixed(2) + 's';
+      entranceFallBg.appendChild(s);
     }
+  }
+  createEntranceFallStreaks();
 
-    function setEffectVisibility(id, enabled) {
-      const el = document.getElementById(id);
-      if (el) el.style.display = (enabled === false) ? 'none' : '';
+  /* ── Theme ── */
+  function applyTheme(theme) {
+    const bg  = hexToRgb(theme.background);
+    const fgc = hexToRgb(theme.foreground);
+    document.documentElement.style.setProperty('--theme-bg', `rgb(${bg.r},${bg.g},${bg.b})`);
+    document.documentElement.style.setProperty('--theme-fg-r', fgc.r);
+    document.documentElement.style.setProperty('--theme-fg-g', fgc.g);
+    document.documentElement.style.setProperty('--theme-fg-b', fgc.b);
+  }
+
+  /* ── Background effects ── */
+  function createParticles() {
+    if (fx.background.particles === false) return;
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      const size = 1 + Math.random() * 2;
+      p.style.width  = size + 'px';
+      p.style.height = size + 'px';
+      p.style.top  = Math.random() * 100 + '%';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.setProperty('--p-op', (0.07 + Math.random() * 0.12).toFixed(2));
+      p.style.animationDuration = (3 + Math.random() * 5) + 's';
+      p.style.animationDelay   = '-' + (Math.random() * 5) + 's';
+      particleContainer.appendChild(p);
     }
+  }
 
-    const entrance       = document.getElementById('entrance');
-    const entranceFallBg = document.getElementById('entranceFallBg');
-    const logoImg        = document.getElementById('logoImg');
-    const enterDivider   = document.getElementById('enterDivider');
-    const enterHint      = document.getElementById('enterHint');
-    const mainContent    = document.getElementById('mainContent');
-    const particleContainer  = document.getElementById('particles');
-    const starfieldContainer = document.getElementById('starfield');
-    const gamingGrid     = document.getElementById('gamingGrid');
-    const accountsGrid   = document.getElementById('accountsGrid');
-    const shopTabs       = document.getElementById('shopTabs');
-    const tabIndicator   = document.getElementById('tabIndicator');
-    const productModal   = document.getElementById('productModal');
-    const modalBackdrop  = document.getElementById('modalBackdrop');
-    const modalCard      = document.getElementById('modalCard');
-    const modalClose     = document.getElementById('modalClose');
-    const modalImage     = document.getElementById('modalImage');
-    const modalName      = document.getElementById('modalName');
-    const modalPrice     = document.getElementById('modalPrice');
-    const modalDesc      = document.getElementById('modalDesc');
-    const modalBuy       = document.getElementById('modalBuy');
-    const heroImg        = document.getElementById('heroImg');
-
-    let fx = { background: {} };
-    let fallingTriggered = false;
-    let globalTelegram = '#';
-
-    const gridByCategory = { gaming: gamingGrid, accounts: accountsGrid };
-
-    /* ── Entrance fall streaks ── */
-    function createEntranceFallStreaks() {
-      for (let i = 0; i < 32; i++) {
-        const s = document.createElement('div');
-        s.className = 'fall-streak';
-        s.style.left = Math.random() * 100 + '%';
-        s.style.height = (30 + Math.random() * 70) + 'px';
-        s.style.opacity = (0.25 + Math.random() * 0.5).toFixed(2);
-        s.style.animationDuration = (1.4 + Math.random() * 2.6) + 's';
-        s.style.animationDelay = '-' + (Math.random() * 4).toFixed(2) + 's';
-        entranceFallBg.appendChild(s);
+  function createMatrixRain() {
+    if (fx.background.matrixRain !== true) return;
+    const container = document.getElementById('matrixRain');
+    const colWidth  = 22;
+    const columns   = Math.min(40, Math.ceil(window.innerWidth / colWidth));
+    const chars     = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789';
+    for (let i = 0; i < columns; i++) {
+      const col = document.createElement('div');
+      col.className = 'matrix-col';
+      col.style.left = (i * colWidth) + 'px';
+      const len = 10 + Math.floor(Math.random() * 8);
+      let html = '';
+      for (let j = 0; j < len; j++) {
+        html += `<span style="opacity:${(j/len).toFixed(2)}">${chars[Math.floor(Math.random()*chars.length)]}</span>`;
       }
+      col.innerHTML = html;
+      col.style.animationDuration = (4 + Math.random() * 5) + 's';
+      col.style.animationDelay    = '-' + (Math.random() * 8).toFixed(1) + 's';
+      container.appendChild(col);
     }
-    createEntranceFallStreaks();
+  }
 
-    /* ── Theme ── */
-    function applyTheme(theme) {
-      const bg  = hexToRgb(theme.background);
-      const fgc = hexToRgb(theme.foreground);
-      document.documentElement.style.setProperty('--theme-bg', `rgb(${bg.r},${bg.g},${bg.b})`);
-      document.documentElement.style.setProperty('--theme-fg-r', fgc.r);
-      document.documentElement.style.setProperty('--theme-fg-g', fgc.g);
-      document.documentElement.style.setProperty('--theme-fg-b', fgc.b);
+  function createSnowfall() {
+    if (fx.background.snowfall !== true) return;
+    const container = document.getElementById('snowfall');
+    for (let i = 0; i < 28; i++) {
+      const flake = document.createElement('div');
+      flake.className = 'snowflake';
+      const size = 2 + Math.random() * 4;
+      flake.style.width  = size + 'px';
+      flake.style.height = size + 'px';
+      flake.style.left   = Math.random() * 100 + '%';
+      flake.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+      flake.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+      flake.style.animationDuration = (8 + Math.random() * 10) + 's';
+      flake.style.animationDelay    = '-' + (Math.random() * 15).toFixed(1) + 's';
+      container.appendChild(flake);
     }
+  }
 
-    /* ── Background effects ── */
-    function createParticles() {
-      if (fx.background.particles === false) return;
-      for (let i = 0; i < 14; i++) {
-        const p = document.createElement('div');
-        p.classList.add('particle');
-        const size = 1 + Math.random() * 2;
-        p.style.width  = size + 'px';
-        p.style.height = size + 'px';
-        p.style.top  = Math.random() * 100 + '%';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.setProperty('--p-op', (0.07 + Math.random() * 0.12).toFixed(2));
-        p.style.animationDuration = (3 + Math.random() * 5) + 's';
-        p.style.animationDelay   = '-' + (Math.random() * 5) + 's';
-        particleContainer.appendChild(p);
-      }
+  function createStarfield() {
+    if (fx.background.starfield !== true) return;
+    for (let i = 0; i < 40; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = 1 + Math.random() * 2;
+      star.style.width  = size + 'px';
+      star.style.height = size + 'px';
+      star.style.top  = Math.random() * 100 + '%';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.setProperty('--s-op', (0.3 + Math.random() * 0.55).toFixed(2));
+      star.style.animationDuration = (2 + Math.random() * 4) + 's';
+      star.style.animationDelay    = '-' + (Math.random() * 6).toFixed(1) + 's';
+      starfieldContainer.appendChild(star);
     }
+    startShipSystem();
+  }
 
-    function createMatrixRain() {
-      if (fx.background.matrixRain !== true) return;
-      const container = document.getElementById('matrixRain');
-      const colWidth  = 22;
-      const columns   = Math.min(40, Math.ceil(window.innerWidth / colWidth));
-      const chars     = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789';
-      for (let i = 0; i < columns; i++) {
-        const col = document.createElement('div');
-        col.className = 'matrix-col';
-        col.style.left = (i * colWidth) + 'px';
-        const len = 10 + Math.floor(Math.random() * 8);
-        let html = '';
-        for (let j = 0; j < len; j++) {
-          html += `<span style="opacity:${(j/len).toFixed(2)}">${chars[Math.floor(Math.random()*chars.length)]}</span>`;
-        }
-        col.innerHTML = html;
-        col.style.animationDuration = (4 + Math.random() * 5) + 's';
-        col.style.animationDelay    = '-' + (Math.random() * 8).toFixed(1) + 's';
-        container.appendChild(col);
-      }
-    }
+  let activeShips = 0;
+  const MAX_SHIPS = 3;
+  let shipSystemStarted = false;
 
-    function createSnowfall() {
-      if (fx.background.snowfall !== true) return;
-      const container = document.getElementById('snowfall');
-      for (let i = 0; i < 28; i++) {
-        const flake = document.createElement('div');
-        flake.className = 'snowflake';
-        const size = 2 + Math.random() * 4;
-        flake.style.width  = size + 'px';
-        flake.style.height = size + 'px';
-        flake.style.left   = Math.random() * 100 + '%';
-        flake.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
-        flake.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
-        flake.style.animationDuration = (8 + Math.random() * 10) + 's';
-        flake.style.animationDelay    = '-' + (Math.random() * 15).toFixed(1) + 's';
-        container.appendChild(flake);
-      }
-    }
+  function spawnShip() {
+    if (fx.background.starfield !== true || activeShips >= MAX_SHIPS) return;
+    activeShips++;
+    const ship  = document.createElement('div');
+    ship.className = 'ship';
+    const edge  = Math.floor(Math.random() * 4);
+    let x1, y1, x2, y2;
+    const jitter = () => Math.random() * 30 - 15;
+    if      (edge===0){ x1=-5;  y1=Math.random()*100; x2=105; y2=Math.min(100,Math.max(0,y1+jitter()*2)); }
+    else if (edge===1){ x1=105; y1=Math.random()*100; x2=-5;  y2=Math.min(100,Math.max(0,y1+jitter()*2)); }
+    else if (edge===2){ x1=Math.random()*100; y1=-5;  x2=Math.min(100,Math.max(0,x1+jitter()*2)); y2=105; }
+    else              { x1=Math.random()*100; y1=105; x2=Math.min(100,Math.max(0,x1+jitter()*2)); y2=-5;  }
+    const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+    ship.style.setProperty('--trail-angle', angle + 'deg');
+    starfieldContainer.appendChild(ship);
+    const duration = 2200 + Math.random() * 600;
+    const anim = ship.animate([
+      { left:x1+'%', top:y1+'%', opacity:0 },
+      { left:(x1+(x2-x1)*0.08)+'%', top:(y1+(y2-y1)*0.08)+'%', opacity:1, offset:0.06 },
+      { left:(x1+(x2-x1)*0.88)+'%', top:(y1+(y2-y1)*0.88)+'%', opacity:1, offset:0.88 },
+      { left:x2+'%', top:y2+'%', opacity:0 }
+    ], { duration, easing: 'linear' });
+    anim.onfinish = () => { ship.remove(); activeShips--; };
+  }
 
-    function createStarfield() {
-      if (fx.background.starfield !== true) return;
-      for (let i = 0; i < 40; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        const size = 1 + Math.random() * 2;
-        star.style.width  = size + 'px';
-        star.style.height = size + 'px';
-        star.style.top  = Math.random() * 100 + '%';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.setProperty('--s-op', (0.3 + Math.random() * 0.55).toFixed(2));
-        star.style.animationDuration = (2 + Math.random() * 4) + 's';
-        star.style.animationDelay    = '-' + (Math.random() * 6).toFixed(1) + 's';
-        starfieldContainer.appendChild(star);
-      }
-      startShipSystem();
-    }
+  function maintainShips() {
+    if (fx.background.starfield !== true) return;
+    if (activeShips < 1 + Math.floor(Math.random() * MAX_SHIPS)) spawnShip();
+  }
 
-    let activeShips = 0;
-    const MAX_SHIPS = 3;
-    let shipSystemStarted = false;
+  function startShipSystem() {
+    if (shipSystemStarted) return;
+    shipSystemStarted = true;
+    setInterval(maintainShips, 700);
+    spawnShip();
+  }
 
-    function spawnShip() {
-      if (fx.background.starfield !== true || activeShips >= MAX_SHIPS) return;
-      activeShips++;
-      const ship  = document.createElement('div');
-      ship.className = 'ship';
-      const edge  = Math.floor(Math.random() * 4);
-      let x1, y1, x2, y2;
-      const jitter = () => Math.random() * 30 - 15;
-      if      (edge===0){ x1=-5;  y1=Math.random()*100; x2=105; y2=Math.min(100,Math.max(0,y1+jitter()*2)); }
-      else if (edge===1){ x1=105; y1=Math.random()*100; x2=-5;  y2=Math.min(100,Math.max(0,y1+jitter()*2)); }
-      else if (edge===2){ x1=Math.random()*100; y1=-5;  x2=Math.min(100,Math.max(0,x1+jitter()*2)); y2=105; }
-      else              { x1=Math.random()*100; y1=105; x2=Math.min(100,Math.max(0,x1+jitter()*2)); y2=-5;  }
-      const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-      ship.style.setProperty('--trail-angle', angle + 'deg');
-      starfieldContainer.appendChild(ship);
-      const duration = 2200 + Math.random() * 600;
-      const anim = ship.animate([
-        { left:x1+'%', top:y1+'%', opacity:0 },
-        { left:(x1+(x2-x1)*0.08)+'%', top:(y1+(y2-y1)*0.08)+'%', opacity:1, offset:0.06 },
-        { left:(x1+(x2-x1)*0.88)+'%', top:(y1+(y2-y1)*0.88)+'%', opacity:1, offset:0.88 },
-        { left:x2+'%', top:y2+'%', opacity:0 }
-      ], { duration, easing: 'linear' });
-      anim.onfinish = () => { ship.remove(); activeShips--; };
-    }
+  /* ── Spotlight ── */
+  const spotlight = document.getElementById('spotlight');
+  function moveSpotlight(x, y) {
+    spotlight.style.left = x + 'px';
+    spotlight.style.top  = y + 'px';
+  }
+  window.addEventListener('mousemove', e => moveSpotlight(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    moveSpotlight(t.clientX, t.clientY);
+  }, { passive: true });
 
-    function maintainShips() {
-      if (fx.background.starfield !== true) return;
-      if (activeShips < 1 + Math.floor(Math.random() * MAX_SHIPS)) spawnShip();
-    }
+  /* ── Tab indicator (hidden in new design, chip active style instead) ── */
+  function updateTabIndicator(category) { /* no-op — chips use .active class */ }
 
-    function startShipSystem() {
-      if (shipSystemStarted) return;
-      shipSystemStarted = true;
-      setInterval(maintainShips, 700);
-      spawnShip();
-    }
-
-    /* ── Spotlight ── */
-    const spotlight = document.getElementById('spotlight');
-    function moveSpotlight(x, y) {
-      spotlight.style.left = x + 'px';
-      spotlight.style.top  = y + 'px';
-    }
-    window.addEventListener('mousemove', e => moveSpotlight(e.clientX, e.clientY));
-    window.addEventListener('touchmove', e => {
-      const t = e.touches[0];
-      moveSpotlight(t.clientX, t.clientY);
-    }, { passive: true });
-
-    /* ── Tab indicator ── */
-    function updateTabIndicator(category) {
-      if (!tabIndicator) return;
-      const activeTab = shopTabs.querySelector(`[data-category="${category}"]`);
-      if (!activeTab) return;
-      const tabsRect = shopTabs.getBoundingClientRect();
-      const tabRect  = activeTab.getBoundingClientRect();
-      tabIndicator.style.left  = (tabRect.left - tabsRect.left) + 'px';
-      tabIndicator.style.width = tabRect.width + 'px';
-    }
-
-    /* ── Tab switching ── */
-    function switchTab(category) {
-      document.querySelectorAll('.shop-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.category === category);
-      });
-      Object.keys(gridByCategory).forEach(key => {
-        gridByCategory[key].style.display = key === category ? 'grid' : 'none';
-      });
-      updateTabIndicator(category);
-    }
-
-    shopTabs.addEventListener('click', e => {
-      const tab = e.target.closest('.shop-tab');
-      if (tab) switchTab(tab.dataset.category);
+  /* ── Tab switching ── */
+  function switchTab(category) {
+    document.querySelectorAll('.shop-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.category === category);
     });
+    Object.keys(gridByCategory).forEach(key => {
+      gridByCategory[key].style.display = key === category ? 'grid' : 'none';
+    });
+  }
 
-    /* ── Modal ── */
-    let modalOpen = false;
+  shopTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.shop-tab');
+    if (tab) switchTab(tab.dataset.category);
+  });
 
-    function openProduct(product, cardImgEl) {
-      if (modalOpen) return;
-      modalOpen = true;
-      const startRect = cardImgEl.getBoundingClientRect();
+  /* ── Modal ── */
+  let modalOpen = false;
 
-      modalName.textContent  = product.name;
-      modalPrice.textContent = product.price;
-      modalDesc.textContent  = product.description || '';
-      modalBuy.href   = product.telegramLink || globalTelegram;
-      modalImage.src  = product.image;
+  function openProduct(product, cardImgEl) {
+    if (modalOpen) return;
+    modalOpen = true;
+    const startRect = cardImgEl.getBoundingClientRect();
 
-      productModal.classList.add('open');
-      modalCard.classList.remove('content-ready');
+    modalName.textContent  = product.name;
+    modalPrice.textContent = product.price;
+    modalDesc.textContent  = product.description || '';
+    modalBuy.href   = product.telegramLink || globalTelegram;
+    modalImage.src  = product.image;
 
-      requestAnimationFrame(() => {
-        const endRect = modalImage.getBoundingClientRect();
+    productModal.classList.add('open');
+    modalCard.classList.remove('content-ready');
 
-        heroImg.src = product.image;
-        heroImg.style.transition   = 'none';
-        heroImg.style.top          = startRect.top    + 'px';
-        heroImg.style.left         = startRect.left   + 'px';
-        heroImg.style.width        = startRect.width  + 'px';
-        heroImg.style.height       = startRect.height + 'px';
-        heroImg.style.borderRadius = '20px';
-        heroImg.style.opacity      = '1';
+    requestAnimationFrame(() => {
+      const endRect = modalImage.getBoundingClientRect();
 
-        void heroImg.offsetWidth;
+      heroImg.src = product.image;
+      heroImg.style.transition   = 'none';
+      heroImg.style.top          = startRect.top    + 'px';
+      heroImg.style.left         = startRect.left   + 'px';
+      heroImg.style.width        = startRect.width  + 'px';
+      heroImg.style.height       = startRect.height + 'px';
+      heroImg.style.borderRadius = '18px';
+      heroImg.style.opacity      = '1';
 
-        heroImg.style.transition   = 'top 0.44s cubic-bezier(0.22,1,0.36,1), left 0.44s cubic-bezier(0.22,1,0.36,1), width 0.44s cubic-bezier(0.22,1,0.36,1), height 0.44s cubic-bezier(0.22,1,0.36,1), border-radius 0.44s ease';
-        heroImg.style.top          = endRect.top    + 'px';
-        heroImg.style.left         = endRect.left   + 'px';
-        heroImg.style.width        = endRect.width  + 'px';
-        heroImg.style.height       = endRect.height + 'px';
-        heroImg.style.borderRadius = '0';
+      void heroImg.offsetWidth;
 
-        setTimeout(() => {
-          heroImg.style.opacity = '0';
-          modalCard.classList.add('content-ready');
-        }, 440);
-      });
-    }
+      heroImg.style.transition   = 'top 0.44s cubic-bezier(0.22,1,0.36,1), left 0.44s cubic-bezier(0.22,1,0.36,1), width 0.44s cubic-bezier(0.22,1,0.36,1), height 0.44s cubic-bezier(0.22,1,0.36,1), border-radius 0.44s ease';
+      heroImg.style.top          = endRect.top    + 'px';
+      heroImg.style.left         = endRect.left   + 'px';
+      heroImg.style.width        = endRect.width  + 'px';
+      heroImg.style.height       = endRect.height + 'px';
+      heroImg.style.borderRadius = '24px 24px 0 0';
 
-    function closeProduct() {
-      if (!modalOpen) return;
-      modalOpen = false;
-      productModal.classList.remove('open');
-      modalCard.classList.remove('content-ready');
-    }
-
-    modalBackdrop.addEventListener('click', closeProduct);
-    modalClose.addEventListener('click', closeProduct);
-
-    /* ── Render products ── */
-    function renderGrid(gridEl, products) {
-      gridEl.innerHTML = '';
-      if (!products.length) {
-        gridEl.innerHTML = '<div class="empty-shop">no items listed yet</div>';
-        return;
-      }
-      products.forEach((product, index) => {
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.style.animationDelay = (index * 0.07) + 's';
-        const badgeType  = (product.badge || '').toLowerCase();
-        const badgeClass = ['hot','sale','new'].includes(badgeType) ? ` badge-${badgeType}` : '';
-        const badgeHtml  = product.badge
-          ? `<div class="card-badge${badgeClass}">${product.badge}</div>` : '';
-        const buyLink = product.telegramLink || globalTelegram;
-        card.innerHTML = `
-          <div class="product-img-wrap">
-            <img src="${product.image}" alt="${product.name}" loading="lazy">
-            ${badgeHtml}
-            <div class="card-caption">
-              <div class="card-name">${product.name}</div>
-              <div class="card-price">${product.price}</div>
-            </div>
-            <div class="card-overlay"><div class="card-overlay-label">view</div></div>
-          </div>
-          <a class="card-buy-btn" href="${buyLink}" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-            <span>Buy</span>
-          </a>
-        `;
-        const imgEl = card.querySelector('img');
-        card.querySelector('.card-buy-btn').addEventListener('click', e => e.stopPropagation());
-        card.addEventListener('click', () => openProduct(product, imgEl));
-        gridEl.appendChild(card);
-      });
-    }
-
-    function renderProducts(products) {
-      const gaming   = products.filter(p => p.category === 'gaming');
-      const accounts = products.filter(p => p.category === 'accounts');
-      renderGrid(gamingGrid,   gaming);
-      renderGrid(accountsGrid, accounts);
-      requestAnimationFrame(() => updateTabIndicator('gaming'));
-    }
-
-    /* ── Entrance ── */
-    entrance.addEventListener('click', () => {
-      if (fallingTriggered) return;
-      fallingTriggered = true;
-      logoImg.classList.add('falling');
-      enterDivider.classList.add('ui-fade-out');
-      enterHint.classList.add('ui-fade-out');
       setTimeout(() => {
-        entrance.classList.add('hidden');
-        mainContent.classList.add('revealed');
-      }, 380);
+        heroImg.style.opacity = '0';
+        modalCard.classList.add('content-ready');
+      }, 440);
     });
+  }
 
-    /* ── Init ── */
-    function initSite(config) {
-      globalTelegram = config.telegram || '#';
-      if (config.telegram)  document.getElementById('tgLink').href  = config.telegram;
-      if (config.telegram)  document.getElementById('fabLink').href = config.telegram;
-      if (config.discord)   document.getElementById('dcLink').href  = config.discord;
-      if (config.instagram) document.getElementById('igLink').href  = config.instagram;
-      if (config.pageTitle) {
-        document.title = config.pageTitle;
-        document.getElementById('pageTitleTag').textContent = config.pageTitle;
-      }
+  function closeProduct() {
+    if (!modalOpen) return;
+    modalOpen = false;
+    productModal.classList.remove('open');
+    modalCard.classList.remove('content-ready');
+  }
 
-      const neon = hexToRgb(config.neonColor || '#ffffff');
-      document.documentElement.style.setProperty('--neon-r', neon.r);
-      document.documentElement.style.setProperty('--neon-g', neon.g);
-      document.documentElement.style.setProperty('--neon-b', neon.b);
+  modalBackdrop.addEventListener('click', closeProduct);
+  modalClose.addEventListener('click', closeProduct);
 
-      applyTheme(config.theme || { background: '#000000', foreground: '#ffffff' });
+  /* ── Render products ── */
+  function renderGrid(gridEl, products) {
+    gridEl.innerHTML = '';
+    if (!products.length) {
+      gridEl.innerHTML = '<div class="empty-shop">no items listed yet</div>';
+      return;
+    }
+    products.forEach((product, index) => {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.style.animationDelay = (index * 0.06) + 's';
+      const badgeType  = (product.badge || '').toLowerCase();
+      const badgeClass = ['hot','sale','new'].includes(badgeType) ? ` badge-${badgeType}` : '';
+      const badgeHtml  = product.badge
+        ? `<div class="card-badge${badgeClass}">${product.badge}</div>` : '';
+      const buyLink = product.telegramLink || globalTelegram;
+      card.innerHTML = `
+        <div class="card-img-wrap">
+          <img src="${product.image}" alt="${product.name}" loading="lazy">
+          ${badgeHtml}
+          <div class="card-price-pill">${product.price}</div>
+          <div class="card-caption">
+            <div class="card-name">${product.name}</div>
+          </div>
+          <div class="card-buy-overlay">
+            <a class="card-buy-btn" href="${buyLink}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+              <span>Buy Now</span>
+            </a>
+          </div>
+        </div>
+      `;
+      const imgEl = card.querySelector('img');
+      card.querySelector('.card-buy-btn').addEventListener('click', e => e.stopPropagation());
+      card.addEventListener('click', () => openProduct(product, imgEl));
+      gridEl.appendChild(card);
+    });
+  }
 
-      const cfgFx = config.effects || {};
-      fx = { background: cfgFx.background || {} };
+  function renderProducts(products) {
+    const gaming   = products.filter(p => p.category === 'gaming');
+    const accounts = products.filter(p => p.category === 'accounts');
+    renderGrid(gamingGrid,   gaming);
+    renderGrid(accountsGrid, accounts);
+  }
 
-      setEffectVisibility('grain',       fx.background.grain);
-      setEffectVisibility('particles',   fx.background.particles);
-      setEffectVisibility('scanlines',   fx.background.scanlines);
-      setEffectVisibility('ambientGlow', fx.background.ambientGlow);
-      setEffectVisibility('bgShine',     fx.background.bgShine);
-      setEffectVisibility('spotlight',   fx.background.spotlight);
+  /* ── Entrance ── */
+  entrance.addEventListener('click', () => {
+    if (fallingTriggered) return;
+    fallingTriggered = true;
+    logoImg.classList.add('falling');
+    enterDivider.classList.add('ui-fade-out');
+    enterHint.classList.add('ui-fade-out');
+    setTimeout(() => {
+      entrance.classList.add('hidden');
+      mainContent.classList.add('revealed');
+    }, 380);
+  });
 
-      createParticles();
-      createMatrixRain();
-      createSnowfall();
-      createStarfield();
-
-      renderProducts(Array.isArray(config.products) ? config.products : []);
+  /* ── Init ── */
+  function initSite(config) {
+    globalTelegram = config.telegram || '#';
+    if (config.telegram)  document.getElementById('tgLink').href  = config.telegram;
+    if (config.telegram)  document.getElementById('fabLink').href = config.telegram;
+    if (config.discord)   document.getElementById('dcLink').href  = config.discord;
+    if (config.instagram) document.getElementById('igLink').href  = config.instagram;
+    if (config.pageTitle) {
+      document.title = config.pageTitle;
+      document.getElementById('pageTitleTag').textContent = config.pageTitle;
     }
 
-    fetch(`config.json?t=${Date.now()}`)
-      .then(res => res.json())
-      .then(config => initSite(config))
-      .catch(() => initSite({}));
-  </script>
+    const neon = hexToRgb(config.neonColor || '#ffffff');
+    document.documentElement.style.setProperty('--neon-r', neon.r);
+    document.documentElement.style.setProperty('--neon-g', neon.g);
+    document.documentElement.style.setProperty('--neon-b', neon.b);
+
+    applyTheme(config.theme || { background: '#000000', foreground: '#ffffff' });
+
+    const cfgFx = config.effects || {};
+    fx = { background: cfgFx.background || {} };
+
+    setEffectVisibility('grain',       fx.background.grain);
+    setEffectVisibility('particles',   fx.background.particles);
+    setEffectVisibility('scanlines',   fx.background.scanlines);
+    setEffectVisibility('ambientGlow', fx.background.ambientGlow);
+    setEffectVisibility('bgShine',     fx.background.bgShine);
+    setEffectVisibility('spotlight',   fx.background.spotlight);
+
+    createParticles();
+    createMatrixRain();
+    createSnowfall();
+    createStarfield();
+
+    renderProducts(Array.isArray(config.products) ? config.products : []);
+  }
+
+  fetch(`config.json?t=${Date.now()}`)
+    .then(res => res.json())
+    .then(config => initSite(config))
+    .catch(() => initSite({}));
+</script>
 
 </body>
 </html>
