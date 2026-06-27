@@ -502,9 +502,14 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const [cH,cW,cC,cE]=theme;
     const R=(30+Math.random()*44)*Math.max(0.38,scale);
     const DUR=(900+Math.random()*600)*Math.max(0.62,scale);
-    function rgb(c,a=1){return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;}
+    function rgba(c,a){return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(2)})`;}
+    // Pre-cache solid color strings — no string building per particle per frame
+    const cHs=`rgb(${cH[0]},${cH[1]},${cH[2]})`;
+    const cWs=`rgb(${cW[0]},${cW[1]},${cW[2]})`;
+    const cCs=`rgb(${cC[0]},${cC[1]},${cC[2]})`;
+    const cEs=`rgb(${cE[0]},${cE[1]},${cE[2]})`;
 
-    // DOM: shockwave rings + smoke
+    // DOM: shockwave rings + smoke (no filter:blur — forces GPU layer)
     const nova=document.createElement('div');
     nova.className='nova';
     nova.style.left=xPct+'%'; nova.style.top=yPct+'%';
@@ -513,7 +518,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const smoke=document.createElement('div');
     smoke.className='nova-smoke';
     const sd=Math.round(R*3.8);
-    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgb(cC,.13)} 0%,${rgb(cW,.05)} 52%,transparent 80%);filter:blur(12px);animation-duration:${Math.round(DUR*2.4)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
+    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgba(cC,.13)} 0%,${rgba(cW,.05)} 52%,transparent 80%);animation-duration:${Math.round(DUR*2.4)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
     nova.appendChild(smoke);
 
     const numRings=2+(scale>.5?1:0)+(scale>1.1?1:0);
@@ -523,72 +528,74 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       const d=Math.round(R*2.6*(i+1)/numRings);
       const rc=[cH,cH,cW,cC][Math.min(i,3)];
       const bw=i===0?'2.5px':'1.5px';
-      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgb(rc,.9)};box-shadow:0 0 ${Math.round(d*.24)}px ${rgb(rc,.58)},0 0 ${Math.round(d*.55)}px ${rgb(rc,.14)};animation-duration:${Math.round(DUR*(.65+i*.32))}ms;animation-delay:${Math.round(i*22)}ms;`;
+      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgba(rc,.9)};box-shadow:0 0 ${Math.round(d*.24)}px ${rgba(rc,.58)},0 0 ${Math.round(d*.55)}px ${rgba(rc,.14)};animation-duration:${Math.round(DUR*(.65+i*.32))}ms;animation-delay:${Math.round(i*22)}ms;`;
       nova.appendChild(ring);
     }
     novaLayer.appendChild(nova);
 
-    // Canvas: flash + core gradient + particles (no per-particle gradient — uses globalAlpha)
-    const csz=Math.ceil(R*6.5);
+    // Canvas: NO mix-blend-mode:screen (forces CSS compositor layer every frame)
+    // Use ctx.globalCompositeOperation='lighter' inside canvas for additive glow
+    const csz=Math.ceil(R*5.5);
     const cv=document.createElement('canvas');
     cv.width=csz; cv.height=csz;
-    cv.style.cssText=`position:fixed;left:${ox}px;top:${oy}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3;mix-blend-mode:screen;`;
+    cv.style.cssText=`position:fixed;left:${ox}px;top:${oy}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3;`;
     document.body.appendChild(cv);
     const ctx=cv.getContext('2d');
     const ccx=csz/2,ccy=csz/2;
 
-    // Particles: store prev position for 1-segment trail (cheap)
+    // Reduced particle counts
     const parts=[];
-    const nE=Math.round((22+Math.random()*18)*Math.min(scale,1.5));
+    const nE=Math.round((14+Math.random()*12)*Math.min(scale,1.5));
     for(let i=0;i<nE;i++){
       const ang=Math.random()*Math.PI*2;
       const spd=(1.6+Math.random()*7)*Math.max(0.42,scale);
-      parts.push({x:ccx,y:ccy,px:ccx,py:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:0.6+Math.random()*0.4,decay:.008+Math.random()*.015,
-        size:1.2+Math.random()*2,col:Math.random()<.55?cH:cW});
+      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:0.6+Math.random()*0.4,decay:.01+Math.random()*.018,
+        size:1.2+Math.random()*2, cs:Math.random()<.55?cHs:cWs});
     }
-    const nD=Math.round((6+Math.random()*8)*Math.min(scale,1.3));
+    const nD=Math.round((4+Math.random()*5)*Math.min(scale,1.3));
     for(let i=0;i<nD;i++){
       const ang=Math.random()*Math.PI*2;
       const spd=(0.5+Math.random()*2.2)*Math.max(0.42,scale);
-      const c=[cW,cC,cE][Math.floor(Math.random()*3)];
-      parts.push({x:ccx,y:ccy,px:ccx,py:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:1,decay:.004+Math.random()*.005,size:2.8+Math.random()*4,col:c});
+      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:1,decay:.005+Math.random()*.006,size:2.8+Math.random()*4,
+        cs:[cWs,cCs,cEs][Math.floor(Math.random()*3)]});
     }
 
-    let t0=null;
+    let t0=null, lastT=0;
     (function frame(t){
       if(!t0) t0=t;
       const el=t-t0;
       if(el>DUR*2.8){cv.remove();return;}
+      // Cap to 30fps
+      if(t-lastT<30){requestAnimationFrame(frame);return;}
+      lastT=t;
       ctx.clearRect(0,0,csz,csz);
+      ctx.globalCompositeOperation='lighter';
 
-      // Flash: 2-stop radial gradient (fast), only first 20% of DUR
       const fp=Math.min(1,el/(DUR*.2));
       if(fp<1){
         const fr=R*(.2+fp*2.6), fa=1-fp;
         const gr=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,fr);
-        gr.addColorStop(0,`rgba(255,255,255,${fa})`);
-        gr.addColorStop(.4,rgb(cH,fa*.7));
+        gr.addColorStop(0,`rgba(255,255,255,${fa.toFixed(2)})`);
+        gr.addColorStop(.4,rgba(cH,fa*.7));
         gr.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle=gr;
         ctx.beginPath(); ctx.arc(ccx,ccy,fr,0,Math.PI*2); ctx.fill();
       }
 
-      // Evolving fire core: 2-stop gradient, shrinks & color-shifts over lifetime
       if(el<DUR*.9){
         const cp=el/(DUR*.9);
         const cr=R*(1.1-cp*.86), ca=Math.max(0,(1-cp*1.12)*.85);
         const fc=cp<.35?cH:cp<.65?cW:cC;
         const gr2=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,Math.max(1,cr));
-        gr2.addColorStop(0,`rgba(255,255,255,${ca})`);
-        gr2.addColorStop(.35,rgb(fc,ca*.75));
+        gr2.addColorStop(0,`rgba(255,255,255,${ca.toFixed(2)})`);
+        gr2.addColorStop(.35,rgba(fc,ca*.75));
         gr2.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle=gr2;
         ctx.beginPath(); ctx.arc(ccx,ccy,Math.max(1,cr),0,Math.PI*2); ctx.fill();
       }
 
-      // Particles: 1-segment trail + solid arc (no per-particle gradient)
       ctx.lineCap='round';
       for(const p of parts){
         p.life-=p.decay;
@@ -596,16 +603,16 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         const prevX=p.x, prevY=p.y;
         p.vx*=.965; p.vy=p.vy*.965+.055;
         p.x+=p.vx; p.y+=p.vy;
-        // Trail line from last pos to current
-        ctx.strokeStyle=`rgba(${p.col[0]},${p.col[1]},${p.col[2]},${(p.life*.72).toFixed(3)})`;
+        ctx.globalAlpha=p.life*.75;
+        ctx.strokeStyle=p.cs;
         ctx.lineWidth=p.size*.7;
         ctx.beginPath(); ctx.moveTo(prevX,prevY); ctx.lineTo(p.x,p.y); ctx.stroke();
-        // Particle dot
         ctx.globalAlpha=p.life*.88;
-        ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+        ctx.fillStyle=p.cs;
         ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha=1;
+      ctx.globalCompositeOperation='source-over';
       requestAnimationFrame(frame);
     })(performance.now());
     setTimeout(()=>nova.remove(),DUR*2.8+400);
@@ -679,132 +686,128 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     if(bhActive) return;
     bhActive=true;
 
-    const EHR=42; // event horizon radius (px)
-    const INCL=Math.sin(22*Math.PI/180); // disk y-compression ≈ 0.374
+    const EHR=42;
+    const INCL=Math.sin(22*Math.PI/180); // ≈ 0.374
+    const EHR2=(EHR*.9)*(EHR*.9); // precomputed for occlusion
 
-    // Solid black event horizon (z:12, normal blend — stays truly black)
     const coreEl=document.createElement('div');
     coreEl.className='bh-core-el';
     coreEl.style.cssText+=`left:${x}px;top:${y}px;width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 30px 8px rgba(80,0,180,.3);`;
     document.body.appendChild(coreEl);
 
-    // Canvas: glowing effects (screen blend — black = transparent)
-    // Kept small to stay GPU-friendly; no ctx.filter used anywhere
-    const csz=EHR*10;
+    // NO mix-blend-mode:screen — use ctx.globalCompositeOperation='lighter' inside canvas
+    const csz=EHR*8; // 336px
     const cv=document.createElement('canvas');
     cv.width=csz; cv.height=csz;
-    cv.style.cssText=`position:fixed;left:${x}px;top:${y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:11;mix-blend-mode:screen;`;
+    cv.style.cssText=`position:fixed;left:${x}px;top:${y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:11;`;
     document.body.appendChild(cv);
     const ctx=cv.getContext('2d');
     const cx=csz/2, cy=csz/2;
 
-    // Disk particles: 55 total across 3 bands — solid fills + globalAlpha (no per-particle gradient)
+    // 36 disk particles, pre-cached color strings
     const diskDefs=[
-      [1.38, 24, .055, [200,228,255]], // inner: blue-white, fastest
-      [2.08, 18, .033, [255,178,50]],  // mid: orange-yellow
-      [2.95, 13, .018, [218,58,20]],   // outer: red, slowest
+      [1.38, 14, .055, 'rgb(200,228,255)'],
+      [2.08, 13, .033, 'rgb(255,178,50)'],
+      [2.95,  9, .018, 'rgb(218,58,20)'],
     ];
-    const disks=diskDefs.map(([rm,count,spd,col])=>{
+    const disks=diskDefs.map(([rm,count,spd,cs])=>{
       const pts=[];
       for(let i=0;i<count;i++){
-        pts.push({
-          angle:Math.random()*Math.PI*2,
+        pts.push({angle:Math.random()*Math.PI*2,
           r:EHR*rm+Math.random()*EHR*.36,
           speed:spd*(0.72+Math.random()*.56),
-          size:1+Math.random()*2.2, col
-        });
+          size:1+Math.random()*2.2, cs});
       }
       return pts;
     });
 
     const hwPts=[];
-    let startT=null, alive=true, coreVisible=false;
+    let startT=null, alive=true, coreVisible=false, lastT=0;
 
     (function frame(t){
       if(!startT) startT=t;
       if(!alive||!cv.isConnected) return;
+      // Cap to 30fps
+      if(t-lastT<30){requestAnimationFrame(frame);return;}
+      lastT=t;
       const el=t-startT;
       const openFrac=Math.min(1,Math.max(0,(el-60)/600));
       if(!coreVisible && openFrac>.06){ coreEl.style.opacity='1'; coreVisible=true; }
 
       ctx.clearRect(0,0,csz,csz);
+      ctx.globalCompositeOperation='lighter';
 
-      // Ambient glow (1 gradient per frame — cheap)
-      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*4.8);
-      gg.addColorStop(0,`rgba(95,8,195,${(.26*openFrac).toFixed(3)})`);
-      gg.addColorStop(.4,`rgba(50,0,135,${(.11*openFrac).toFixed(3)})`);
+      // Ambient glow
+      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*3.8);
+      gg.addColorStop(0,`rgba(95,8,195,${(.24*openFrac).toFixed(2)})`);
+      gg.addColorStop(.5,`rgba(50,0,135,${(.08*openFrac).toFixed(2)})`);
       gg.addColorStop(1,'rgba(0,0,0,0)');
       ctx.fillStyle=gg;
-      ctx.beginPath(); ctx.arc(cx,cy,EHR*4.8,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx,cy,EHR*3.8,0,Math.PI*2); ctx.fill();
 
-      // Disk: solid arc + globalAlpha (no createRadialGradient per particle)
+      // Disk particles
       for(const pts of disks){
         for(const p of pts){
           p.angle+=p.speed;
           const px=cx+Math.cos(p.angle)*p.r;
           const py=cy+Math.sin(p.angle)*p.r*INCL;
-          // Skip particles occluded behind the event horizon
-          if(Math.sin(p.angle)<0 && Math.hypot(px-cx,(py-cy)/INCL)<EHR*.9) continue;
-          // Doppler: approaching side (cos>0) is brighter
+          // Squared-distance occlusion (no Math.hypot)
+          const dx=px-cx, dy=(py-cy)/INCL;
+          if(Math.sin(p.angle)<0 && dx*dx+dy*dy<EHR2) continue;
           const dop=0.35+Math.cos(p.angle)*0.65;
           ctx.globalAlpha=openFrac*dop*.85;
-          ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+          ctx.fillStyle=p.cs;
           ctx.beginPath(); ctx.arc(px,py,p.size*(0.6+dop*.65),0,Math.PI*2); ctx.fill();
         }
       }
       ctx.globalAlpha=1;
 
-      // Photon ring: cheap ellipse stroke (no gradient fill)
+      // Photon ring
       if(openFrac>.08){
         ctx.save(); ctx.translate(cx,cy); ctx.scale(1,INCL);
-        ctx.strokeStyle=`rgba(255,255,255,${(openFrac*.58).toFixed(3)})`;
+        ctx.strokeStyle=`rgba(255,255,255,${(openFrac*.55).toFixed(2)})`;
         ctx.lineWidth=2.5;
         ctx.beginPath(); ctx.arc(0,0,EHR*1.04,0,Math.PI*2); ctx.stroke();
         ctx.restore();
-        ctx.strokeStyle=`rgba(200,155,255,${(openFrac*.32).toFixed(3)})`;
+        ctx.strokeStyle=`rgba(200,155,255,${(openFrac*.28).toFixed(2)})`;
         ctx.lineWidth=5;
         ctx.beginPath(); ctx.arc(cx,cy,EHR*1.02,0,Math.PI*2); ctx.stroke();
       }
 
-      // Jets: plain gradient ellipse, NO ctx.filter (filter forces software render)
+      // Jets
       if(openFrac>.2){
         const ja=Math.min(1,(openFrac-.2)/.8)*(0.38+Math.sin(t/820)*.18);
-        for(const sign of [-1,1]){
-          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*4);
-          jg.addColorStop(0,`rgba(195,135,255,${(ja*.75).toFixed(3)})`);
-          jg.addColorStop(.3,`rgba(155,70,255,${(ja*.42).toFixed(3)})`);
-          jg.addColorStop(.65,`rgba(85,20,185,${(ja*.16).toFixed(3)})`);
+        for(let si=0;si<2;si++){
+          const sign=si?1:-1;
+          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*3.5);
+          jg.addColorStop(0,`rgba(195,135,255,${(ja*.72).toFixed(2)})`);
+          jg.addColorStop(.35,`rgba(155,70,255,${(ja*.38).toFixed(2)})`);
+          jg.addColorStop(.7,`rgba(85,20,185,${(ja*.12).toFixed(2)})`);
           jg.addColorStop(1,'rgba(0,0,0,0)');
           ctx.fillStyle=jg;
-          ctx.beginPath();
-          ctx.ellipse(cx,cy+sign*EHR*.45,EHR*.22,EHR*2,0,0,Math.PI*2);
-          ctx.fill();
+          ctx.beginPath(); ctx.ellipse(cx,cy+sign*EHR*.45,EHR*.22,EHR*1.8,0,0,Math.PI*2); ctx.fill();
         }
       }
 
-      // Hawking radiation: solid fill + globalAlpha (no gradient)
-      if(el>500 && Math.random()<.18){
-        const ang=Math.random()*Math.PI*2;
-        const spd=.5+Math.random()*1.6;
-        hwPts.push({
-          x:cx+Math.cos(ang)*EHR*.92, y:cy+Math.sin(ang)*EHR*.92*INCL,
+      // Hawking radiation
+      if(el>500 && Math.random()<.12){
+        const ang=Math.random()*Math.PI*2, spd=.5+Math.random()*1.6;
+        hwPts.push({x:cx+Math.cos(ang)*EHR*.92, y:cy+Math.sin(ang)*EHR*.92*INCL,
           vx:Math.cos(ang)*spd, vy:Math.sin(ang)*INCL*spd-.2,
-          life:1, decay:.02+Math.random()*.024, size:.8+Math.random()*1.2
-        });
+          life:1, decay:.025+Math.random()*.025, size:.8+Math.random()*1.2});
       }
       if(hwPts.length){
         ctx.fillStyle='rgb(220,180,255)';
         for(let i=hwPts.length-1;i>=0;i--){
-          const p=hwPts[i];
-          p.life-=p.decay;
+          const p=hwPts[i]; p.life-=p.decay;
           if(p.life<=0){hwPts.splice(i,1);continue;}
           p.x+=p.vx; p.y+=p.vy;
-          ctx.globalAlpha=p.life*.82;
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2,0,Math.PI*2); ctx.fill();
+          ctx.globalAlpha=p.life*.7;
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.size*1.5,0,Math.PI*2); ctx.fill();
         }
         ctx.globalAlpha=1;
       }
-
+      ctx.globalCompositeOperation='source-over';
       requestAnimationFrame(frame);
     })(performance.now());
 
