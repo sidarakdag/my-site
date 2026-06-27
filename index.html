@@ -955,7 +955,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
   // ── Ambient distant explosions ──
   function startAmbientNovas(){
-    const boom=()=>spawnExplosion(4+Math.random()*92,4+Math.random()*88,0.55+Math.random()*.8);
+    const boom=()=>spawnExplosion(4+Math.random()*92,4+Math.random()*88,0.15+Math.random()*.22);
     setTimeout(boom,900); setTimeout(boom,2600); setTimeout(boom,4500);
     (function loop(){ setTimeout(()=>{boom();loop();},2800+Math.random()*5000); })();
   }
