@@ -600,6 +600,87 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     ],{duration:dur, easing:'ease-out'}).onfinish=()=>pod.remove();
   }
 
+  // ── Ship registry (for doc-level tap + black hole) ──
+  const shipRegistry = new Set();
+
+  // ── Black hole ──
+  (function injectBHStyles(){
+    const s=document.createElement('style');
+    s.textContent=`
+      @keyframes bhSpin{to{transform:translate(-50%,-50%) rotateX(72deg) rotate(360deg);}}
+      @keyframes bhPulse{0%,100%{opacity:.7;filter:blur(0px);}50%{opacity:1;filter:blur(1px);}}
+      .bh-wrap{position:fixed;pointer-events:none;z-index:5;transform:translate(-50%,-50%);}
+      .bh-core{position:absolute;top:0;left:0;border-radius:50%;
+        background:radial-gradient(circle,#000 38%,rgba(20,0,50,.85) 65%,transparent 100%);
+        transform:translate(-50%,-50%) scale(0);transition:transform .45s cubic-bezier(.34,1.2,.64,1);}
+      .bh-ring{position:absolute;top:0;left:0;border-radius:50%;border:2px solid rgba(160,80,255,.55);
+        box-shadow:0 0 12px rgba(120,60,255,.45),inset 0 0 8px rgba(180,100,255,.3);
+        transform:translate(-50%,-50%) rotateX(72deg) rotate(0deg) scale(0);
+        transition:transform .45s cubic-bezier(.34,1.2,.64,1) .05s;
+        animation:none;}
+      .bh-ring.open{animation:bhSpin 1.8s linear infinite;}
+      .bh-glow{position:absolute;top:0;left:0;border-radius:50%;
+        background:radial-gradient(circle,transparent 28%,rgba(100,40,220,.18) 55%,transparent 75%);
+        transform:translate(-50%,-50%) scale(0);transition:transform .5s ease .1s;
+        animation:bhPulse 1.4s ease-in-out infinite;}
+    `;
+    document.head.appendChild(s);
+  })();
+
+  let bhActive=false;
+  function spawnBlackHole(x,y){
+    if(bhActive) return;
+    bhActive=true;
+
+    const bh=document.createElement('div');
+    bh.className='bh-wrap';
+    bh.style.left=x+'px'; bh.style.top=y+'px';
+
+    const sz=78;
+    const core=document.createElement('div');
+    core.className='bh-core';
+    core.style.width=sz+'px'; core.style.height=sz+'px';
+
+    const ring=document.createElement('div');
+    ring.className='bh-ring';
+    ring.style.width=(sz*1.9)+'px'; ring.style.height=(sz*1.9)+'px';
+
+    const glow=document.createElement('div');
+    glow.className='bh-glow';
+    glow.style.width=(sz*3.2)+'px'; glow.style.height=(sz*3.2)+'px';
+
+    bh.appendChild(glow); bh.appendChild(ring); bh.appendChild(core);
+    document.body.appendChild(bh);
+
+    // Open
+    requestAnimationFrame(()=>{
+      core.style.transform='translate(-50%,-50%) scale(1)';
+      ring.style.transform=`translate(-50%,-50%) rotateX(72deg) rotate(0deg) scale(1)`;
+      glow.style.transform='translate(-50%,-50%) scale(1)';
+      setTimeout(()=>ring.classList.add('open'),50);
+    });
+
+    // Pull all ships after a short open delay
+    setTimeout(()=>{
+      for(const w of shipRegistry){
+        if(w.isConnected && w._pull) w._pull(x,y);
+      }
+    }, 380);
+
+    // Collapse
+    const LIFETIME=2800;
+    setTimeout(()=>{
+      core.style.transition='transform .3s ease-in,opacity .3s ease-in';
+      core.style.transform='translate(-50%,-50%) scale(0)';
+      core.style.opacity='0';
+      ring.style.transition='transform .3s ease-in,opacity .3s ease-in';
+      ring.style.opacity='0';
+      glow.style.transition='opacity .3s ease-in';
+      glow.style.opacity='0';
+      setTimeout(()=>{bh.remove();bhActive=false;},320);
+    }, LIFETIME);
+  }
+
   // ── Spawn one ship ──
   let activeShips=0;
   const MAX_SHIPS=9;
@@ -626,11 +707,13 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const tilt=(Math.random()*18-9).toFixed(1);
 
     const wrap=document.createElement('div');
-    wrap.style.cssText='position:absolute;pointer-events:auto;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
-    wrap.innerHTML=`<div id="inner" style="opacity:${op};transform:scale(${scale})${goRight?'':' scaleX(-1)'} rotate(${tilt}deg);transform-origin:left center;">${svgStr}</div>`;
+    wrap.className='ship-wrap';
+    wrap.style.cssText='position:absolute;pointer-events:auto;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
+    wrap.innerHTML=`<div class="s-inner" style="opacity:${op};transform:scale(${scale})${goRight?'':' scaleX(-1)'} rotate(${tilt}deg);transform-origin:left center;">${svgStr}</div>`;
     const startX=goRight?-10:112, endX=goRight?114:-12;
     wrap.style.left=startX+'%'; wrap.style.top=startY+'%';
     shipLayer.appendChild(wrap);
+    shipRegistry.add(wrap);
 
     let laserTimer, exploded=false;
     if(cfg.fires){
@@ -649,28 +732,27 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       {left:(startX+(endX-startX)*.93)+'%',opacity:op,offset:.94},
       {left:endX+'%',opacity:'0'},
     ],{duration:dur,easing:'linear'});
-    anim.onfinish=()=>{clearTimeout(laserTimer);if(!exploded){wrap.remove();activeShips--;}};
+    anim.onfinish=()=>{clearTimeout(laserTimer);if(!exploded){wrap.remove();shipRegistry.delete(wrap);activeShips--;}};
 
     // ── Click / tap to destroy ──
     function onHit(e){
       if(exploded) return;
-      e.stopPropagation();
+      if(e && e.stopPropagation) e.stopPropagation();
       exploded=true;
       clearTimeout(laserTimer);
-      try{anim.cancel();}catch(_){}
+      shipRegistry.delete(wrap);
 
       const rect=wrap.getBoundingClientRect();
       const cx=rect.left+rect.width/2;
       const cy=rect.top+rect.height/2;
+      try{anim.cancel();}catch(_){}
 
       const isLarge = type==='capital'||type==='freighter';
       const isMed   = type==='ufo';
 
-      // Flash white
-      const inner=wrap.querySelector('#inner');
+      const inner=wrap.querySelector('.s-inner');
       if(inner) inner.style.filter='brightness(10) saturate(0)';
 
-      // Escape pods for large/medium ships
       const podCount = isLarge ? 4+Math.floor(Math.random()*4) : isMed ? 3+Math.floor(Math.random()*2) : 0;
       const spread   = isLarge ? Math.PI*.8 : Math.PI*.6;
       const baseAngle= goRight ? 0 : Math.PI;
@@ -681,7 +763,6 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         }, i*140 + Math.random()*60);
       }
 
-      // Explosion after pods have a head-start
       const explDelay = isLarge ? 750+Math.random()*400 : isMed ? 320+Math.random()*200 : 40;
       const explScale = isLarge ? 1.6+Math.random()*.9  : isMed ? 1.0+Math.random()*.5  : 0.4+Math.random()*.35;
 
@@ -692,8 +773,40 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       }, explDelay);
     }
 
-    wrap.addEventListener('click',      onHit);
-    wrap.addEventListener('touchend',   onHit, {passive:false});
+    // ── Black hole pull ──
+    wrap._pull = function(bhX,bhY){
+      if(exploded) return;
+      exploded=true;
+      clearTimeout(laserTimer);
+      shipRegistry.delete(wrap);
+
+      const rect=wrap.getBoundingClientRect();
+      const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+      try{anim.cancel();}catch(_){}
+
+      // Re-anchor at current pixel position so translate works
+      wrap.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;pointer-events:none;z-index:6;cursor:default;`;
+      document.body.appendChild(wrap);
+
+      const dx=bhX-cx, dy=bhY-cy;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const pullDur=280+dist*1.1;
+
+      wrap.animate([
+        {transform:'translate(0,0) scale(1)', opacity:1},
+        {transform:`translate(${dx*.6}px,${dy*.6}px) scale(.5)`, opacity:.6, offset:.55},
+        {transform:`translate(${dx}px,${dy}px) scale(0)`, opacity:0},
+      ],{duration:pullDur, easing:'ease-in'}).onfinish=()=>{
+        wrap.remove();
+        activeShips--;
+        spawnExplosion(bhX/window.innerWidth*100, bhY/window.innerHeight*100, 0.25+Math.random()*.2);
+      };
+    };
+
+    wrap._onHit = onHit;
+    wrap.addEventListener('click', onHit);
+    // touchend backup for edge cases
+    wrap.addEventListener('touchend', e=>{ e.preventDefault(); onHit(e); }, {passive:false});
   }
 
   // ── Ambient distant explosions ──
@@ -708,6 +821,45 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     setInterval(()=>{if(activeShips<MAX_SHIPS)spawnBattleShip();},5500);
     startAmbientNovas();
   }
+
+  /* ── Doc-level touch: find ship under finger (bypasses z-index blocking) ── */
+  let _touchMoved=false;
+  document.addEventListener('touchstart',e=>{
+    _touchMoved=false;
+    if(e.touches.length!==1) return;
+    const t=e.touches[0];
+    const tx=t.clientX, ty=t.clientY;
+    for(const w of shipRegistry){
+      if(!w.isConnected){shipRegistry.delete(w);continue;}
+      const r=w.getBoundingClientRect();
+      const PAD=32;
+      if(tx>=r.left-PAD&&tx<=r.right+PAD&&ty>=r.top-PAD&&ty<=r.bottom+PAD){
+        e.preventDefault();
+        if(w._onHit) w._onHit(null);
+        return;
+      }
+    }
+  },{passive:false});
+  document.addEventListener('touchmove',()=>{_touchMoved=true;},{passive:true});
+
+  /* ── Double-tap anywhere on background → black hole ── */
+  let _bhLastT=0,_bhLastX=0,_bhLastY=0;
+  document.addEventListener('touchend',e=>{
+    if(_touchMoved||e.touches.length!==0) return;
+    const tgt=e.target;
+    if(tgt.closest('#mainContent,.p-music,#entrance,button,a,input')) return;
+    const t=e.changedTouches[0];
+    const now=Date.now(),dx=t.clientX-_bhLastX,dy=t.clientY-_bhLastY;
+    if(now-_bhLastT<360&&dx*dx+dy*dy<70*70){
+      e.preventDefault();
+      spawnBlackHole(t.clientX,t.clientY);
+      _bhLastT=0;
+    }else{_bhLastT=now;_bhLastX=t.clientX;_bhLastY=t.clientY;}
+  },{passive:false});
+  document.addEventListener('dblclick',e=>{
+    if(e.target.closest('#mainContent,.p-music,#entrance,button,a,input')) return;
+    spawnBlackHole(e.clientX,e.clientY);
+  });
 
   /* ── Subtle cursor spotlight ── */
   const spotlight = document.createElement('div');
