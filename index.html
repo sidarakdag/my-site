@@ -33,46 +33,20 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 /* ── Nova layer ── */
 #novaLayer{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
 .nova{position:absolute;transform:translate(-50%,-50%);pointer-events:none;}
-.nova-flash{position:absolute;top:50%;left:50%;border-radius:50%;
-  transform:translate(-50%,-50%) scale(0);animation:novaFlash ease-out forwards;}
-@keyframes novaFlash{
-  0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
-  14%{transform:translate(-50%,-50%) scale(1);opacity:.88;}
-  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0;}}
-.nova-core{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:#fff;
-  transform:translate(-50%,-50%) scale(0);animation:novaCore ease-out forwards;}
-@keyframes novaCore{
-  0%{transform:translate(-50%,-50%) scale(0);opacity:1;filter:brightness(4);}
-  9%{transform:translate(-50%,-50%) scale(3.8);opacity:1;filter:brightness(5);}
-  24%{transform:translate(-50%,-50%) scale(2.9);opacity:1;filter:brightness(2.5) sepia(1) saturate(3) hue-rotate(-15deg);}
-  48%{transform:translate(-50%,-50%) scale(1.9);opacity:.88;filter:brightness(1.8) sepia(1) saturate(4) hue-rotate(-35deg);}
-  72%{transform:translate(-50%,-50%) scale(1.1);opacity:.5;filter:brightness(1.2) sepia(1) saturate(3) hue-rotate(-60deg);}
-  100%{transform:translate(-50%,-50%) scale(.04);opacity:0;filter:brightness(1);}}
 .nova-ring{position:absolute;top:50%;left:50%;border-radius:50%;
-  transform:translate(-50%,-50%) scale(0);animation:novaRing ease-out forwards;}
+  transform:translate(-50%,-50%) scale(0);animation:novaRing cubic-bezier(.1,.5,.2,1) forwards;}
 @keyframes novaRing{
   0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
-  65%{opacity:.55;}
+  60%{opacity:.6;}
   100%{transform:translate(-50%,-50%) scale(1);opacity:0;}}
-.nova-debris{position:absolute;top:50%;left:50%;width:2px;height:2px;border-radius:50%;background:#fff;
-  animation:novaDebris ease-out forwards;}
-@keyframes novaDebris{
-  0%{transform:translate(-50%,-50%) translate(0,0) scale(1.6);opacity:1;}
-  55%{opacity:.65;}
-  100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(0);opacity:0;}}
-.nova-streak{position:absolute;top:50%;left:50%;border-radius:1px;
-  animation:novaStreak ease-out forwards;}
-@keyframes novaStreak{
-  0%{transform:translate(-50%,-50%) translate(0,0) rotate(var(--ang)) scaleX(1);opacity:1;}
-  45%{opacity:.75;}
-  100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--ang)) scaleX(.25);opacity:0;}}
 .nova-smoke{position:absolute;top:50%;left:50%;border-radius:50%;
   transform:translate(-50%,-50%) scale(0);animation:novaSmoke ease-out forwards;}
 @keyframes novaSmoke{
   0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
-  18%{transform:translate(-50%,-50%) scale(.4);opacity:.55;}
-  58%{transform:translate(-50%,-50%) scale(.9);opacity:.22;}
-  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0;}}
+  16%{transform:translate(-50%,-50%) scale(.35);opacity:.52;}
+  55%{transform:translate(-50%,-50%) scale(.85);opacity:.2;}
+  100%{transform:translate(-50%,-50%) scale(1.6);opacity:0;}}
+.bh-core-el{position:fixed;pointer-events:none;z-index:12;border-radius:50%;background:#000;}
 
 /* ── Ambient orbs ── */
 .orb{position:fixed;border-radius:50%;filter:blur(170px);pointer-events:none;z-index:0;}
@@ -513,98 +487,140 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   }
 
   // ── Explosion ──
+  // Each theme: [hot, warm, cool, ember] as [r,g,b] arrays
   const EX_THEMES=[
-    ['rgba(255,240,160,','rgba(255,180,60,', 'rgba(220,80,20,'],
-    ['rgba(180,220,255,','rgba(80,160,255,', 'rgba(40,80,200,'],
-    ['rgba(255,255,255,','rgba(200,240,255,','rgba(100,200,255,'],
-    ['rgba(255,200,230,','rgba(220,80,180,', 'rgba(140,20,120,'],
+    [[255,248,180],[255,162,42],[222,62,10],[255,88,18]],   // fire: white-gold→orange→deep red
+    [[168,222,255],[62,142,255],[18,62,210],[88,148,255]],  // plasma: ice-blue→electric blue
+    [[255,255,255],[198,244,255],[72,172,255],[128,198,255]], // nova: white→cyan→blue
+    [[255,202,238],[224,72,172],[142,10,122],[202,88,182]], // supernova: white-pink→magenta→purple
+    [[218,255,192],[88,255,108],[16,158,52],[52,192,72]],   // alien: white-green→emerald
   ];
   function spawnExplosion(xPct,yPct,scale=1){
+    const vw=window.innerWidth,vh=window.innerHeight;
+    const ox=vw*xPct/100, oy=vh*yPct/100;
+    const theme=EX_THEMES[Math.floor(Math.random()*EX_THEMES.length)];
+    const [cH,cW,cC,cE]=theme;
+    const R=(30+Math.random()*48)*Math.max(0.38,scale);
+    const DUR=(980+Math.random()*680)*Math.max(0.62,scale);
+    function rgb(c,a=1){return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;}
+
+    // DOM: shockwave rings + lingering smoke (on novaLayer)
     const nova=document.createElement('div');
     nova.className='nova';
     nova.style.left=xPct+'%'; nova.style.top=yPct+'%';
-    const theme=EX_THEMES[Math.floor(Math.random()*EX_THEMES.length)];
-    const maxR=(8+Math.random()*22)*scale;
-    const baseDur=(700+Math.random()*800)*Math.max(0.6,scale);
-    const op=(0.28+Math.random()*0.5).toFixed(2);
-    nova.style.opacity=op;
+    nova.style.opacity=(0.3+Math.random()*0.55).toFixed(2);
 
-    // Smoke afterglow — rendered first so it sits under everything
     const smoke=document.createElement('div');
     smoke.className='nova-smoke';
-    const sd=Math.round(maxR*3.4);
-    smoke.style.width=sd+'px'; smoke.style.height=sd+'px';
-    smoke.style.background=`radial-gradient(circle,${theme[2]}0.16) 0%,${theme[1]}0.07) 50%,transparent 75%)`;
-    smoke.style.filter='blur(8px)';
-    smoke.style.animationDuration=Math.round(baseDur*1.9)+'ms';
-    smoke.style.animationDelay=Math.round(baseDur*.1)+'ms';
+    const sd=Math.round(R*4.4);
+    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgb(cC,.14)} 0%,${rgb(cW,.055)} 52%,transparent 80%);filter:blur(14px);animation-duration:${Math.round(DUR*2.5)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
     nova.appendChild(smoke);
 
-    // Flash — bright initial burst ring
-    const flash=document.createElement('div');
-    flash.className='nova-flash';
-    const fd=Math.round(maxR*2.6);
-    flash.style.width=fd+'px'; flash.style.height=fd+'px';
-    flash.style.background=`radial-gradient(circle,rgba(255,255,255,.96) 0%,${theme[0]}0.72) 38%,${theme[1]}0.22) 68%,transparent 100%)`;
-    flash.style.animationDuration=Math.round(baseDur*.35)+'ms';
-    nova.appendChild(flash);
-
-    // Core — evolves white→orange→red
-    const core=document.createElement('div');
-    core.className='nova-core';
-    core.style.animationDuration=Math.round(baseDur*.75)+'ms';
-    core.style.boxShadow=`0 0 ${Math.round(maxR*.85)}px ${Math.round(maxR*.42)}px ${theme[0]}0.95),0 0 ${Math.round(maxR*1.7)}px ${Math.round(maxR*.85)}px ${theme[1]}0.48),0 0 ${Math.round(maxR*2.8)}px ${Math.round(maxR*1.3)}px ${theme[2]}0.22)`;
-    nova.appendChild(core);
-
-    // Shockwave rings — 2 base + extras for larger explosions
-    const rings=2+(scale>0.5?1:0)+(scale>1.1?1:0);
-    for(let i=0;i<rings;i++){
+    const numRings=3+(scale>.65?1:0)+(scale>1.15?1:0);
+    for(let i=0;i<numRings;i++){
       const ring=document.createElement('div');
       ring.className='nova-ring';
-      const d=Math.round(maxR*2.3*(i+1)/rings);
-      ring.style.width=d+'px'; ring.style.height=d+'px';
-      const col=i===0?theme[0]:i===1?theme[1]:theme[2];
-      ring.style.border=`${i===0?'2px':'1px'} solid ${col}0.9)`;
-      ring.style.boxShadow=`0 0 ${Math.round(d*.2)}px ${col}0.5),inset 0 0 ${Math.round(d*.07)}px ${col}0.2)`;
-      ring.style.animationDuration=Math.round(baseDur*(0.72+i*.34))+'ms';
-      ring.style.animationDelay=Math.round(i*32)+'ms';
+      const d=Math.round(R*2.7*(i+1)/numRings);
+      const rc=[cH,cH,cW,cC][Math.min(i,3)];
+      const bw=i<2?'2.5px':'1.5px';
+      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgb(rc,.92)};box-shadow:0 0 ${Math.round(d*.26)}px ${rgb(rc,.62)},inset 0 0 ${Math.round(d*.09)}px ${rgb(rc,.24)},0 0 ${Math.round(d*.6)}px ${rgb(rc,.16)};animation-duration:${Math.round(DUR*(.62+i*.34))}ms;animation-delay:${Math.round(i*24)}ms;`;
       nova.appendChild(ring);
     }
-
-    // Mixed debris: ~65% elongated streaks, ~35% round blobs
-    const dn=Math.round((5+Math.random()*7)*Math.min(scale,1.5));
-    for(let i=0;i<dn;i++){
-      const angle=(i/dn)*Math.PI*2+(Math.random()*.7-.35);
-      const dist=maxR*(.55+Math.random()*1.05);
-      if(Math.random()<0.65){
-        const s=document.createElement('div');
-        s.className='nova-streak';
-        const len=Math.round((3+Math.random()*9)*Math.min(scale,1.4));
-        s.style.width=len+'px'; s.style.height='1.5px';
-        s.style.background=`linear-gradient(to right,${theme[0]}1),${theme[1]}0.28))`;
-        s.style.boxShadow=`0 0 3px 1px ${theme[0]}0.55)`;
-        s.style.setProperty('--dx',Math.round(Math.cos(angle)*dist)+'px');
-        s.style.setProperty('--dy',Math.round(Math.sin(angle)*dist)+'px');
-        s.style.setProperty('--ang',(angle*180/Math.PI).toFixed(1)+'deg');
-        s.style.animationDuration=Math.round(baseDur*(.42+Math.random()*.55))+'ms';
-        s.style.animationDelay=Math.round(Math.random()*90)+'ms';
-        nova.appendChild(s);
-      } else {
-        const d=document.createElement('div');
-        d.className='nova-debris';
-        const bsz=Math.random()<0.28?'3px':'2px';
-        d.style.width=bsz; d.style.height=bsz;
-        d.style.setProperty('--dx',Math.round(Math.cos(angle)*dist)+'px');
-        d.style.setProperty('--dy',Math.round(Math.sin(angle)*dist)+'px');
-        d.style.background=theme[0]+'1)';
-        d.style.boxShadow=`0 0 4px 2px ${theme[1]}0.68)`;
-        d.style.animationDuration=Math.round(baseDur*(.48+Math.random()*.52))+'ms';
-        d.style.animationDelay=Math.round(Math.random()*105)+'ms';
-        nova.appendChild(d);
-      }
-    }
     novaLayer.appendChild(nova);
-    setTimeout(()=>nova.remove(),baseDur*2.6+500);
+
+    // Canvas: supernova flash + evolving fire core + particle trails (additive screen-blend)
+    const csz=Math.ceil(R*9.5);
+    const cv=document.createElement('canvas');
+    cv.width=csz; cv.height=csz;
+    cv.style.cssText=`position:fixed;left:${ox}px;top:${oy}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3;mix-blend-mode:screen;`;
+    document.body.appendChild(cv);
+    const ctx=cv.getContext('2d');
+    const ccx=csz/2,ccy=csz/2;
+
+    // Particle system: hot embers (fast) + heavy debris (slow)
+    const parts=[];
+    const nE=Math.round((55+Math.random()*40)*Math.min(scale,1.65));
+    for(let i=0;i<nE;i++){
+      const ang=Math.random()*Math.PI*2;
+      const spd=(1.8+Math.random()*8.5)*Math.max(0.42,scale);
+      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:0.6+Math.random()*0.4,decay:.007+Math.random()*.014,
+        size:1.1+Math.random()*2.1,col:Math.random()<.55?cH:cW,hot:cH,trail:[]});
+    }
+    const nD=Math.round((14+Math.random()*12)*Math.min(scale,1.4));
+    for(let i=0;i<nD;i++){
+      const ang=Math.random()*Math.PI*2;
+      const spd=(0.65+Math.random()*2.7)*Math.max(0.42,scale);
+      const c=[cW,cC,cE][Math.floor(Math.random()*3)];
+      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:1,decay:.0035+Math.random()*.005,
+        size:2.6+Math.random()*4.8,col:c,hot:cW,trail:[]});
+    }
+
+    let t0=null;
+    function frame(t){
+      if(!t0) t0=t;
+      const el=t-t0;
+      if(el>DUR*2.9){cv.remove();return;}
+      ctx.clearRect(0,0,csz,csz);
+
+      // Supernova flash: instant white-hot radial bloom that expands and fades
+      const fp=Math.min(1,el/(DUR*.2));
+      if(fp<1){
+        const fr=R*(.25+fp*2.7);
+        const fa=1-fp;
+        const gr=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,fr);
+        gr.addColorStop(0,rgb([255,255,255],fa));
+        gr.addColorStop(.1,rgb(cH,fa*.96));
+        gr.addColorStop(.42,rgb(cW,fa*.58));
+        gr.addColorStop(.76,rgb(cC,fa*.2));
+        gr.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=gr;
+        ctx.beginPath(); ctx.arc(ccx,ccy,fr,0,Math.PI*2); ctx.fill();
+      }
+
+      // Evolving fire core: white→hot→warm→cool, shrinks and fades over DUR
+      if(el<DUR*.92){
+        const cp=el/(DUR*.92);
+        const cr=R*(1.15-cp*.88);
+        const ca=Math.max(0,(1-cp*1.1)*.88);
+        const fc=cp<.3?cH:cp<.62?cW:cC;
+        const gr2=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,Math.max(1,cr));
+        gr2.addColorStop(0,rgb([255,255,255],ca));
+        gr2.addColorStop(.1,rgb(cH,ca*.96));
+        gr2.addColorStop(.38,rgb(fc,ca*.7));
+        gr2.addColorStop(.72,rgb(cC,ca*.22));
+        gr2.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=gr2;
+        ctx.beginPath(); ctx.arc(ccx,ccy,Math.max(1,cr),0,Math.PI*2); ctx.fill();
+      }
+
+      // Particles with glowing comet tails
+      for(const p of parts){
+        p.life-=p.decay;
+        if(p.life<=0) continue;
+        p.trail.unshift({x:p.x,y:p.y});
+        if(p.trail.length>14) p.trail.pop();
+        p.vx*=.963; p.vy=p.vy*.963+.062;
+        p.x+=p.vx; p.y+=p.vy;
+        for(let j=1;j<p.trail.length;j++){
+          const a=p.trail[j-1],b=p.trail[j];
+          ctx.strokeStyle=rgb(p.hot,p.life*(1-j/p.trail.length)*.78);
+          ctx.lineWidth=p.size*(1-j/p.trail.length)*.88;
+          ctx.lineCap='round';
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+        const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3.2);
+        gr.addColorStop(0,rgb([255,255,255],p.life*.92));
+        gr.addColorStop(.25,rgb(p.hot,p.life*.78));
+        gr.addColorStop(.62,rgb(p.col,p.life*.38));
+        gr.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3.2,0,Math.PI*2); ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    setTimeout(()=>nova.remove(),DUR*2.9+500);
   }
 
   // ── Laser beam ──
@@ -670,211 +686,177 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   const shipRegistry = new Set();
 
   // ── Black hole ──
-  (function injectBHStyles(){
-    const s=document.createElement('style');
-    s.textContent=`
-      @keyframes bhSpin{
-        from{transform:translate(-50%,-50%) rotateX(68deg) rotate(0deg);}
-        to{transform:translate(-50%,-50%) rotateX(68deg) rotate(360deg);}
-      }
-      @keyframes bhCorePulse{
-        0%,100%{box-shadow:0 0 20px rgba(180,60,255,.9),0 0 48px rgba(130,0,240,.55),inset 0 0 16px rgba(200,80,255,.35),0 0 0 2px rgba(200,90,255,.95);}
-        50%{box-shadow:0 0 36px rgba(220,110,255,1),0 0 76px rgba(170,40,255,.7),inset 0 0 26px rgba(220,100,255,.5),0 0 0 2px rgba(235,130,255,1);}
-      }
-      @keyframes bhGlowPulse{0%,100%{opacity:.8;}50%{opacity:1;}}
-      @keyframes bhJetPulse{
-        0%,100%{opacity:.3;transform:translate(-50%,var(--joffs)) scaleX(.6);}
-        50%{opacity:.65;transform:translate(-50%,var(--joffs)) scaleX(1);}
-      }
-      @keyframes bhHawking{
-        0%{transform:translate(-50%,-50%) translate(var(--hx),var(--hy)) scale(1.2);opacity:.9;}
-        100%{transform:translate(-50%,-50%) translate(var(--hx2),var(--hy2)) scale(0);opacity:0;}
-      }
-      .bh-wrap{position:fixed;pointer-events:none;z-index:11;transform:translate(-50%,-50%);}
-      .bh-glow{position:absolute;top:0;left:0;border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(0);}
-      .bh-photon{position:absolute;top:0;left:0;border-radius:50%;
-        border:1.5px solid rgba(255,255,255,.88);
-        box-shadow:0 0 5px 2px rgba(255,255,255,.45),0 0 12px rgba(200,180,255,.55);
-        opacity:0;transform:translate(-50%,-50%) scale(0);}
-      .bh-disk-outer{position:absolute;top:0;left:0;border-radius:50%;
-        border:2px solid rgba(200,75,35,.82);
-        box-shadow:0 0 16px rgba(200,55,18,.5),0 0 32px rgba(170,35,8,.22),-10px 0 20px rgba(225,75,28,.62),10px 0 8px rgba(150,35,8,.28);
-        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
-      .bh-disk-mid{position:absolute;top:0;left:0;border-radius:50%;
-        border:2.5px solid rgba(255,198,75,.88);
-        box-shadow:0 0 14px rgba(255,178,48,.62),0 0 26px rgba(220,138,28,.3),-12px 0 22px rgba(255,200,58,.72),10px 0 10px rgba(195,118,18,.32);
-        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
-      .bh-disk-inner{position:absolute;top:0;left:0;border-radius:50%;
-        border:2px solid rgba(178,218,255,.92);
-        box-shadow:0 0 12px rgba(158,198,255,.72),0 0 22px rgba(118,178,255,.38),-9px 0 18px rgba(198,228,255,.82),7px 0 9px rgba(98,158,255,.32);
-        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
-      .bh-core{position:absolute;top:0;left:0;border-radius:50%;
-        background:radial-gradient(circle,#000 38%,rgba(6,0,22,.99) 62%,rgba(18,0,48,.88) 82%,transparent 100%);
-        box-shadow:0 0 20px rgba(180,60,255,.9),0 0 48px rgba(130,0,240,.55),inset 0 0 16px rgba(200,80,255,.35),0 0 0 2px rgba(200,90,255,.95);
-        opacity:0;transform:translate(-50%,-50%) scale(0);}
-      .bh-jet{position:absolute;left:0;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
-        filter:blur(5px);opacity:0;}
-      .bh-hrad{position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;
-        background:rgba(220,180,255,1);animation:bhHawking ease-out forwards;}
-      .bh-disk-outer.spin{animation:bhSpin 4.8s linear infinite;}
-      .bh-disk-mid.spin{animation:bhSpin 2.9s linear infinite reverse;}
-      .bh-disk-inner.spin{animation:bhSpin 1.75s linear infinite;}
-      .bh-core.pulse{animation:bhCorePulse 1.4s ease-in-out infinite;}
-      .bh-glow.pulse{animation:bhGlowPulse 1.7s ease-in-out infinite;}
-      .bh-jet.pulse{animation:bhJetPulse 1.25s ease-in-out infinite;}
-    `;
-    document.head.appendChild(s);
-  })();
-
   let bhActive=false;
   function spawnBlackHole(x,y){
     if(bhActive) return;
     bhActive=true;
 
-    const sz=80;
-    const bh=document.createElement('div');
-    bh.className='bh-wrap';
-    bh.style.left=x+'px'; bh.style.top=y+'px';
+    const EHR=42; // event horizon radius (px)
+    const INCL=Math.sin(22*Math.PI/180); // disk y-compression ≈ 0.374
 
-    // Ambient gravitational glow
-    const glow=document.createElement('div');
-    glow.className='bh-glow';
-    glow.style.width=(sz*4.4)+'px'; glow.style.height=(sz*4.4)+'px';
-    glow.style.background='radial-gradient(circle,rgba(110,15,210,.24) 0%,rgba(75,0,175,.14) 42%,transparent 70%)';
+    // Solid black event horizon (z:12, no blend — stays truly black)
+    const coreEl=document.createElement('div');
+    coreEl.className='bh-core-el';
+    coreEl.style.cssText+=`left:${x}px;top:${y}px;width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 32px 10px rgba(80,0,180,.32);`;
+    document.body.appendChild(coreEl);
 
-    // Relativistic jets (top + bottom)
-    const jetTop=document.createElement('div');
-    jetTop.className='bh-jet';
-    const jw=Math.round(sz*.55), jh=Math.round(sz*2);
-    jetTop.style.width=jw+'px'; jetTop.style.height=jh+'px';
-    jetTop.style.top='0'; jetTop.style.left='0';
-    jetTop.style.setProperty('--joffs',`calc(-50% - ${Math.round(sz*.55)}px)`);
-    jetTop.style.transform=`translate(-50%,calc(-50% - ${Math.round(sz*.55)}px))`;
-    jetTop.style.background='linear-gradient(to top,rgba(185,125,255,.62),rgba(145,65,255,.28),transparent)';
+    // Canvas: all glowing effects (additive screen blend)
+    const csz=EHR*15;
+    const cv=document.createElement('canvas');
+    cv.width=csz; cv.height=csz;
+    cv.style.cssText=`position:fixed;left:${x}px;top:${y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:11;mix-blend-mode:screen;`;
+    document.body.appendChild(cv);
+    const ctx=cv.getContext('2d');
+    const cx=csz/2, cy=csz/2;
 
-    const jetBot=document.createElement('div');
-    jetBot.className='bh-jet';
-    jetBot.style.width=jw+'px'; jetBot.style.height=jh+'px';
-    jetBot.style.top='0'; jetBot.style.left='0';
-    jetBot.style.setProperty('--joffs',`calc(-50% + ${Math.round(sz*.55)}px)`);
-    jetBot.style.transform=`translate(-50%,calc(-50% + ${Math.round(sz*.55)}px))`;
-    jetBot.style.background='linear-gradient(to bottom,rgba(185,125,255,.62),rgba(145,65,255,.28),transparent)';
+    // Accretion disk particle bands [radius multiplier, count, angular speed, col [r,g,b], glow [r,g,b]]
+    const diskDefs=[
+      [1.38, 50, .054, [200,230,255],[230,248,255]], // inner: hot blue-white, fastest
+      [2.08, 32, .033, [255,178,50], [255,214,105]], // mid: orange-yellow
+      [2.95, 20, .018, [218,58,20],  [245,102,45]],  // outer: cool red, slowest
+    ];
+    const disks=diskDefs.map(([rm,count,spd,col,glow])=>{
+      const pts=[];
+      for(let i=0;i<count;i++){
+        pts.push({
+          angle:Math.random()*Math.PI*2,
+          r:EHR*rm+Math.random()*EHR*.38,
+          speed:spd*(0.72+Math.random()*.56),
+          size:0.85+Math.random()*2,
+          col,glow
+        });
+      }
+      return pts;
+    });
 
-    // 3-band accretion disk (outer=red, mid=orange-yellow, inner=blue-white)
-    const diskOuter=document.createElement('div');
-    diskOuter.className='bh-disk-outer';
-    diskOuter.style.width=(sz*2.9)+'px'; diskOuter.style.height=(sz*2.9)+'px';
+    // Hawking radiation particles (canvas-drawn, emitted over lifetime)
+    const hwPts=[];
 
-    const diskMid=document.createElement('div');
-    diskMid.className='bh-disk-mid';
-    diskMid.style.width=(sz*2.25)+'px'; diskMid.style.height=(sz*2.25)+'px';
+    let startT=null, alive=true, coreVisible=false;
 
-    const diskInner=document.createElement('div');
-    diskInner.className='bh-disk-inner';
-    diskInner.style.width=(sz*1.68)+'px'; diskInner.style.height=(sz*1.68)+'px';
+    function frame(t){
+      if(!startT) startT=t;
+      if(!alive||!cv.isConnected) return;
+      const el=t-startT;
 
-    // Photon sphere — thin bright ring at event horizon edge
-    const photon=document.createElement('div');
-    photon.className='bh-photon';
-    photon.style.width=(sz*1.2)+'px'; photon.style.height=(sz*1.2)+'px';
+      // Fade in event horizon after a short delay
+      const openFrac=Math.min(1,Math.max(0,(el-60)/650));
+      if(!coreVisible && openFrac>.06){ coreEl.style.opacity='1'; coreVisible=true; }
 
-    // Dark core (event horizon)
-    const core=document.createElement('div');
-    core.className='bh-core';
-    core.style.width=sz+'px'; core.style.height=sz+'px';
+      ctx.clearRect(0,0,csz,csz);
 
-    // Inline opacity=1 on all children; hide via wrapper (bypasses CSS opacity:0 rules)
-    for(const el of [glow,jetTop,jetBot,diskOuter,diskMid,diskInner,photon,core])
-      el.style.opacity='1';
-    jetTop.style.opacity='0'; jetBot.style.opacity='0'; // jets fade in after open
-    bh.style.opacity='0';
+      // Large gravitational ambient glow
+      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*7);
+      gg.addColorStop(0,`rgba(100,10,200,${.28*openFrac})`);
+      gg.addColorStop(.3,`rgba(65,0,155,${.15*openFrac})`);
+      gg.addColorStop(.7,`rgba(35,0,90,${.06*openFrac})`);
+      gg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=gg;
+      ctx.beginPath(); ctx.arc(cx,cy,EHR*7,0,Math.PI*2); ctx.fill();
 
-    bh.appendChild(glow);
-    bh.appendChild(jetTop); bh.appendChild(jetBot);
-    bh.appendChild(diskOuter); bh.appendChild(diskMid); bh.appendChild(diskInner);
-    bh.appendChild(photon);
-    bh.appendChild(core);
-    document.body.appendChild(bh);
+      // Accretion disk particles (projected onto tilted ellipse)
+      for(const pts of disks){
+        for(const p of pts){
+          p.angle+=p.speed;
+          const px=cx+Math.cos(p.angle)*p.r;
+          const py=cy+Math.sin(p.angle)*p.r*INCL;
+          // Occlude particles behind event horizon
+          if(Math.sin(p.angle)<0 && Math.hypot(px-cx,(py-cy)/INCL)<EHR*.95) continue;
+          // Doppler beaming: approaching side (cos>0) brighter and bigger
+          const dop=0.38+Math.cos(p.angle)*0.62;
+          const alpha=openFrac*dop*.9;
+          const sz=p.size*(0.65+dop*.7);
+          const gr=ctx.createRadialGradient(px,py,0,px,py,sz*4.5);
+          gr.addColorStop(0,`rgba(255,255,255,${alpha*.95})`);
+          gr.addColorStop(.18,`rgba(${p.glow[0]},${p.glow[1]},${p.glow[2]},${alpha*.88})`);
+          gr.addColorStop(.52,`rgba(${p.col[0]},${p.col[1]},${p.col[2]},${alpha*.45})`);
+          gr.addColorStop(1,'rgba(0,0,0,0)');
+          ctx.fillStyle=gr;
+          ctx.beginPath(); ctx.arc(px,py,sz*4.5,0,Math.PI*2); ctx.fill();
+        }
+      }
 
-    const TR='cubic-bezier(.34,1.18,.64,1)';
-    setTimeout(()=>{
-      bh.style.transition='opacity .28s ease';
-      bh.style.opacity='1';
+      // Photon sphere: glowing elliptical ring hugging the event horizon
+      if(openFrac>.08){
+        ctx.save(); ctx.translate(cx,cy); ctx.scale(1,INCL);
+        const prg=ctx.createRadialGradient(0,0,EHR*.82,0,0,EHR*1.18);
+        prg.addColorStop(0,'rgba(0,0,0,0)');
+        prg.addColorStop(.42,`rgba(255,255,255,${openFrac*.72})`);
+        prg.addColorStop(.62,`rgba(210,185,255,${openFrac*.55})`);
+        prg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=prg;
+        ctx.beginPath(); ctx.arc(0,0,EHR*1.18,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+        // Upright thin ring too (event horizon rim glow)
+        const erg=ctx.createRadialGradient(cx,cy,EHR*.9,cx,cy,EHR*1.08);
+        erg.addColorStop(0,'rgba(0,0,0,0)');
+        erg.addColorStop(.5,`rgba(200,155,255,${openFrac*.38})`);
+        erg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=erg;
+        ctx.beginPath(); ctx.arc(cx,cy,EHR*1.08,0,Math.PI*2); ctx.fill();
+      }
 
-      glow.style.transition='transform .6s ease';
-      glow.style.transform='translate(-50%,-50%) scale(1)';
+      // Relativistic jets: pulsing vertical cones of plasma
+      if(openFrac>.18){
+        const jOpen=Math.min(1,(openFrac-.18)/.82);
+        const jPulse=.42+Math.sin(t/820)*.2;
+        const ja=jOpen*jPulse;
+        ctx.save(); ctx.filter='blur(7px)';
+        for(const sign of [-1,1]){
+          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*5);
+          jg.addColorStop(0,`rgba(210,150,255,${ja*.88})`);
+          jg.addColorStop(.22,`rgba(170,85,255,${ja*.6})`);
+          jg.addColorStop(.55,`rgba(105,32,210,${ja*.28})`);
+          jg.addColorStop(1,'rgba(0,0,0,0)');
+          ctx.fillStyle=jg;
+          ctx.beginPath();
+          ctx.ellipse(cx,cy+sign*EHR*.52,EHR*.25,EHR*2.4,0,0,Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
 
-      diskOuter.style.transition=`transform .62s ${TR} 55ms`;
-      diskOuter.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+      // Hawking radiation: particles escape from photon sphere
+      if(el>500 && Math.random()<.38){
+        const ang=Math.random()*Math.PI*2;
+        const spd=.55+Math.random()*1.9;
+        hwPts.push({
+          x:cx+Math.cos(ang)*EHR*.95, y:cy+Math.sin(ang)*EHR*.95*INCL,
+          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*INCL*spd-.25,
+          life:1, decay:.016+Math.random()*.02, size:.7+Math.random()*1.4
+        });
+      }
+      for(let i=hwPts.length-1;i>=0;i--){
+        const p=hwPts[i];
+        p.life-=p.decay;
+        if(p.life<=0){hwPts.splice(i,1);continue;}
+        p.x+=p.vx; p.y+=p.vy;
+        const hr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*4.5);
+        hr.addColorStop(0,`rgba(245,205,255,${p.life*.95})`);
+        hr.addColorStop(.38,`rgba(185,105,255,${p.life*.58})`);
+        hr.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=hr;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size*4.5,0,Math.PI*2); ctx.fill();
+      }
 
-      diskMid.style.transition=`transform .54s ${TR} 32ms`;
-      diskMid.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
 
-      diskInner.style.transition=`transform .46s ${TR} 14ms`;
-      diskInner.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
-
-      photon.style.transition=`transform .42s ${TR}`;
-      photon.style.transform='translate(-50%,-50%) scale(1)';
-
-      core.style.transition=`transform .5s ${TR}`;
-      core.style.transform='translate(-50%,-50%) scale(1)';
-
-      // Jets fade in slightly after disk opens
-      setTimeout(()=>{
-        jetTop.style.transition='opacity .5s ease'; jetTop.style.opacity='1';
-        jetBot.style.transition='opacity .5s ease'; jetBot.style.opacity='1';
-      }, 340);
-
-      // Add spin/pulse classes after open animation completes
-      setTimeout(()=>{
-        diskOuter.classList.add('spin');
-        diskMid.classList.add('spin');
-        diskInner.classList.add('spin');
-        core.classList.add('pulse');
-        glow.classList.add('pulse');
-        jetTop.classList.add('pulse');
-        jetBot.classList.add('pulse');
-      }, 600);
-    }, 40);
-
-    // Hawking radiation — tiny particles escaping the event horizon
-    let hradInterval=null;
-    setTimeout(()=>{
-      hradInterval=setInterval(()=>{
-        if(!bh.isConnected){clearInterval(hradInterval);return;}
-        const angle=Math.random()*Math.PI*2;
-        const r=sz*.6;
-        const hx=Math.round(Math.cos(angle)*r);
-        const hy=Math.round(Math.sin(angle)*r);
-        const escAng=angle+(Math.random()*.9-.45);
-        const escDist=sz*(.9+Math.random()*1.5);
-        const p=document.createElement('div');
-        p.className='bh-hrad';
-        p.style.setProperty('--hx',hx+'px');
-        p.style.setProperty('--hy',hy+'px');
-        p.style.setProperty('--hx2',Math.round(Math.cos(escAng)*escDist)+'px');
-        p.style.setProperty('--hy2',Math.round(Math.sin(escAng)*escDist)+'px');
-        p.style.animationDuration=Math.round(500+Math.random()*900)+'ms';
-        p.style.boxShadow='0 0 4px 1px rgba(200,155,255,.72)';
-        bh.appendChild(p);
-        setTimeout(()=>p.remove(),1600);
-      }, 160);
-    }, 580);
-
-    // Pull all ships after black hole is open
+    // Pull all ships
     setTimeout(()=>{
       for(const w of shipRegistry){
-        if(w.isConnected && w._pull) w._pull(x,y);
+        if(w.isConnected&&w._pull) w._pull(x,y);
       }
-    }, 420);
+    },420);
 
     // Collapse
     setTimeout(()=>{
-      clearInterval(hradInterval);
-      bh.style.transition='opacity .38s ease-in';
-      bh.style.opacity='0';
-      setTimeout(()=>{bh.remove();bhActive=false;},400);
-    }, 3300);
+      alive=false;
+      coreEl.style.transition='opacity .45s ease-in';
+      coreEl.style.opacity='0';
+      setTimeout(()=>{cv.remove();coreEl.remove();bhActive=false;},500);
+    },3500);
   }
 
   // ── Spawn one ship ──
