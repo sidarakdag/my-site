@@ -500,36 +500,36 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const ox=vw*xPct/100, oy=vh*yPct/100;
     const theme=EX_THEMES[Math.floor(Math.random()*EX_THEMES.length)];
     const [cH,cW,cC,cE]=theme;
-    const R=(30+Math.random()*48)*Math.max(0.38,scale);
-    const DUR=(980+Math.random()*680)*Math.max(0.62,scale);
+    const R=(30+Math.random()*44)*Math.max(0.38,scale);
+    const DUR=(900+Math.random()*600)*Math.max(0.62,scale);
     function rgb(c,a=1){return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;}
 
-    // DOM: shockwave rings + lingering smoke (on novaLayer)
+    // DOM: shockwave rings + smoke
     const nova=document.createElement('div');
     nova.className='nova';
     nova.style.left=xPct+'%'; nova.style.top=yPct+'%';
-    nova.style.opacity=(0.3+Math.random()*0.55).toFixed(2);
+    nova.style.opacity=(0.32+Math.random()*0.52).toFixed(2);
 
     const smoke=document.createElement('div');
     smoke.className='nova-smoke';
-    const sd=Math.round(R*4.4);
-    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgb(cC,.14)} 0%,${rgb(cW,.055)} 52%,transparent 80%);filter:blur(14px);animation-duration:${Math.round(DUR*2.5)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
+    const sd=Math.round(R*3.8);
+    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgb(cC,.13)} 0%,${rgb(cW,.05)} 52%,transparent 80%);filter:blur(12px);animation-duration:${Math.round(DUR*2.4)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
     nova.appendChild(smoke);
 
-    const numRings=3+(scale>.65?1:0)+(scale>1.15?1:0);
+    const numRings=2+(scale>.5?1:0)+(scale>1.1?1:0);
     for(let i=0;i<numRings;i++){
       const ring=document.createElement('div');
       ring.className='nova-ring';
-      const d=Math.round(R*2.7*(i+1)/numRings);
+      const d=Math.round(R*2.6*(i+1)/numRings);
       const rc=[cH,cH,cW,cC][Math.min(i,3)];
-      const bw=i<2?'2.5px':'1.5px';
-      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgb(rc,.92)};box-shadow:0 0 ${Math.round(d*.26)}px ${rgb(rc,.62)},inset 0 0 ${Math.round(d*.09)}px ${rgb(rc,.24)},0 0 ${Math.round(d*.6)}px ${rgb(rc,.16)};animation-duration:${Math.round(DUR*(.62+i*.34))}ms;animation-delay:${Math.round(i*24)}ms;`;
+      const bw=i===0?'2.5px':'1.5px';
+      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgb(rc,.9)};box-shadow:0 0 ${Math.round(d*.24)}px ${rgb(rc,.58)},0 0 ${Math.round(d*.55)}px ${rgb(rc,.14)};animation-duration:${Math.round(DUR*(.65+i*.32))}ms;animation-delay:${Math.round(i*22)}ms;`;
       nova.appendChild(ring);
     }
     novaLayer.appendChild(nova);
 
-    // Canvas: supernova flash + evolving fire core + particle trails (additive screen-blend)
-    const csz=Math.ceil(R*9.5);
+    // Canvas: flash + core gradient + particles (no per-particle gradient — uses globalAlpha)
+    const csz=Math.ceil(R*6.5);
     const cv=document.createElement('canvas');
     cv.width=csz; cv.height=csz;
     cv.style.cssText=`position:fixed;left:${ox}px;top:${oy}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3;mix-blend-mode:screen;`;
@@ -537,90 +537,78 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const ctx=cv.getContext('2d');
     const ccx=csz/2,ccy=csz/2;
 
-    // Particle system: hot embers (fast) + heavy debris (slow)
+    // Particles: store prev position for 1-segment trail (cheap)
     const parts=[];
-    const nE=Math.round((55+Math.random()*40)*Math.min(scale,1.65));
+    const nE=Math.round((22+Math.random()*18)*Math.min(scale,1.5));
     for(let i=0;i<nE;i++){
       const ang=Math.random()*Math.PI*2;
-      const spd=(1.8+Math.random()*8.5)*Math.max(0.42,scale);
-      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:0.6+Math.random()*0.4,decay:.007+Math.random()*.014,
-        size:1.1+Math.random()*2.1,col:Math.random()<.55?cH:cW,hot:cH,trail:[]});
+      const spd=(1.6+Math.random()*7)*Math.max(0.42,scale);
+      parts.push({x:ccx,y:ccy,px:ccx,py:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:0.6+Math.random()*0.4,decay:.008+Math.random()*.015,
+        size:1.2+Math.random()*2,col:Math.random()<.55?cH:cW});
     }
-    const nD=Math.round((14+Math.random()*12)*Math.min(scale,1.4));
+    const nD=Math.round((6+Math.random()*8)*Math.min(scale,1.3));
     for(let i=0;i<nD;i++){
       const ang=Math.random()*Math.PI*2;
-      const spd=(0.65+Math.random()*2.7)*Math.max(0.42,scale);
+      const spd=(0.5+Math.random()*2.2)*Math.max(0.42,scale);
       const c=[cW,cC,cE][Math.floor(Math.random()*3)];
-      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:1,decay:.0035+Math.random()*.005,
-        size:2.6+Math.random()*4.8,col:c,hot:cW,trail:[]});
+      parts.push({x:ccx,y:ccy,px:ccx,py:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:1,decay:.004+Math.random()*.005,size:2.8+Math.random()*4,col:c});
     }
 
     let t0=null;
-    function frame(t){
+    (function frame(t){
       if(!t0) t0=t;
       const el=t-t0;
-      if(el>DUR*2.9){cv.remove();return;}
+      if(el>DUR*2.8){cv.remove();return;}
       ctx.clearRect(0,0,csz,csz);
 
-      // Supernova flash: instant white-hot radial bloom that expands and fades
+      // Flash: 2-stop radial gradient (fast), only first 20% of DUR
       const fp=Math.min(1,el/(DUR*.2));
       if(fp<1){
-        const fr=R*(.25+fp*2.7);
-        const fa=1-fp;
+        const fr=R*(.2+fp*2.6), fa=1-fp;
         const gr=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,fr);
-        gr.addColorStop(0,rgb([255,255,255],fa));
-        gr.addColorStop(.1,rgb(cH,fa*.96));
-        gr.addColorStop(.42,rgb(cW,fa*.58));
-        gr.addColorStop(.76,rgb(cC,fa*.2));
+        gr.addColorStop(0,`rgba(255,255,255,${fa})`);
+        gr.addColorStop(.4,rgb(cH,fa*.7));
         gr.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle=gr;
         ctx.beginPath(); ctx.arc(ccx,ccy,fr,0,Math.PI*2); ctx.fill();
       }
 
-      // Evolving fire core: white→hot→warm→cool, shrinks and fades over DUR
-      if(el<DUR*.92){
-        const cp=el/(DUR*.92);
-        const cr=R*(1.15-cp*.88);
-        const ca=Math.max(0,(1-cp*1.1)*.88);
-        const fc=cp<.3?cH:cp<.62?cW:cC;
+      // Evolving fire core: 2-stop gradient, shrinks & color-shifts over lifetime
+      if(el<DUR*.9){
+        const cp=el/(DUR*.9);
+        const cr=R*(1.1-cp*.86), ca=Math.max(0,(1-cp*1.12)*.85);
+        const fc=cp<.35?cH:cp<.65?cW:cC;
         const gr2=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,Math.max(1,cr));
-        gr2.addColorStop(0,rgb([255,255,255],ca));
-        gr2.addColorStop(.1,rgb(cH,ca*.96));
-        gr2.addColorStop(.38,rgb(fc,ca*.7));
-        gr2.addColorStop(.72,rgb(cC,ca*.22));
+        gr2.addColorStop(0,`rgba(255,255,255,${ca})`);
+        gr2.addColorStop(.35,rgb(fc,ca*.75));
         gr2.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle=gr2;
         ctx.beginPath(); ctx.arc(ccx,ccy,Math.max(1,cr),0,Math.PI*2); ctx.fill();
       }
 
-      // Particles with glowing comet tails
+      // Particles: 1-segment trail + solid arc (no per-particle gradient)
+      ctx.lineCap='round';
       for(const p of parts){
         p.life-=p.decay;
         if(p.life<=0) continue;
-        p.trail.unshift({x:p.x,y:p.y});
-        if(p.trail.length>14) p.trail.pop();
-        p.vx*=.963; p.vy=p.vy*.963+.062;
+        const prevX=p.x, prevY=p.y;
+        p.vx*=.965; p.vy=p.vy*.965+.055;
         p.x+=p.vx; p.y+=p.vy;
-        for(let j=1;j<p.trail.length;j++){
-          const a=p.trail[j-1],b=p.trail[j];
-          ctx.strokeStyle=rgb(p.hot,p.life*(1-j/p.trail.length)*.78);
-          ctx.lineWidth=p.size*(1-j/p.trail.length)*.88;
-          ctx.lineCap='round';
-          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-        }
-        const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3.2);
-        gr.addColorStop(0,rgb([255,255,255],p.life*.92));
-        gr.addColorStop(.25,rgb(p.hot,p.life*.78));
-        gr.addColorStop(.62,rgb(p.col,p.life*.38));
-        gr.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3.2,0,Math.PI*2); ctx.fill();
+        // Trail line from last pos to current
+        ctx.strokeStyle=`rgba(${p.col[0]},${p.col[1]},${p.col[2]},${(p.life*.72).toFixed(3)})`;
+        ctx.lineWidth=p.size*.7;
+        ctx.beginPath(); ctx.moveTo(prevX,prevY); ctx.lineTo(p.x,p.y); ctx.stroke();
+        // Particle dot
+        ctx.globalAlpha=p.life*.88;
+        ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
       }
+      ctx.globalAlpha=1;
       requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-    setTimeout(()=>nova.remove(),DUR*2.9+500);
+    })(performance.now());
+    setTimeout(()=>nova.remove(),DUR*2.8+400);
   }
 
   // ── Laser beam ──
@@ -694,14 +682,15 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const EHR=42; // event horizon radius (px)
     const INCL=Math.sin(22*Math.PI/180); // disk y-compression ≈ 0.374
 
-    // Solid black event horizon (z:12, no blend — stays truly black)
+    // Solid black event horizon (z:12, normal blend — stays truly black)
     const coreEl=document.createElement('div');
     coreEl.className='bh-core-el';
-    coreEl.style.cssText+=`left:${x}px;top:${y}px;width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 32px 10px rgba(80,0,180,.32);`;
+    coreEl.style.cssText+=`left:${x}px;top:${y}px;width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 30px 8px rgba(80,0,180,.3);`;
     document.body.appendChild(coreEl);
 
-    // Canvas: all glowing effects (additive screen blend)
-    const csz=EHR*15;
+    // Canvas: glowing effects (screen blend — black = transparent)
+    // Kept small to stay GPU-friendly; no ctx.filter used anywhere
+    const csz=EHR*10;
     const cv=document.createElement('canvas');
     cv.width=csz; cv.height=csz;
     cv.style.cssText=`position:fixed;left:${x}px;top:${y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:11;mix-blend-mode:screen;`;
@@ -709,148 +698,122 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const ctx=cv.getContext('2d');
     const cx=csz/2, cy=csz/2;
 
-    // Accretion disk particle bands [radius multiplier, count, angular speed, col [r,g,b], glow [r,g,b]]
+    // Disk particles: 55 total across 3 bands — solid fills + globalAlpha (no per-particle gradient)
     const diskDefs=[
-      [1.38, 50, .054, [200,230,255],[230,248,255]], // inner: hot blue-white, fastest
-      [2.08, 32, .033, [255,178,50], [255,214,105]], // mid: orange-yellow
-      [2.95, 20, .018, [218,58,20],  [245,102,45]],  // outer: cool red, slowest
+      [1.38, 24, .055, [200,228,255]], // inner: blue-white, fastest
+      [2.08, 18, .033, [255,178,50]],  // mid: orange-yellow
+      [2.95, 13, .018, [218,58,20]],   // outer: red, slowest
     ];
-    const disks=diskDefs.map(([rm,count,spd,col,glow])=>{
+    const disks=diskDefs.map(([rm,count,spd,col])=>{
       const pts=[];
       for(let i=0;i<count;i++){
         pts.push({
           angle:Math.random()*Math.PI*2,
-          r:EHR*rm+Math.random()*EHR*.38,
+          r:EHR*rm+Math.random()*EHR*.36,
           speed:spd*(0.72+Math.random()*.56),
-          size:0.85+Math.random()*2,
-          col,glow
+          size:1+Math.random()*2.2, col
         });
       }
       return pts;
     });
 
-    // Hawking radiation particles (canvas-drawn, emitted over lifetime)
     const hwPts=[];
-
     let startT=null, alive=true, coreVisible=false;
 
-    function frame(t){
+    (function frame(t){
       if(!startT) startT=t;
       if(!alive||!cv.isConnected) return;
       const el=t-startT;
-
-      // Fade in event horizon after a short delay
-      const openFrac=Math.min(1,Math.max(0,(el-60)/650));
+      const openFrac=Math.min(1,Math.max(0,(el-60)/600));
       if(!coreVisible && openFrac>.06){ coreEl.style.opacity='1'; coreVisible=true; }
 
       ctx.clearRect(0,0,csz,csz);
 
-      // Large gravitational ambient glow
-      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*7);
-      gg.addColorStop(0,`rgba(100,10,200,${.28*openFrac})`);
-      gg.addColorStop(.3,`rgba(65,0,155,${.15*openFrac})`);
-      gg.addColorStop(.7,`rgba(35,0,90,${.06*openFrac})`);
+      // Ambient glow (1 gradient per frame — cheap)
+      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*4.8);
+      gg.addColorStop(0,`rgba(95,8,195,${(.26*openFrac).toFixed(3)})`);
+      gg.addColorStop(.4,`rgba(50,0,135,${(.11*openFrac).toFixed(3)})`);
       gg.addColorStop(1,'rgba(0,0,0,0)');
       ctx.fillStyle=gg;
-      ctx.beginPath(); ctx.arc(cx,cy,EHR*7,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx,cy,EHR*4.8,0,Math.PI*2); ctx.fill();
 
-      // Accretion disk particles (projected onto tilted ellipse)
+      // Disk: solid arc + globalAlpha (no createRadialGradient per particle)
       for(const pts of disks){
         for(const p of pts){
           p.angle+=p.speed;
           const px=cx+Math.cos(p.angle)*p.r;
           const py=cy+Math.sin(p.angle)*p.r*INCL;
-          // Occlude particles behind event horizon
-          if(Math.sin(p.angle)<0 && Math.hypot(px-cx,(py-cy)/INCL)<EHR*.95) continue;
-          // Doppler beaming: approaching side (cos>0) brighter and bigger
-          const dop=0.38+Math.cos(p.angle)*0.62;
-          const alpha=openFrac*dop*.9;
-          const sz=p.size*(0.65+dop*.7);
-          const gr=ctx.createRadialGradient(px,py,0,px,py,sz*4.5);
-          gr.addColorStop(0,`rgba(255,255,255,${alpha*.95})`);
-          gr.addColorStop(.18,`rgba(${p.glow[0]},${p.glow[1]},${p.glow[2]},${alpha*.88})`);
-          gr.addColorStop(.52,`rgba(${p.col[0]},${p.col[1]},${p.col[2]},${alpha*.45})`);
-          gr.addColorStop(1,'rgba(0,0,0,0)');
-          ctx.fillStyle=gr;
-          ctx.beginPath(); ctx.arc(px,py,sz*4.5,0,Math.PI*2); ctx.fill();
+          // Skip particles occluded behind the event horizon
+          if(Math.sin(p.angle)<0 && Math.hypot(px-cx,(py-cy)/INCL)<EHR*.9) continue;
+          // Doppler: approaching side (cos>0) is brighter
+          const dop=0.35+Math.cos(p.angle)*0.65;
+          ctx.globalAlpha=openFrac*dop*.85;
+          ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+          ctx.beginPath(); ctx.arc(px,py,p.size*(0.6+dop*.65),0,Math.PI*2); ctx.fill();
         }
       }
+      ctx.globalAlpha=1;
 
-      // Photon sphere: glowing elliptical ring hugging the event horizon
+      // Photon ring: cheap ellipse stroke (no gradient fill)
       if(openFrac>.08){
         ctx.save(); ctx.translate(cx,cy); ctx.scale(1,INCL);
-        const prg=ctx.createRadialGradient(0,0,EHR*.82,0,0,EHR*1.18);
-        prg.addColorStop(0,'rgba(0,0,0,0)');
-        prg.addColorStop(.42,`rgba(255,255,255,${openFrac*.72})`);
-        prg.addColorStop(.62,`rgba(210,185,255,${openFrac*.55})`);
-        prg.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=prg;
-        ctx.beginPath(); ctx.arc(0,0,EHR*1.18,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle=`rgba(255,255,255,${(openFrac*.58).toFixed(3)})`;
+        ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.arc(0,0,EHR*1.04,0,Math.PI*2); ctx.stroke();
         ctx.restore();
-        // Upright thin ring too (event horizon rim glow)
-        const erg=ctx.createRadialGradient(cx,cy,EHR*.9,cx,cy,EHR*1.08);
-        erg.addColorStop(0,'rgba(0,0,0,0)');
-        erg.addColorStop(.5,`rgba(200,155,255,${openFrac*.38})`);
-        erg.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=erg;
-        ctx.beginPath(); ctx.arc(cx,cy,EHR*1.08,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle=`rgba(200,155,255,${(openFrac*.32).toFixed(3)})`;
+        ctx.lineWidth=5;
+        ctx.beginPath(); ctx.arc(cx,cy,EHR*1.02,0,Math.PI*2); ctx.stroke();
       }
 
-      // Relativistic jets: pulsing vertical cones of plasma
-      if(openFrac>.18){
-        const jOpen=Math.min(1,(openFrac-.18)/.82);
-        const jPulse=.42+Math.sin(t/820)*.2;
-        const ja=jOpen*jPulse;
-        ctx.save(); ctx.filter='blur(7px)';
+      // Jets: plain gradient ellipse, NO ctx.filter (filter forces software render)
+      if(openFrac>.2){
+        const ja=Math.min(1,(openFrac-.2)/.8)*(0.38+Math.sin(t/820)*.18);
         for(const sign of [-1,1]){
-          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*5);
-          jg.addColorStop(0,`rgba(210,150,255,${ja*.88})`);
-          jg.addColorStop(.22,`rgba(170,85,255,${ja*.6})`);
-          jg.addColorStop(.55,`rgba(105,32,210,${ja*.28})`);
+          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*4);
+          jg.addColorStop(0,`rgba(195,135,255,${(ja*.75).toFixed(3)})`);
+          jg.addColorStop(.3,`rgba(155,70,255,${(ja*.42).toFixed(3)})`);
+          jg.addColorStop(.65,`rgba(85,20,185,${(ja*.16).toFixed(3)})`);
           jg.addColorStop(1,'rgba(0,0,0,0)');
           ctx.fillStyle=jg;
           ctx.beginPath();
-          ctx.ellipse(cx,cy+sign*EHR*.52,EHR*.25,EHR*2.4,0,0,Math.PI*2);
+          ctx.ellipse(cx,cy+sign*EHR*.45,EHR*.22,EHR*2,0,0,Math.PI*2);
           ctx.fill();
         }
-        ctx.restore();
       }
 
-      // Hawking radiation: particles escape from photon sphere
-      if(el>500 && Math.random()<.38){
+      // Hawking radiation: solid fill + globalAlpha (no gradient)
+      if(el>500 && Math.random()<.18){
         const ang=Math.random()*Math.PI*2;
-        const spd=.55+Math.random()*1.9;
+        const spd=.5+Math.random()*1.6;
         hwPts.push({
-          x:cx+Math.cos(ang)*EHR*.95, y:cy+Math.sin(ang)*EHR*.95*INCL,
-          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*INCL*spd-.25,
-          life:1, decay:.016+Math.random()*.02, size:.7+Math.random()*1.4
+          x:cx+Math.cos(ang)*EHR*.92, y:cy+Math.sin(ang)*EHR*.92*INCL,
+          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*INCL*spd-.2,
+          life:1, decay:.02+Math.random()*.024, size:.8+Math.random()*1.2
         });
       }
-      for(let i=hwPts.length-1;i>=0;i--){
-        const p=hwPts[i];
-        p.life-=p.decay;
-        if(p.life<=0){hwPts.splice(i,1);continue;}
-        p.x+=p.vx; p.y+=p.vy;
-        const hr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*4.5);
-        hr.addColorStop(0,`rgba(245,205,255,${p.life*.95})`);
-        hr.addColorStop(.38,`rgba(185,105,255,${p.life*.58})`);
-        hr.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=hr;
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.size*4.5,0,Math.PI*2); ctx.fill();
+      if(hwPts.length){
+        ctx.fillStyle='rgb(220,180,255)';
+        for(let i=hwPts.length-1;i>=0;i--){
+          const p=hwPts[i];
+          p.life-=p.decay;
+          if(p.life<=0){hwPts.splice(i,1);continue;}
+          p.x+=p.vx; p.y+=p.vy;
+          ctx.globalAlpha=p.life*.82;
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2,0,Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha=1;
       }
 
       requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    })(performance.now());
 
-    // Pull all ships
     setTimeout(()=>{
       for(const w of shipRegistry){
         if(w.isConnected&&w._pull) w._pull(x,y);
       }
     },420);
 
-    // Collapse
     setTimeout(()=>{
       alive=false;
       coreEl.style.transition='opacity .45s ease-in';
