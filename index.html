@@ -33,23 +33,46 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 /* ── Nova layer ── */
 #novaLayer{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
 .nova{position:absolute;transform:translate(-50%,-50%);pointer-events:none;}
+.nova-flash{position:absolute;top:50%;left:50%;border-radius:50%;
+  transform:translate(-50%,-50%) scale(0);animation:novaFlash ease-out forwards;}
+@keyframes novaFlash{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
+  14%{transform:translate(-50%,-50%) scale(1);opacity:.88;}
+  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0;}}
 .nova-core{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:#fff;
   transform:translate(-50%,-50%) scale(0);animation:novaCore ease-out forwards;}
 @keyframes novaCore{
-  0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
-  18%{transform:translate(-50%,-50%) scale(2.2);opacity:1;}
-  55%{transform:translate(-50%,-50%) scale(1.1);opacity:.55;}
-  100%{transform:translate(-50%,-50%) scale(.05);opacity:0;}}
+  0%{transform:translate(-50%,-50%) scale(0);opacity:1;filter:brightness(4);}
+  9%{transform:translate(-50%,-50%) scale(3.8);opacity:1;filter:brightness(5);}
+  24%{transform:translate(-50%,-50%) scale(2.9);opacity:1;filter:brightness(2.5) sepia(1) saturate(3) hue-rotate(-15deg);}
+  48%{transform:translate(-50%,-50%) scale(1.9);opacity:.88;filter:brightness(1.8) sepia(1) saturate(4) hue-rotate(-35deg);}
+  72%{transform:translate(-50%,-50%) scale(1.1);opacity:.5;filter:brightness(1.2) sepia(1) saturate(3) hue-rotate(-60deg);}
+  100%{transform:translate(-50%,-50%) scale(.04);opacity:0;filter:brightness(1);}}
 .nova-ring{position:absolute;top:50%;left:50%;border-radius:50%;
   transform:translate(-50%,-50%) scale(0);animation:novaRing ease-out forwards;}
 @keyframes novaRing{
   0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
+  65%{opacity:.55;}
   100%{transform:translate(-50%,-50%) scale(1);opacity:0;}}
 .nova-debris{position:absolute;top:50%;left:50%;width:2px;height:2px;border-radius:50%;background:#fff;
   animation:novaDebris ease-out forwards;}
 @keyframes novaDebris{
-  0%{transform:translate(-50%,-50%) translate(0,0) scale(1.2);opacity:.9;}
+  0%{transform:translate(-50%,-50%) translate(0,0) scale(1.6);opacity:1;}
+  55%{opacity:.65;}
   100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(0);opacity:0;}}
+.nova-streak{position:absolute;top:50%;left:50%;border-radius:1px;
+  animation:novaStreak ease-out forwards;}
+@keyframes novaStreak{
+  0%{transform:translate(-50%,-50%) translate(0,0) rotate(var(--ang)) scaleX(1);opacity:1;}
+  45%{opacity:.75;}
+  100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--ang)) scaleX(.25);opacity:0;}}
+.nova-smoke{position:absolute;top:50%;left:50%;border-radius:50%;
+  transform:translate(-50%,-50%) scale(0);animation:novaSmoke ease-out forwards;}
+@keyframes novaSmoke{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+  18%{transform:translate(-50%,-50%) scale(.4);opacity:.55;}
+  58%{transform:translate(-50%,-50%) scale(.9);opacity:.22;}
+  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0;}}
 
 /* ── Ambient orbs ── */
 .orb{position:fixed;border-radius:50%;filter:blur(170px);pointer-events:none;z-index:0;}
@@ -503,42 +526,85 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const theme=EX_THEMES[Math.floor(Math.random()*EX_THEMES.length)];
     const maxR=(8+Math.random()*22)*scale;
     const baseDur=(700+Math.random()*800)*Math.max(0.6,scale);
-    const op=(0.2+Math.random()*0.55).toFixed(2);
+    const op=(0.28+Math.random()*0.5).toFixed(2);
     nova.style.opacity=op;
+
+    // Smoke afterglow — rendered first so it sits under everything
+    const smoke=document.createElement('div');
+    smoke.className='nova-smoke';
+    const sd=Math.round(maxR*3.4);
+    smoke.style.width=sd+'px'; smoke.style.height=sd+'px';
+    smoke.style.background=`radial-gradient(circle,${theme[2]}0.16) 0%,${theme[1]}0.07) 50%,transparent 75%)`;
+    smoke.style.filter='blur(8px)';
+    smoke.style.animationDuration=Math.round(baseDur*1.9)+'ms';
+    smoke.style.animationDelay=Math.round(baseDur*.1)+'ms';
+    nova.appendChild(smoke);
+
+    // Flash — bright initial burst ring
+    const flash=document.createElement('div');
+    flash.className='nova-flash';
+    const fd=Math.round(maxR*2.6);
+    flash.style.width=fd+'px'; flash.style.height=fd+'px';
+    flash.style.background=`radial-gradient(circle,rgba(255,255,255,.96) 0%,${theme[0]}0.72) 38%,${theme[1]}0.22) 68%,transparent 100%)`;
+    flash.style.animationDuration=Math.round(baseDur*.35)+'ms';
+    nova.appendChild(flash);
+
+    // Core — evolves white→orange→red
     const core=document.createElement('div');
     core.className='nova-core';
-    core.style.animationDuration=Math.round(baseDur*.65)+'ms';
-    core.style.boxShadow=`0 0 ${Math.round(maxR*.7)}px ${Math.round(maxR*.35)}px ${theme[0]}0.9),0 0 ${Math.round(maxR*1.4)}px ${Math.round(maxR*.7)}px ${theme[1]}0.4)`;
+    core.style.animationDuration=Math.round(baseDur*.75)+'ms';
+    core.style.boxShadow=`0 0 ${Math.round(maxR*.85)}px ${Math.round(maxR*.42)}px ${theme[0]}0.95),0 0 ${Math.round(maxR*1.7)}px ${Math.round(maxR*.85)}px ${theme[1]}0.48),0 0 ${Math.round(maxR*2.8)}px ${Math.round(maxR*1.3)}px ${theme[2]}0.22)`;
     nova.appendChild(core);
-    const rings=2+(scale>0.7&&Math.random()>.45?1:0);
+
+    // Shockwave rings — 2 base + extras for larger explosions
+    const rings=2+(scale>0.5?1:0)+(scale>1.1?1:0);
     for(let i=0;i<rings;i++){
       const ring=document.createElement('div');
       ring.className='nova-ring';
-      const d=Math.round(maxR*2*(i+1)/rings);
+      const d=Math.round(maxR*2.3*(i+1)/rings);
       ring.style.width=d+'px'; ring.style.height=d+'px';
-      const col=i===0?theme[1]:theme[2];
-      ring.style.border=`1px solid ${col}0.88)`;
-      ring.style.boxShadow=`0 0 ${Math.round(d*.14)}px ${col}0.45)`;
-      ring.style.animationDuration=Math.round(baseDur*(0.82+i*.28))+'ms';
-      ring.style.animationDelay=Math.round(i*50)+'ms';
+      const col=i===0?theme[0]:i===1?theme[1]:theme[2];
+      ring.style.border=`${i===0?'2px':'1px'} solid ${col}0.9)`;
+      ring.style.boxShadow=`0 0 ${Math.round(d*.2)}px ${col}0.5),inset 0 0 ${Math.round(d*.07)}px ${col}0.2)`;
+      ring.style.animationDuration=Math.round(baseDur*(0.72+i*.34))+'ms';
+      ring.style.animationDelay=Math.round(i*32)+'ms';
       nova.appendChild(ring);
     }
-    const dn=Math.round((4+Math.random()*6)*Math.min(scale,1.5));
+
+    // Mixed debris: ~65% elongated streaks, ~35% round blobs
+    const dn=Math.round((5+Math.random()*7)*Math.min(scale,1.5));
     for(let i=0;i<dn;i++){
-      const d=document.createElement('div');
-      d.className='nova-debris';
-      const angle=(i/dn)*Math.PI*2+(Math.random()*.6-.3);
-      const dist=maxR*(.5+Math.random()*.9);
-      d.style.setProperty('--dx',Math.round(Math.cos(angle)*dist)+'px');
-      d.style.setProperty('--dy',Math.round(Math.sin(angle)*dist)+'px');
-      d.style.background=theme[0]+'1)';
-      d.style.boxShadow=`0 0 3px 1px ${theme[1]}0.65)`;
-      d.style.animationDuration=Math.round(baseDur*(.5+Math.random()*.5))+'ms';
-      d.style.animationDelay=Math.round(Math.random()*100)+'ms';
-      nova.appendChild(d);
+      const angle=(i/dn)*Math.PI*2+(Math.random()*.7-.35);
+      const dist=maxR*(.55+Math.random()*1.05);
+      if(Math.random()<0.65){
+        const s=document.createElement('div');
+        s.className='nova-streak';
+        const len=Math.round((3+Math.random()*9)*Math.min(scale,1.4));
+        s.style.width=len+'px'; s.style.height='1.5px';
+        s.style.background=`linear-gradient(to right,${theme[0]}1),${theme[1]}0.28))`;
+        s.style.boxShadow=`0 0 3px 1px ${theme[0]}0.55)`;
+        s.style.setProperty('--dx',Math.round(Math.cos(angle)*dist)+'px');
+        s.style.setProperty('--dy',Math.round(Math.sin(angle)*dist)+'px');
+        s.style.setProperty('--ang',(angle*180/Math.PI).toFixed(1)+'deg');
+        s.style.animationDuration=Math.round(baseDur*(.42+Math.random()*.55))+'ms';
+        s.style.animationDelay=Math.round(Math.random()*90)+'ms';
+        nova.appendChild(s);
+      } else {
+        const d=document.createElement('div');
+        d.className='nova-debris';
+        const bsz=Math.random()<0.28?'3px':'2px';
+        d.style.width=bsz; d.style.height=bsz;
+        d.style.setProperty('--dx',Math.round(Math.cos(angle)*dist)+'px');
+        d.style.setProperty('--dy',Math.round(Math.sin(angle)*dist)+'px');
+        d.style.background=theme[0]+'1)';
+        d.style.boxShadow=`0 0 4px 2px ${theme[1]}0.68)`;
+        d.style.animationDuration=Math.round(baseDur*(.48+Math.random()*.52))+'ms';
+        d.style.animationDelay=Math.round(Math.random()*105)+'ms';
+        nova.appendChild(d);
+      }
     }
     novaLayer.appendChild(nova);
-    setTimeout(()=>nova.remove(),baseDur*2.5+400);
+    setTimeout(()=>nova.remove(),baseDur*2.6+500);
   }
 
   // ── Laser beam ──
@@ -612,28 +678,50 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         to{transform:translate(-50%,-50%) rotateX(68deg) rotate(360deg);}
       }
       @keyframes bhCorePulse{
-        0%,100%{box-shadow:0 0 18px rgba(180,60,255,.85),0 0 42px rgba(130,0,240,.5),inset 0 0 14px rgba(200,80,255,.3),0 0 0 2.5px rgba(195,80,255,.9);}
-        50%{box-shadow:0 0 32px rgba(220,100,255,1),0 0 68px rgba(170,40,255,.65),inset 0 0 22px rgba(220,100,255,.45),0 0 0 2.5px rgba(230,120,255,1);}
+        0%,100%{box-shadow:0 0 20px rgba(180,60,255,.9),0 0 48px rgba(130,0,240,.55),inset 0 0 16px rgba(200,80,255,.35),0 0 0 2px rgba(200,90,255,.95);}
+        50%{box-shadow:0 0 36px rgba(220,110,255,1),0 0 76px rgba(170,40,255,.7),inset 0 0 26px rgba(220,100,255,.5),0 0 0 2px rgba(235,130,255,1);}
       }
-      @keyframes bhGlowPulse{
-        0%,100%{opacity:.85;}50%{opacity:1;}
+      @keyframes bhGlowPulse{0%,100%{opacity:.8;}50%{opacity:1;}}
+      @keyframes bhJetPulse{
+        0%,100%{opacity:.3;transform:translate(-50%,var(--joffs)) scaleX(.6);}
+        50%{opacity:.65;transform:translate(-50%,var(--joffs)) scaleX(1);}
+      }
+      @keyframes bhHawking{
+        0%{transform:translate(-50%,-50%) translate(var(--hx),var(--hy)) scale(1.2);opacity:.9;}
+        100%{transform:translate(-50%,-50%) translate(var(--hx2),var(--hy2)) scale(0);opacity:0;}
       }
       .bh-wrap{position:fixed;pointer-events:none;z-index:11;transform:translate(-50%,-50%);}
       .bh-glow{position:absolute;top:0;left:0;border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(0);}
-      .bh-ring{position:absolute;top:0;left:0;border-radius:50%;border:2px solid rgba(210,110,255,.85);
-        box-shadow:0 0 10px rgba(180,80,255,.5),0 0 22px rgba(140,40,255,.3);
+      .bh-photon{position:absolute;top:0;left:0;border-radius:50%;
+        border:1.5px solid rgba(255,255,255,.88);
+        box-shadow:0 0 5px 2px rgba(255,255,255,.45),0 0 12px rgba(200,180,255,.55);
+        opacity:0;transform:translate(-50%,-50%) scale(0);}
+      .bh-disk-outer{position:absolute;top:0;left:0;border-radius:50%;
+        border:2px solid rgba(200,75,35,.82);
+        box-shadow:0 0 16px rgba(200,55,18,.5),0 0 32px rgba(170,35,8,.22),-10px 0 20px rgba(225,75,28,.62),10px 0 8px rgba(150,35,8,.28);
         opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
-      .bh-ring2{position:absolute;top:0;left:0;border-radius:50%;border:1px solid rgba(170,70,255,.55);
-        box-shadow:0 0 8px rgba(160,60,255,.4);
+      .bh-disk-mid{position:absolute;top:0;left:0;border-radius:50%;
+        border:2.5px solid rgba(255,198,75,.88);
+        box-shadow:0 0 14px rgba(255,178,48,.62),0 0 26px rgba(220,138,28,.3),-12px 0 22px rgba(255,200,58,.72),10px 0 10px rgba(195,118,18,.32);
+        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
+      .bh-disk-inner{position:absolute;top:0;left:0;border-radius:50%;
+        border:2px solid rgba(178,218,255,.92);
+        box-shadow:0 0 12px rgba(158,198,255,.72),0 0 22px rgba(118,178,255,.38),-9px 0 18px rgba(198,228,255,.82),7px 0 9px rgba(98,158,255,.32);
         opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
       .bh-core{position:absolute;top:0;left:0;border-radius:50%;
-        background:radial-gradient(circle,#04001a 30%,rgba(18,0,52,.98) 60%,rgba(38,0,78,.75) 80%,transparent 100%);
-        box-shadow:0 0 18px rgba(180,60,255,.85),0 0 42px rgba(130,0,240,.5),inset 0 0 14px rgba(200,80,255,.3),0 0 0 2.5px rgba(195,80,255,.9);
+        background:radial-gradient(circle,#000 38%,rgba(6,0,22,.99) 62%,rgba(18,0,48,.88) 82%,transparent 100%);
+        box-shadow:0 0 20px rgba(180,60,255,.9),0 0 48px rgba(130,0,240,.55),inset 0 0 16px rgba(200,80,255,.35),0 0 0 2px rgba(200,90,255,.95);
         opacity:0;transform:translate(-50%,-50%) scale(0);}
-      .bh-ring.spin{animation:bhSpin 2s linear infinite;}
-      .bh-ring2.spin{animation:bhSpin 3.2s linear infinite reverse;}
+      .bh-jet{position:absolute;left:0;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+        filter:blur(5px);opacity:0;}
+      .bh-hrad{position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;
+        background:rgba(220,180,255,1);animation:bhHawking ease-out forwards;}
+      .bh-disk-outer.spin{animation:bhSpin 4.8s linear infinite;}
+      .bh-disk-mid.spin{animation:bhSpin 2.9s linear infinite reverse;}
+      .bh-disk-inner.spin{animation:bhSpin 1.75s linear infinite;}
       .bh-core.pulse{animation:bhCorePulse 1.4s ease-in-out infinite;}
-      .bh-glow.pulse{animation:bhGlowPulse 1.6s ease-in-out infinite;}
+      .bh-glow.pulse{animation:bhGlowPulse 1.7s ease-in-out infinite;}
+      .bh-jet.pulse{animation:bhJetPulse 1.25s ease-in-out infinite;}
     `;
     document.head.appendChild(s);
   })();
@@ -643,60 +731,135 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     if(bhActive) return;
     bhActive=true;
 
-    const sz=82;
+    const sz=80;
     const bh=document.createElement('div');
     bh.className='bh-wrap';
     bh.style.left=x+'px'; bh.style.top=y+'px';
 
+    // Ambient gravitational glow
     const glow=document.createElement('div');
     glow.className='bh-glow';
-    glow.style.width=(sz*3.6)+'px'; glow.style.height=(sz*3.6)+'px';
-    glow.style.background='radial-gradient(circle,rgba(150,30,255,.2) 0%,rgba(100,0,200,.12) 45%,transparent 70%)';
+    glow.style.width=(sz*4.4)+'px'; glow.style.height=(sz*4.4)+'px';
+    glow.style.background='radial-gradient(circle,rgba(110,15,210,.24) 0%,rgba(75,0,175,.14) 42%,transparent 70%)';
 
-    const ring2=document.createElement('div');
-    ring2.className='bh-ring2';
-    ring2.style.width=(sz*2.8)+'px'; ring2.style.height=(sz*2.8)+'px';
+    // Relativistic jets (top + bottom)
+    const jetTop=document.createElement('div');
+    jetTop.className='bh-jet';
+    const jw=Math.round(sz*.55), jh=Math.round(sz*2);
+    jetTop.style.width=jw+'px'; jetTop.style.height=jh+'px';
+    jetTop.style.top='0'; jetTop.style.left='0';
+    jetTop.style.setProperty('--joffs',`calc(-50% - ${Math.round(sz*.55)}px)`);
+    jetTop.style.transform=`translate(-50%,calc(-50% - ${Math.round(sz*.55)}px))`;
+    jetTop.style.background='linear-gradient(to top,rgba(185,125,255,.62),rgba(145,65,255,.28),transparent)';
 
-    const ring=document.createElement('div');
-    ring.className='bh-ring';
-    ring.style.width=(sz*2.1)+'px'; ring.style.height=(sz*2.1)+'px';
+    const jetBot=document.createElement('div');
+    jetBot.className='bh-jet';
+    jetBot.style.width=jw+'px'; jetBot.style.height=jh+'px';
+    jetBot.style.top='0'; jetBot.style.left='0';
+    jetBot.style.setProperty('--joffs',`calc(-50% + ${Math.round(sz*.55)}px)`);
+    jetBot.style.transform=`translate(-50%,calc(-50% + ${Math.round(sz*.55)}px))`;
+    jetBot.style.background='linear-gradient(to bottom,rgba(185,125,255,.62),rgba(145,65,255,.28),transparent)';
 
+    // 3-band accretion disk (outer=red, mid=orange-yellow, inner=blue-white)
+    const diskOuter=document.createElement('div');
+    diskOuter.className='bh-disk-outer';
+    diskOuter.style.width=(sz*2.9)+'px'; diskOuter.style.height=(sz*2.9)+'px';
+
+    const diskMid=document.createElement('div');
+    diskMid.className='bh-disk-mid';
+    diskMid.style.width=(sz*2.25)+'px'; diskMid.style.height=(sz*2.25)+'px';
+
+    const diskInner=document.createElement('div');
+    diskInner.className='bh-disk-inner';
+    diskInner.style.width=(sz*1.68)+'px'; diskInner.style.height=(sz*1.68)+'px';
+
+    // Photon sphere — thin bright ring at event horizon edge
+    const photon=document.createElement('div');
+    photon.className='bh-photon';
+    photon.style.width=(sz*1.2)+'px'; photon.style.height=(sz*1.2)+'px';
+
+    // Dark core (event horizon)
     const core=document.createElement('div');
     core.className='bh-core';
     core.style.width=sz+'px'; core.style.height=sz+'px';
 
-    // Wrapper starts invisible; children have opacity:1 via inline (bypasses CSS rule opacity:0)
-    glow.style.opacity='1'; ring.style.opacity='1'; ring2.style.opacity='.65'; core.style.opacity='1';
+    // Inline opacity=1 on all children; hide via wrapper (bypasses CSS opacity:0 rules)
+    for(const el of [glow,jetTop,jetBot,diskOuter,diskMid,diskInner,photon,core])
+      el.style.opacity='1';
+    jetTop.style.opacity='0'; jetBot.style.opacity='0'; // jets fade in after open
     bh.style.opacity='0';
-    bh.appendChild(glow); bh.appendChild(ring2); bh.appendChild(ring); bh.appendChild(core);
+
+    bh.appendChild(glow);
+    bh.appendChild(jetTop); bh.appendChild(jetBot);
+    bh.appendChild(diskOuter); bh.appendChild(diskMid); bh.appendChild(diskInner);
+    bh.appendChild(photon);
+    bh.appendChild(core);
     document.body.appendChild(bh);
 
-    // Animate children scale open, then fade wrapper in
     const TR='cubic-bezier(.34,1.18,.64,1)';
     setTimeout(()=>{
-      // Fade in wrapper
-      bh.style.transition='opacity .3s ease';
+      bh.style.transition='opacity .28s ease';
       bh.style.opacity='1';
 
-      // Scale up children
-      glow.style.transition=`transform .55s ease`;
+      glow.style.transition='transform .6s ease';
       glow.style.transform='translate(-50%,-50%) scale(1)';
 
-      ring2.style.transition=`transform .48s ${TR} 80ms`;
-      ring2.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+      diskOuter.style.transition=`transform .62s ${TR} 55ms`;
+      diskOuter.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
 
-      ring.style.transition=`transform .48s ${TR} 40ms`;
-      ring.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+      diskMid.style.transition=`transform .54s ${TR} 32ms`;
+      diskMid.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+
+      diskInner.style.transition=`transform .46s ${TR} 14ms`;
+      diskInner.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+
+      photon.style.transition=`transform .42s ${TR}`;
+      photon.style.transform='translate(-50%,-50%) scale(1)';
 
       core.style.transition=`transform .5s ${TR}`;
       core.style.transform='translate(-50%,-50%) scale(1)';
 
-      // Spin + pulse after open
+      // Jets fade in slightly after disk opens
       setTimeout(()=>{
-        ring.classList.add('spin'); ring2.classList.add('spin');
-        core.classList.add('pulse'); glow.classList.add('pulse');
-      }, 540);
+        jetTop.style.transition='opacity .5s ease'; jetTop.style.opacity='1';
+        jetBot.style.transition='opacity .5s ease'; jetBot.style.opacity='1';
+      }, 340);
+
+      // Add spin/pulse classes after open animation completes
+      setTimeout(()=>{
+        diskOuter.classList.add('spin');
+        diskMid.classList.add('spin');
+        diskInner.classList.add('spin');
+        core.classList.add('pulse');
+        glow.classList.add('pulse');
+        jetTop.classList.add('pulse');
+        jetBot.classList.add('pulse');
+      }, 600);
     }, 40);
+
+    // Hawking radiation — tiny particles escaping the event horizon
+    let hradInterval=null;
+    setTimeout(()=>{
+      hradInterval=setInterval(()=>{
+        if(!bh.isConnected){clearInterval(hradInterval);return;}
+        const angle=Math.random()*Math.PI*2;
+        const r=sz*.6;
+        const hx=Math.round(Math.cos(angle)*r);
+        const hy=Math.round(Math.sin(angle)*r);
+        const escAng=angle+(Math.random()*.9-.45);
+        const escDist=sz*(.9+Math.random()*1.5);
+        const p=document.createElement('div');
+        p.className='bh-hrad';
+        p.style.setProperty('--hx',hx+'px');
+        p.style.setProperty('--hy',hy+'px');
+        p.style.setProperty('--hx2',Math.round(Math.cos(escAng)*escDist)+'px');
+        p.style.setProperty('--hy2',Math.round(Math.sin(escAng)*escDist)+'px');
+        p.style.animationDuration=Math.round(500+Math.random()*900)+'ms';
+        p.style.boxShadow='0 0 4px 1px rgba(200,155,255,.72)';
+        bh.appendChild(p);
+        setTimeout(()=>p.remove(),1600);
+      }, 160);
+    }, 580);
 
     // Pull all ships after black hole is open
     setTimeout(()=>{
@@ -707,10 +870,11 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     // Collapse
     setTimeout(()=>{
-      bh.style.transition='opacity .35s ease-in';
+      clearInterval(hradInterval);
+      bh.style.transition='opacity .38s ease-in';
       bh.style.opacity='0';
-      setTimeout(()=>{bh.remove();bhActive=false;},380);
-    }, 2900);
+      setTimeout(()=>{bh.remove();bhActive=false;},400);
+    }, 3300);
   }
 
   // ── Spawn one ship ──
