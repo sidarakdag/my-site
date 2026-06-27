@@ -692,7 +692,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     const coreEl=document.createElement('div');
     coreEl.className='bh-core-el';
-    coreEl.style.cssText+=`left:${x}px;top:${y}px;width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 30px 8px rgba(80,0,180,.3);`;
+    coreEl.style.cssText+=`left:${x}px;top:${y}px;transform:translate(-50%,-50%);width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 30px 8px rgba(80,0,180,.3);`;
     document.body.appendChild(coreEl);
 
     // NO mix-blend-mode:screen — use ctx.globalCompositeOperation='lighter' inside canvas
