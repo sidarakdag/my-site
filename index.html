@@ -396,7 +396,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
   // ── Ship SVG builders (all face right by default) ──
   function svgFighter(h,w,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 12" style="display:block;overflow:visible">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 12" width="28" height="12" style="display:block;overflow:visible">
       <path d="M2,6 L22,1 L28,6 L22,11 Z" fill="${h}"/>
       <path d="M10,6 L18,1 L20,3.5 L11,6" fill="${w}"/>
       <path d="M10,6 L18,11 L20,8.5 L11,6" fill="${w}"/>
@@ -410,7 +410,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       const a=(i/6)*Math.PI*2;
       return `<circle cx="${(18+Math.cos(a)*11).toFixed(1)}" cy="${(10+Math.sin(a)*3.8).toFixed(1)}" r="1.5" fill="${l}"/>`;
     }).join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 16" style="display:block;overflow:visible">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 16" width="36" height="16" style="display:block;overflow:visible">
       <ellipse cx="18" cy="11" rx="17" ry="4.5" fill="${h}"/>
       <ellipse cx="18" cy="7.5" rx="10" ry="6" fill="${d}"/>
       <ellipse cx="18" cy="6" rx="6" ry="3.5" fill="rgba(0,0,0,.25)"/>
@@ -419,7 +419,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     </svg>`;
   }
   function svgFreighter(h,b,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 18" style="display:block;overflow:visible">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 18" width="52" height="18" style="display:block;overflow:visible">
       <rect x="4" y="5" width="38" height="8" rx="2" fill="${h}"/>
       <rect x="36" y="2" width="16" height="14" rx="2" fill="${b}"/>
       <rect x="5" y="3" width="12" height="3" rx="1" fill="${c}"/>
@@ -432,7 +432,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     </svg>`;
   }
   function svgCapital(h,p,b,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 24" style="display:block;overflow:visible">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 24" width="80" height="24" style="display:block;overflow:visible">
       <path d="M0,12 L62,0 L80,12 L62,24 Z" fill="${h}"/>
       <path d="M8,12 L54,3.5 L66,12 L54,20.5 Z" fill="${p}" opacity="0.28"/>
       <line x1="12" y1="12" x2="54" y2="5" stroke="${p}" stroke-width="0.7" opacity="0.22"/>
@@ -446,7 +446,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     </svg>`;
   }
   function svgShuttle(h,w,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" style="display:block;overflow:visible">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" width="24" height="16" style="display:block;overflow:visible">
       <path d="M2,8 L16,2 L24,8 L16,14 Z" fill="${h}"/>
       <path d="M7,8 L16,0 L18,3 L9,8" fill="${w}" opacity="0.85"/>
       <path d="M7,8 L16,16 L18,13 L9,8" fill="${w}" opacity="0.85"/>
@@ -607,22 +607,33 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   (function injectBHStyles(){
     const s=document.createElement('style');
     s.textContent=`
-      @keyframes bhSpin{to{transform:translate(-50%,-50%) rotateX(72deg) rotate(360deg);}}
-      @keyframes bhPulse{0%,100%{opacity:.7;filter:blur(0px);}50%{opacity:1;filter:blur(1px);}}
-      .bh-wrap{position:fixed;pointer-events:none;z-index:5;transform:translate(-50%,-50%);}
+      @keyframes bhSpin{
+        from{transform:translate(-50%,-50%) rotateX(68deg) rotate(0deg);}
+        to{transform:translate(-50%,-50%) rotateX(68deg) rotate(360deg);}
+      }
+      @keyframes bhCorePulse{
+        0%,100%{box-shadow:0 0 18px rgba(180,60,255,.85),0 0 42px rgba(130,0,240,.5),inset 0 0 14px rgba(200,80,255,.3),0 0 0 2.5px rgba(195,80,255,.9);}
+        50%{box-shadow:0 0 32px rgba(220,100,255,1),0 0 68px rgba(170,40,255,.65),inset 0 0 22px rgba(220,100,255,.45),0 0 0 2.5px rgba(230,120,255,1);}
+      }
+      @keyframes bhGlowPulse{
+        0%,100%{opacity:.85;}50%{opacity:1;}
+      }
+      .bh-wrap{position:fixed;pointer-events:none;z-index:11;transform:translate(-50%,-50%);}
+      .bh-glow{position:absolute;top:0;left:0;border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(0);}
+      .bh-ring{position:absolute;top:0;left:0;border-radius:50%;border:2px solid rgba(210,110,255,.85);
+        box-shadow:0 0 10px rgba(180,80,255,.5),0 0 22px rgba(140,40,255,.3);
+        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
+      .bh-ring2{position:absolute;top:0;left:0;border-radius:50%;border:1px solid rgba(170,70,255,.55);
+        box-shadow:0 0 8px rgba(160,60,255,.4);
+        opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(0);}
       .bh-core{position:absolute;top:0;left:0;border-radius:50%;
-        background:radial-gradient(circle,#000 38%,rgba(20,0,50,.85) 65%,transparent 100%);
-        transform:translate(-50%,-50%) scale(0);transition:transform .45s cubic-bezier(.34,1.2,.64,1);}
-      .bh-ring{position:absolute;top:0;left:0;border-radius:50%;border:2px solid rgba(160,80,255,.55);
-        box-shadow:0 0 12px rgba(120,60,255,.45),inset 0 0 8px rgba(180,100,255,.3);
-        transform:translate(-50%,-50%) rotateX(72deg) rotate(0deg) scale(0);
-        transition:transform .45s cubic-bezier(.34,1.2,.64,1) .05s;
-        animation:none;}
-      .bh-ring.open{animation:bhSpin 1.8s linear infinite;}
-      .bh-glow{position:absolute;top:0;left:0;border-radius:50%;
-        background:radial-gradient(circle,transparent 28%,rgba(100,40,220,.18) 55%,transparent 75%);
-        transform:translate(-50%,-50%) scale(0);transition:transform .5s ease .1s;
-        animation:bhPulse 1.4s ease-in-out infinite;}
+        background:radial-gradient(circle,#04001a 30%,rgba(18,0,52,.98) 60%,rgba(38,0,78,.75) 80%,transparent 100%);
+        box-shadow:0 0 18px rgba(180,60,255,.85),0 0 42px rgba(130,0,240,.5),inset 0 0 14px rgba(200,80,255,.3),0 0 0 2.5px rgba(195,80,255,.9);
+        opacity:0;transform:translate(-50%,-50%) scale(0);}
+      .bh-ring.spin{animation:bhSpin 2s linear infinite;}
+      .bh-ring2.spin{animation:bhSpin 3.2s linear infinite reverse;}
+      .bh-core.pulse{animation:bhCorePulse 1.4s ease-in-out infinite;}
+      .bh-glow.pulse{animation:bhGlowPulse 1.6s ease-in-out infinite;}
     `;
     document.head.appendChild(s);
   })();
@@ -632,53 +643,74 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     if(bhActive) return;
     bhActive=true;
 
+    const sz=82;
     const bh=document.createElement('div');
     bh.className='bh-wrap';
     bh.style.left=x+'px'; bh.style.top=y+'px';
 
-    const sz=78;
+    const glow=document.createElement('div');
+    glow.className='bh-glow';
+    glow.style.width=(sz*3.6)+'px'; glow.style.height=(sz*3.6)+'px';
+    glow.style.background='radial-gradient(circle,rgba(150,30,255,.2) 0%,rgba(100,0,200,.12) 45%,transparent 70%)';
+
+    const ring2=document.createElement('div');
+    ring2.className='bh-ring2';
+    ring2.style.width=(sz*2.8)+'px'; ring2.style.height=(sz*2.8)+'px';
+
+    const ring=document.createElement('div');
+    ring.className='bh-ring';
+    ring.style.width=(sz*2.1)+'px'; ring.style.height=(sz*2.1)+'px';
+
     const core=document.createElement('div');
     core.className='bh-core';
     core.style.width=sz+'px'; core.style.height=sz+'px';
 
-    const ring=document.createElement('div');
-    ring.className='bh-ring';
-    ring.style.width=(sz*1.9)+'px'; ring.style.height=(sz*1.9)+'px';
-
-    const glow=document.createElement('div');
-    glow.className='bh-glow';
-    glow.style.width=(sz*3.2)+'px'; glow.style.height=(sz*3.2)+'px';
-
-    bh.appendChild(glow); bh.appendChild(ring); bh.appendChild(core);
+    // Wrapper starts invisible; children have opacity:1 via inline (bypasses CSS rule opacity:0)
+    glow.style.opacity='1'; ring.style.opacity='1'; ring2.style.opacity='.65'; core.style.opacity='1';
+    bh.style.opacity='0';
+    bh.appendChild(glow); bh.appendChild(ring2); bh.appendChild(ring); bh.appendChild(core);
     document.body.appendChild(bh);
 
-    // Open
-    requestAnimationFrame(()=>{
-      core.style.transform='translate(-50%,-50%) scale(1)';
-      ring.style.transform=`translate(-50%,-50%) rotateX(72deg) rotate(0deg) scale(1)`;
-      glow.style.transform='translate(-50%,-50%) scale(1)';
-      setTimeout(()=>ring.classList.add('open'),50);
-    });
+    // Animate children scale open, then fade wrapper in
+    const TR='cubic-bezier(.34,1.18,.64,1)';
+    setTimeout(()=>{
+      // Fade in wrapper
+      bh.style.transition='opacity .3s ease';
+      bh.style.opacity='1';
 
-    // Pull all ships after a short open delay
+      // Scale up children
+      glow.style.transition=`transform .55s ease`;
+      glow.style.transform='translate(-50%,-50%) scale(1)';
+
+      ring2.style.transition=`transform .48s ${TR} 80ms`;
+      ring2.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+
+      ring.style.transition=`transform .48s ${TR} 40ms`;
+      ring.style.transform='translate(-50%,-50%) rotateX(68deg) scale(1)';
+
+      core.style.transition=`transform .5s ${TR}`;
+      core.style.transform='translate(-50%,-50%) scale(1)';
+
+      // Spin + pulse after open
+      setTimeout(()=>{
+        ring.classList.add('spin'); ring2.classList.add('spin');
+        core.classList.add('pulse'); glow.classList.add('pulse');
+      }, 540);
+    }, 40);
+
+    // Pull all ships after black hole is open
     setTimeout(()=>{
       for(const w of shipRegistry){
         if(w.isConnected && w._pull) w._pull(x,y);
       }
-    }, 380);
+    }, 420);
 
     // Collapse
-    const LIFETIME=2800;
     setTimeout(()=>{
-      core.style.transition='transform .3s ease-in,opacity .3s ease-in';
-      core.style.transform='translate(-50%,-50%) scale(0)';
-      core.style.opacity='0';
-      ring.style.transition='transform .3s ease-in,opacity .3s ease-in';
-      ring.style.opacity='0';
-      glow.style.transition='opacity .3s ease-in';
-      glow.style.opacity='0';
-      setTimeout(()=>{bh.remove();bhActive=false;},320);
-    }, LIFETIME);
+      bh.style.transition='opacity .35s ease-in';
+      bh.style.opacity='0';
+      setTimeout(()=>{bh.remove();bhActive=false;},380);
+    }, 2900);
   }
 
   // ── Spawn one ship ──
@@ -822,32 +854,38 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     startAmbientNovas();
   }
 
-  /* ── Doc-level touch: find ship under finger (bypasses z-index blocking) ── */
+  /* ── Doc-level hit detection: bypasses z-index blocking for both mouse & touch ── */
+  function _scanShipsAt(tx,ty){
+    for(const w of shipRegistry){
+      if(!w.isConnected){shipRegistry.delete(w);continue;}
+      const r=w.getBoundingClientRect();
+      const PAD=34;
+      if(tx>=r.left-PAD&&tx<=r.right+PAD&&ty>=r.top-PAD&&ty<=r.bottom+PAD){
+        if(w._onHit) w._onHit(null);
+        return true;
+      }
+    }
+    return false;
+  }
   let _touchMoved=false;
   document.addEventListener('touchstart',e=>{
     _touchMoved=false;
     if(e.touches.length!==1) return;
     const t=e.touches[0];
-    const tx=t.clientX, ty=t.clientY;
-    for(const w of shipRegistry){
-      if(!w.isConnected){shipRegistry.delete(w);continue;}
-      const r=w.getBoundingClientRect();
-      const PAD=32;
-      if(tx>=r.left-PAD&&tx<=r.right+PAD&&ty>=r.top-PAD&&ty<=r.bottom+PAD){
-        e.preventDefault();
-        if(w._onHit) w._onHit(null);
-        return;
-      }
-    }
+    if(_scanShipsAt(t.clientX,t.clientY)) e.preventDefault();
   },{passive:false});
   document.addEventListener('touchmove',()=>{_touchMoved=true;},{passive:true});
+  document.addEventListener('click',e=>{
+    if(e.target.closest('a,button,input,.p-music,.p-nav')) return;
+    _scanShipsAt(e.clientX,e.clientY);
+  },false);
 
   /* ── Double-tap anywhere on background → black hole ── */
   let _bhLastT=0,_bhLastX=0,_bhLastY=0;
   document.addEventListener('touchend',e=>{
     if(_touchMoved||e.touches.length!==0) return;
     const tgt=e.target;
-    if(tgt.closest('#mainContent,.p-music,#entrance,button,a,input')) return;
+    if(tgt?.closest?.('.p-card,.p-music,.p-nav,a,button,input,textarea,.p-fab')) return;
     const t=e.changedTouches[0];
     const now=Date.now(),dx=t.clientX-_bhLastX,dy=t.clientY-_bhLastY;
     if(now-_bhLastT<360&&dx*dx+dy*dy<70*70){
@@ -857,7 +895,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     }else{_bhLastT=now;_bhLastX=t.clientX;_bhLastY=t.clientY;}
   },{passive:false});
   document.addEventListener('dblclick',e=>{
-    if(e.target.closest('#mainContent,.p-music,#entrance,button,a,input')) return;
+    if(e.target?.closest?.('.p-card,.p-music,.p-nav,a,button,input,textarea,.p-fab')) return;
     spawnBlackHole(e.clientX,e.clientY);
   });
 
