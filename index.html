@@ -577,6 +577,29 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     };
   }
 
+  // ── Escape pod (tiny fleeing ship) ──
+  function spawnEscapePod(fromX, fromY, angle) {
+    const sz  = 6 + Math.random() * 7;
+    const h   = Math.round(sz * 0.4);
+    const pod = document.createElement('div');
+    pod.style.cssText = `position:fixed;pointer-events:none;z-index:7;
+      width:${sz}px;height:${h}px;
+      background:linear-gradient(to right,transparent 0%,rgba(190,215,255,.55) 25%,rgba(225,238,255,.92) 100%);
+      clip-path:polygon(0% 50%, 26% 0%, 100% 50%, 26% 100%);
+      box-shadow:0 0 ${Math.round(sz*.55)}px rgba(160,200,255,.6);
+      left:${fromX - sz/2}px;top:${fromY - h/2}px;
+      transform-origin:center center;
+      transform:rotate(${angle}rad);`;
+    document.body.appendChild(pod);
+    const dist = 65 + Math.random() * 110;
+    const dur  = 900 + Math.random() * 700;
+    pod.animate([
+      {transform:`rotate(${angle}rad) translateX(0)`,       opacity:.95},
+      {transform:`rotate(${angle}rad) translateX(${dist*.2}px)`, opacity:1,  offset:.12},
+      {transform:`rotate(${angle}rad) translateX(${dist}px)`,   opacity:0},
+    ],{duration:dur, easing:'ease-out'}).onfinish=()=>pod.remove();
+  }
+
   // ── Spawn one ship ──
   let activeShips=0;
   const MAX_SHIPS=9;
@@ -589,11 +612,11 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const [hC,wC,bC,eC,laserC]=FX[faction];
     let svgStr;
     switch(type){
-      case 'fighter':   svgStr=svgFighter(hC,wC,bC,eC);   break;
+      case 'fighter':   svgStr=svgFighter(hC,wC,bC,eC);      break;
       case 'ufo':       svgStr=svgUFO(hC,wC,bC,laserC+'1)'); break;
-      case 'freighter': svgStr=svgFreighter(hC,bC,wC,eC); break;
-      case 'capital':   svgStr=svgCapital(hC,wC,bC,eC);   break;
-      case 'shuttle':   svgStr=svgShuttle(hC,wC,bC,eC);   break;
+      case 'freighter': svgStr=svgFreighter(hC,bC,wC,eC);    break;
+      case 'capital':   svgStr=svgCapital(hC,wC,bC,eC);      break;
+      case 'shuttle':   svgStr=svgShuttle(hC,wC,bC,eC);      break;
     }
     const scale=(cfg.scale[0]+Math.random()*(cfg.scale[1]-cfg.scale[0])).toFixed(2);
     const op=(0.38+Math.random()*0.42).toFixed(2);
@@ -601,29 +624,76 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const startY=3+Math.random()*82;
     const dur=cfg.dur[0]+Math.random()*(cfg.dur[1]-cfg.dur[0]);
     const tilt=(Math.random()*18-9).toFixed(1);
+
     const wrap=document.createElement('div');
-    wrap.style.cssText='position:absolute;pointer-events:none;';
-    wrap.innerHTML=`<div style="opacity:${op};transform:scale(${scale})${goRight?'':' scaleX(-1)'} rotate(${tilt}deg);transform-origin:left center;">${svgStr}</div>`;
+    wrap.style.cssText='position:absolute;pointer-events:auto;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+    wrap.innerHTML=`<div id="inner" style="opacity:${op};transform:scale(${scale})${goRight?'':' scaleX(-1)'} rotate(${tilt}deg);transform-origin:left center;">${svgStr}</div>`;
     const startX=goRight?-10:112, endX=goRight?114:-12;
     wrap.style.left=startX+'%'; wrap.style.top=startY+'%';
     shipLayer.appendChild(wrap);
-    let laserTimer;
+
+    let laserTimer, exploded=false;
     if(cfg.fires){
       const schedLaser=()=>{
         const delay=cfg.iv[0]+Math.random()*(cfg.iv[1]-cfg.iv[0]);
         laserTimer=setTimeout(()=>{
-          if(wrap.isConnected){fireLaser(wrap,goRight,laserC);schedLaser();}
+          if(wrap.isConnected&&!exploded){fireLaser(wrap,goRight,laserC);schedLaser();}
         },delay);
       };
       setTimeout(schedLaser,600+Math.random()*1200);
     }
+
     const anim=wrap.animate([
       {left:startX+'%',opacity:'0'},
       {left:(startX+(endX-startX)*.05)+'%',opacity:op,offset:.04},
       {left:(startX+(endX-startX)*.93)+'%',opacity:op,offset:.94},
       {left:endX+'%',opacity:'0'},
     ],{duration:dur,easing:'linear'});
-    anim.onfinish=()=>{clearTimeout(laserTimer);wrap.remove();activeShips--;};
+    anim.onfinish=()=>{clearTimeout(laserTimer);if(!exploded){wrap.remove();activeShips--;}};
+
+    // ── Click / tap to destroy ──
+    function onHit(e){
+      if(exploded) return;
+      e.stopPropagation();
+      exploded=true;
+      clearTimeout(laserTimer);
+      try{anim.cancel();}catch(_){}
+
+      const rect=wrap.getBoundingClientRect();
+      const cx=rect.left+rect.width/2;
+      const cy=rect.top+rect.height/2;
+
+      const isLarge = type==='capital'||type==='freighter';
+      const isMed   = type==='ufo';
+
+      // Flash white
+      const inner=wrap.querySelector('#inner');
+      if(inner) inner.style.filter='brightness(10) saturate(0)';
+
+      // Escape pods for large/medium ships
+      const podCount = isLarge ? 4+Math.floor(Math.random()*4) : isMed ? 3+Math.floor(Math.random()*2) : 0;
+      const spread   = isLarge ? Math.PI*.8 : Math.PI*.6;
+      const baseAngle= goRight ? 0 : Math.PI;
+      for(let i=0;i<podCount;i++){
+        setTimeout(()=>{
+          const a = baseAngle + (Math.random()*spread*2 - spread);
+          spawnEscapePod(cx, cy, a);
+        }, i*140 + Math.random()*60);
+      }
+
+      // Explosion after pods have a head-start
+      const explDelay = isLarge ? 750+Math.random()*400 : isMed ? 320+Math.random()*200 : 40;
+      const explScale = isLarge ? 1.6+Math.random()*.9  : isMed ? 1.0+Math.random()*.5  : 0.4+Math.random()*.35;
+
+      setTimeout(()=>{
+        wrap.style.opacity='0';
+        spawnExplosion(cx/window.innerWidth*100, cy/window.innerHeight*100, explScale);
+        setTimeout(()=>{wrap.remove();activeShips--;},300);
+      }, explDelay);
+    }
+
+    wrap.addEventListener('click',      onHit);
+    wrap.addEventListener('touchend',   onHit, {passive:false});
   }
 
   // ── Ambient distant explosions ──
