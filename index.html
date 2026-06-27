@@ -30,6 +30,11 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 /* ── Spaceship layer ── */
 #shipLayer{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
 
+/* ── Figure layer ── */
+#figLayer{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+.bg-fig{position:absolute;pointer-events:none;animation:bgFigFloat ease-in-out infinite alternate;}
+@keyframes bgFigFloat{0%{transform:translateY(0) rotate(var(--fr,0deg))}100%{transform:translateY(var(--fy,-14px)) rotate(var(--fr2,0deg))}}
+
 /* ── Ambient orbs ── */
 .orb{position:fixed;border-radius:50%;filter:blur(170px);pointer-events:none;z-index:0;}
 .orb-a{width:65vw;height:65vw;max-width:580px;max-height:580px;top:-22%;right:-22%;background:rgba(16,40,160,.038);animation:orbDrift 38s ease-in-out infinite;}
@@ -199,7 +204,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 /* ═══ REDUCED MOTION ═══ */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.15ms!important;}
-  #starLayer,#shipLayer,#bgShine,.orb,#grain{display:none!important;}
+  #starLayer,#shipLayer,#figLayer,#bgShine,.orb,#grain{display:none!important;}
   .p-hero-name,.p-hero-fig-img,.p-hero-fig-ring{animation:none;}
 }
 </style>
@@ -210,6 +215,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 <div id="cosmicAtmo"></div>
 <div id="starLayer"></div>
 <div id="shipLayer"></div>
+<div id="figLayer"></div>
 <div class="orb orb-a"></div>
 <div class="orb orb-b"></div>
 <div id="bgShine"></div>
@@ -336,6 +342,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   const mainContent   = document.getElementById('mainContent');
   const starLayer     = document.getElementById('starLayer');
   const shipLayer     = document.getElementById('shipLayer');
+  const figLayer      = document.getElementById('figLayer');
   const bgMusic       = document.getElementById('bgMusic');
   const musicPlayer   = document.getElementById('musicPlayer');
   const heroFigure    = document.getElementById('heroFigure');
@@ -438,6 +445,76 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     setInterval(() => { if(shipCount < MAX_SHIPS) spawnShip(); }, 7000);
   }
 
+  /* ── Drifting figures ── */
+  const FIGURE_IMGS = ['assets/images/falling-figure.png'];
+  let figCount = 0;
+  const MAX_FIGS = 5;
+
+  function spawnFig() {
+    if(figCount >= MAX_FIGS) return;
+    figCount++;
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:absolute;pointer-events:none;';
+
+    // Vary: small distant ones vs slightly larger nearer ones
+    const h        = 36 + Math.random() * 52;       // 36-88px tall
+    const op       = (0.04 + Math.random() * 0.1).toFixed(3); // very subtle
+    const src      = FIGURE_IMGS[0];
+    const floatAmp = (8 + Math.random() * 14).toFixed(1);
+    const floatDur = (4 + Math.random() * 5).toFixed(1);
+    const tiltA    = (Math.random() * 14 - 7).toFixed(1);
+    const tiltB    = (Math.random() * 14 - 7).toFixed(1);
+    const glowSize = Math.round(h * 0.35);
+
+    const goRight  = Math.random() > 0.4;
+    const startY   = 8 + Math.random() * 72;
+    const drift    = (Math.random() * 16 - 8).toFixed(1);  // slight diagonal
+    const dur      = 28000 + Math.random() * 22000;         // 28-50s
+
+    wrap.innerHTML = `
+      <div class="bg-fig" style="
+        width:${Math.round(h*0.52)}px;height:${h}px;
+        --fr:${tiltA}deg;--fr2:${tiltB}deg;
+        --fy:-${floatAmp}px;
+        animation-duration:${floatDur}s;
+        animation-delay:-${(Math.random()*5).toFixed(1)}s;
+        filter:drop-shadow(0 0 ${glowSize}px rgba(255,230,240,.18));
+      ">
+        <img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;display:block;
+          ${goRight ? '' : 'transform:scaleX(-1);'}
+          filter:brightness(1.1) saturate(0.6);">
+      </div>`;
+
+    wrap.style.opacity  = op;
+    wrap.style.top      = startY + '%';
+    wrap.style.left     = (goRight ? -6 : 106) + '%';
+    wrap.style.transform = `rotate(${drift}deg)`;
+
+    figLayer.appendChild(wrap);
+
+    const startX = goRight ? -6  : 108;
+    const endX   = goRight ? 110 : -8;
+
+    const anim = wrap.animate(
+      [
+        {left: startX+'%', opacity: '0'},
+        {left: (startX+(endX-startX)*0.06)+'%', opacity: op, offset: 0.05},
+        {left: (startX+(endX-startX)*0.93)+'%', opacity: op, offset: 0.94},
+        {left: endX+'%', opacity: '0'}
+      ],
+      {duration: dur, easing: 'linear'}
+    );
+    anim.onfinish = () => { wrap.remove(); figCount--; };
+  }
+
+  function startFigs() {
+    spawnFig();
+    setTimeout(spawnFig, 5000);
+    setTimeout(spawnFig, 11000);
+    setInterval(() => { if(figCount < MAX_FIGS) spawnFig(); }, 9000);
+  }
+
   /* ── Subtle cursor spotlight ── */
   const spotlight = document.createElement('div');
   spotlight.style.cssText='position:fixed;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.016) 0%,transparent 70%);transform:translate(-50%,-50%);pointer-events:none;z-index:4;top:50%;left:50%;transition:left .08s,top .08s;';
@@ -456,6 +533,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       starLayer.style.transform = `translate(${rx*5}px, ${ry*3}px)`;
       // Ships drift even less
       shipLayer.style.transform = `translate(${rx*2}px, ${ry*1.5}px)`;
+      figLayer.style.transform  = `translate(${rx*4}px, ${ry*2.5}px)`;
       // Hero figure responds to mouse
       if(heroFigure && window.innerWidth >= 720)
         heroFigure.style.transform = `translate(${rx*-18}px, ${ry*-11}px)`;
@@ -505,6 +583,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     createStars();
     startShips();
+    startFigs();
   }
 
   fetch(`config.json?t=${Date.now()}`)
