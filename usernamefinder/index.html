@@ -173,6 +173,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .t-status{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;flex-shrink:0;}
 .t-status.clear{color:rgba(74,222,128,.9);}
 .t-status.taken{color:rgba(255,80,60,.9);}
+.t-status.forsale{color:rgba(251,146,60,.9);}
 .t-status.unverified{color:rgba(255,255,255,.18);}
 
 .t-spacer{flex:1;}
@@ -1133,7 +1134,7 @@ function addEntry(username, status, p) {
 
   const badge = document.createElement('span');
   badge.className = 't-status ' + status;
-  badge.textContent = status === 'clear' ? 'available' : status === 'claimed' ? 'claimed' : status === 'taken' ? 'taken' : '—';
+  badge.textContent = status === 'clear' ? 'available' : status === 'claimed' ? 'claimed' : status === 'taken' ? 'taken' : status === 'forsale' ? 'for sale' : '—';
 
   const spacer = document.createElement('span');
   spacer.className = 't-spacer';
@@ -1268,6 +1269,7 @@ snipeBtn.addEventListener('click', async () => {
       }
       errStreak = 0; checked++;
       if(s === 'available') { hits++; addEntry(u, 'clear', 'ig'); }
+      else if(s === 'forsale') addEntry(u, 'forsale', 'ig');
       else addEntry(u, 'taken', 'ig');
       setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
     });
@@ -1300,6 +1302,7 @@ snipeBtn.addEventListener('click', async () => {
         }
         errStreak = 0; checked++;
         if(s === 'available') { hits++; addEntry(u, 'clear', 'tg'); }
+        else if(s === 'forsale') addEntry(u, 'forsale', 'tg');
         else addEntry(u, 'taken', 'tg');
         setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
       });

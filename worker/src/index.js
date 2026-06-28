@@ -40,13 +40,35 @@ async function checkInstagram(username, session) {
 
 async function checkTelegram(username) {
   if (username.length < 5) return 'too_short';
-  const res = await fetch(`https://t.me/${encodeURIComponent(username)}`, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
-    redirect: 'follow',
-  });
-  const html = await res.text();
-  const taken = html.includes('tgme_page_title') || html.includes('tgme_page_photo');
-  return taken ? 'taken' : 'available';
+
+  const [tmeRes, fragRes] = await Promise.all([
+    fetch(`https://t.me/${encodeURIComponent(username)}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
+      redirect: 'follow',
+    }),
+    fetch(`https://fragment.com/username/${encodeURIComponent('@' + username)}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      redirect: 'follow',
+    }).catch(() => null),
+  ]);
+
+  const html = await tmeRes.text();
+  if (html.includes('tgme_page_title') || html.includes('tgme_page_photo')) return 'taken';
+  if (html.includes('fragment.com')) return 'forsale';
+
+  if (fragRes && fragRes.ok) {
+    const fragHtml = await fragRes.text().catch(() => '');
+    if (
+      fragHtml.includes('table-cell-value') ||
+      fragHtml.includes('ton-crystal') ||
+      fragHtml.includes('js-bid') ||
+      fragHtml.includes('"sold"') ||
+      fragHtml.includes('"active"') ||
+      fragHtml.includes('"ongoing"')
+    ) return 'forsale';
+  }
+
+  return 'available';
 }
 
 async function checkDiscordAvailable(username) {
