@@ -12,26 +12,28 @@ function cors(origin) {
 }
 
 async function checkInstagram(username) {
+  // facebookexternalhit UA: Instagram (Meta) serves real profile/404 content to it
+  // instead of redirecting to login like it does for regular browser UA without cookies
   const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml',
-      'Accept-Language': 'en-US,en;q=0.9',
+      ‘User-Agent’: ‘facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)’,
+      ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
+      ‘Accept-Language’: ‘en-US’,
     },
-    redirect: 'follow',
+    redirect: ‘follow’,
   });
-  if (res.status === 404) return 'available';
-  if (res.status === 429) return 'ratelimit';
-  if (res.status !== 200) return 'error';
+  if (res.status === 404) return ‘available’;
+  if (res.status === 429) return ‘ratelimit’;
+  if (res.status !== 200) return ‘error’;
   const html = await res.text();
   if (
-    html.includes('Page Not Found') ||
-    html.includes('"pageNotFound"') ||
-    html.includes("Sorry, this page") ||
-    html.includes("isn’t available") ||
-    html.includes("page isn't available")
-  ) return 'available';
-  return 'taken';
+    html.includes(‘Page Not Found’) ||
+    html.includes(‘"pageNotFound"’) ||
+    html.includes(‘Sorry, this page’) ||
+    html.includes(‘isn’t available’) ||
+    html.includes("isn’t available")
+  ) return ‘available’;
+  return ‘taken’;
 }
 
 async function checkTelegram(username) {
