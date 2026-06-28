@@ -117,40 +117,55 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 }
 #scanningRow span{color:rgba(255,255,255,.45);}
 
-/* ── Hits feed ── */
-.hits-label{
+/* ── Results feed ── */
+.feed-label{
   font-size:6.5px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.14);
   margin-bottom:10px;display:flex;align-items:center;gap:10px;
 }
-.hits-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05);}
+.feed-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05);}
 
-#hitsFeed{display:flex;flex-direction:column;gap:7px;}
+#hitsFeed{display:flex;flex-direction:column;gap:6px;}
 
 .hit-row{
   display:flex;align-items:center;gap:12px;
-  padding:13px 16px;border-radius:12px;
-  background:rgba(6,8,20,.65);border:1px solid rgba(255,255,255,.06);
+  padding:11px 14px;border-radius:11px;
+  background:rgba(6,8,20,.65);border:1px solid rgba(255,255,255,.055);
+  border-left:3px solid rgba(255,255,255,.08);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  animation:hitIn .28s cubic-bezier(.22,1,.36,1) both;
-  border-left:3px solid var(--p-color,rgba(255,255,255,.2));
+  animation:hitIn .22s cubic-bezier(.22,1,.36,1) both;
   position:relative;overflow:hidden;
 }
-.hit-row::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 0% 50%,rgba(255,255,255,.02),transparent 60%);pointer-events:none;}
-@keyframes hitIn{
-  from{opacity:0;transform:translateX(-16px);}
-  to{opacity:1;transform:translateX(0);}
+.hit-row.clear{border-left-color:rgba(74,222,128,.55);background:rgba(4,18,10,.7);}
+.hit-row.taken{border-left-color:rgba(255,65,55,.35);opacity:.72;}
+.hit-row::before{content:'';position:absolute;inset:0;pointer-events:none;}
+.hit-row.clear::before{background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(74,222,128,.04),transparent 60%);}
+@keyframes hitIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:translateX(0);}}
+
+.hit-name{
+  font-size:15px;font-weight:700;letter-spacing:.04em;flex-shrink:0;min-width:52px;
+  color:#fff;
 }
-.hit-name{font-size:16px;font-weight:700;letter-spacing:.04em;color:#fff;flex-shrink:0;min-width:60px;}
-.hit-url{flex:1;font-size:8px;letter-spacing:.04em;color:rgba(255,255,255,.22);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hit-row.taken .hit-name{color:rgba(255,255,255,.4);}
+
+.hit-status{
+  font-size:7px;letter-spacing:2.5px;text-transform:uppercase;flex-shrink:0;
+  padding:3px 9px;border-radius:100px;border:1px solid;
+}
+.hit-status.clear{color:rgba(74,222,128,.95);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07);}
+.hit-status.taken{color:rgba(255,65,55,.8);border-color:rgba(255,65,55,.22);background:rgba(255,65,55,.05);}
+.hit-status.unverified{color:rgba(255,255,255,.2);border-color:rgba(255,255,255,.07);background:transparent;}
+
+.hit-spacer{flex:1;}
+
 .hit-action{
-  flex-shrink:0;padding:6px 14px;border-radius:100px;
-  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);
-  color:rgba(255,255,255,.38);font-family:'Terminus TTF',monospace;font-size:7px;letter-spacing:2px;
+  flex-shrink:0;padding:5px 13px;border-radius:100px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);
+  color:rgba(255,255,255,.32);font-family:'Terminus TTF',monospace;font-size:7px;letter-spacing:2px;
   cursor:pointer;text-decoration:none;
   transition:background .15s,color .15s,border-color .15s;
   -webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;gap:5px;
 }
-.hit-action:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.8);}
+.hit-action:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:rgba(255,255,255,.78);}
 .hit-action svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0;}
 
 .empty-state{
@@ -246,8 +261,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     <!-- Scanning indicator -->
     <div id="scanningRow">scanning &nbsp;<span id="scanningName">—</span></div>
 
-    <!-- Hits feed -->
-    <div class="hits-label" id="hitsLabel" style="display:none">hits</div>
+    <!-- Results feed -->
+    <div class="feed-label" id="feedLabel" style="display:none">results</div>
     <div id="hitsFeed">
       <div class="empty-state" id="emptyState">pick a platform and hit snipe</div>
     </div>
@@ -340,26 +355,28 @@ async function checkIG(u) {
   } catch { return 'error'; }
 }
 
-/* ── Add a hit row ── */
-function addHit(username, p) {
+/* ── Add an entry row (any status) ── */
+function addEntry(username, status, p) {
   const cfg   = PLATFORMS[p];
   const feed  = document.getElementById('hitsFeed');
   const empty = document.getElementById('emptyState');
-  const label = document.getElementById('hitsLabel');
+  const label = document.getElementById('feedLabel');
   if(empty) empty.remove();
   label.style.display = '';
 
   const row = document.createElement('div');
-  row.className = 'hit-row';
-  row.style.setProperty('--p-color', cfg.color);
+  row.className = 'hit-row ' + status;
 
   const name = document.createElement('span');
   name.className = 'hit-name';
   name.textContent = username;
 
-  const url = document.createElement('span');
-  url.className = 'hit-url';
-  url.textContent = cfg.label(username);
+  const badge = document.createElement('span');
+  badge.className = 'hit-status ' + status;
+  badge.textContent = status === 'clear' ? 'clear' : status === 'taken' ? 'taken' : 'unverified';
+
+  const spacer = document.createElement('span');
+  spacer.className = 'hit-spacer';
 
   const btn = document.createElement(cfg.url ? 'a' : 'button');
   btn.className = 'hit-action';
@@ -367,21 +384,22 @@ function addHit(username, p) {
     btn.href   = cfg.url(username);
     btn.target = '_blank';
     btn.rel    = 'noopener noreferrer';
+    btn.innerHTML = svgArrow() + ' open';
   } else {
+    btn.innerHTML = svgArrow() + ' copy';
     btn.onclick = () => {
       navigator.clipboard?.writeText(username).catch(()=>{});
       btn.textContent = 'copied';
       setTimeout(() => { btn.innerHTML = svgArrow() + ' copy'; }, 1200);
     };
   }
-  const actionLabel = cfg.action === 'copy' ? 'copy' : 'open';
-  btn.innerHTML = svgArrow() + ` ${actionLabel}`;
 
   row.appendChild(name);
-  row.appendChild(url);
+  row.appendChild(badge);
+  row.appendChild(spacer);
   row.appendChild(btn);
   feed.appendChild(row);
-  row.scrollIntoView({behavior:'smooth',block:'nearest'});
+  row.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 function svgArrow(){
@@ -420,7 +438,7 @@ snipeBtn.addEventListener('click', async () => {
   /* Reset feed */
   const feed = document.getElementById('hitsFeed');
   feed.innerHTML = '<div class="empty-state" id="emptyState">scanning...</div>';
-  document.getElementById('hitsLabel').style.display = 'none';
+  document.getElementById('feedLabel').style.display = 'none';
 
   running = true;
   snipeBtn.innerHTML = '■ &nbsp; STOP';
@@ -434,48 +452,54 @@ snipeBtn.addEventListener('click', async () => {
   setStatus('running', 'scanning', `0 / ${combos.length} · 0 hits`);
 
   if(platform === 'ig') {
-    /* ── Instagram: real API check ── */
+    /* ── Instagram: real API check, show every result ── */
     for(let i=0; i<combos.length && running; i++) {
-      const u = combos[i];
+      const u      = combos[i];
       setScanning(u);
       const result = await checkIG(u);
 
       if(result === 'ratelimit') {
         i--;
-        setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length} · ${hits} hits`);
+        setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length} · ${hits} clear`);
         await sleep(5000);
         delay = Math.min(delay * 1.5, 3000);
-        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} hits`);
+        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
         continue;
       }
 
       checked++;
       if(result === 'available') {
         hits++;
-        addHit(u, 'ig');
+        addEntry(u, 'clear', 'ig');
+      } else if(result === 'taken') {
+        addEntry(u, 'taken', 'ig');
       }
-      setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} hits`);
+      /* skip 'error' silently */
+      setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
       await sleep(delay);
     }
   } else {
-    /* ── Telegram / Discord: generate & stream with small delay ── */
+    /* ── Telegram / Discord: generate & stream ── */
     for(let i=0; i<combos.length && running; i++) {
       const u = combos[i];
       setScanning(u);
-      addHit(u, platform);
-      checked++; hits++;
+      addEntry(u, 'unverified', platform);
+      checked++;
       setStatus('running', 'generating', `${checked} / ${combos.length}`);
-      await sleep(60);
+      await sleep(55);
     }
   }
 
   running = false;
   setScanning(null);
   const empty = document.getElementById('emptyState');
-  if(empty) empty.textContent = 'no hits found · try different settings';
+  if(empty) empty.textContent = 'no results · try different settings';
   snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
   snipeBtn.classList.remove('running');
-  setStatus('done', 'done', `${hits} hit${hits!==1?'s':''} · ${checked} checked`);
+  const summary = platform === 'ig'
+    ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
+    : `${checked} generated`;
+  setStatus('done', 'done', summary);
 });
 
 /* ── Platform tabs ── */
