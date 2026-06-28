@@ -441,6 +441,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
           <button class="cfg-btn active" data-cs="letters">a–z</button>
           <button class="cfg-btn" data-cs="nums">0–9</button>
           <button class="cfg-btn" data-cs="mix">mix</button>
+          <button class="cfg-btn" data-cs="words">words</button>
         </div>
       </div>
       <div class="cfg-group">
@@ -546,6 +547,79 @@ const PLATFORMS = {
   },
 };
 
+/* ── Word list (real words for username checking) ── */
+const WORDLIST = [
+  // 3-letter
+  'ace','age','aid','aim','air','arc','ark','arm','art','ash','axe',
+  'bat','bay','bit','bow','bug','cab','cap','cat','cod','cog','cow','cup','cut',
+  'day','den','dew','dig','dip','dog','dot','dye',
+  'ear','eat','egg','elf','elk','elm','emu','era','eve','eye',
+  'fan','fat','fee','fig','fin','fit','fix','fly','fog','foe','fox','fun','fur',
+  'gap','gas','god','gum','guy','gym',
+  'ham','hat','hay','hip','hit','hog','hop','hot','hub','hug',
+  'ice','imp','ink','ivy',
+  'jam','jar','jaw','jet','joy','jug',
+  'kin','kit',
+  'lag','lap','law','lay','leg','lid','lip','log','low',
+  'mad','man','map','mat','mob','mud','mug',
+  'net','oak','oat','oil','orb','ore','owl',
+  'pad','pal','pan','paw','pay','pea','pen','pie','pig','pin','pod','pop','pro','pub','pun','pup',
+  'raw','ray','red','ref','rep','rib','rig','rod','row','rum','run','rye',
+  'sap','saw','set','shy','sin','sip','ski','sky','sob','son','spy','sub','sun',
+  'tan','tar','tax','tea','tin','tip','toe','ton','toy','tug','tub',
+  'van','vim','vow',
+  'war','wax','way','web','wig','win','wit','woe',
+  'yak','yam','yen','zen','zip','zoo',
+  // 4-letter
+  'acid','apex','arch','army','atom','auto',
+  'back','bail','bait','bake','band','bare','bark','barn','base','bash','bath','bead','beam','bear','beat','bell','belt','best','bind','bird','bite','blow','blue','blur','bold','bolt','bond','bone','book','boom','boot','boss','bowl','bull','burn','bust','byte',
+  'cage','cake','calm','camp','cane','cape','card','cash','cave','chef','chin','chip','chop','clan','claw','clay','coal','coat','code','coil','cold','comb','cool','cope','cord','core','corn','crab','crew','crop','crow','cult','cure','curl',
+  'dare','dark','dart','data','dawn','deal','deep','deer','dice','disk','dive','dome','drag','draw','drop','drum','duck','duel','dune','dusk','dust','duty',
+  'edge','epic','evil',
+  'face','fade','fake','fame','fast','fate','fear','feat','feel','fire','firm','fish','fist','flag','flip','flow','foam','fold','font','food','ford','fork','form','fort','free','frog','fuel','fume','fund','fuse',
+  'gale','game','gate','gaze','gear','gift','glad','glow','glue','goal','gold','good',
+  'hack','hail','hand','hang','hard','harp','hawk','head','heal','heat','heel','herb','herd','hero','high','hill','hire','hold','hole','home','hood','hook','hope','horn','hull','hunt','hurt',
+  'icon','idea','idle','idol','iron','isle',
+  'jade','jest','join','joke','jump',
+  'keen','keep','kick','king','knot','know',
+  'lake','land','lane','lead','leaf','leap','lend','liar','life','lift','like','lime','link','lion','live','lock','loft','lone','long','loom','loop','lord','lore','lose','lure',
+  'mane','mark','mast','melt','mesh','mild','mill','mind','mine','mist','mode','mood','moon','moss','myth',
+  'name','neon','nest','news','node','norm','note','nuke',
+  'oath','omen','open',
+  'pace','page','pain','pale','palm','park','path','peak','peel','pest','pine','plan','play','plot','plug','poem','poet','pole','pond','pool','port','pose','post','pour','prey','pull','pure','push',
+  'rack','rage','raid','rail','rain','rank','rare','rate','read','real','reap','reel','rent','rich','ride','rift','ring','riot','rise','risk','roam','robe','rock','role','roll','roof','root','rope','rose','ruin','rule','rush','rust',
+  'safe','sage','sail','sake','sale','salt','sand','sane','save','scan','scar','seal','seam','self','shed','shin','ship','shop','shot','show','shut','silk','sing','sink','skin','slow','snap','snow','soar','sock','soft','soil','sole','soul','span','spin','spit','spot','spur','star','stem','stir','stop','suit','sway',
+  'tail','tale','tall','tank','tape','task','team','tear','temp','term','text','tide','tile','time','tire','toll','tomb','tone','tool','town','trap','trek','trim','trio','trip','tune','turf','turn','type',
+  'vale','vast','vent','vibe','view','vine','void','volt',
+  'wake','walk','wall','warm','warp','wave','weak','weed','week','west','wild','will','wind','wine','wing','wire','wise','wolf','wood','word','wrap',
+  'zone','zoom',
+  // 5-letter
+  'abbey','agile','alarm','album','alien','align','alive','alley','alone','angel','anime','ankle','anvil','apple','ardor','arena','armor','arrow','ashes','atlas','audio','await','awake',
+  'beach','beard','beast','bench','birch','birth','bison','black','blade','blame','blast','blaze','bleak','blend','bless','blind','block','blood','bloom','blunt','board','boost','bound','brace','brain','brand','brave','bread','break','brine','brisk','broad','brook','brown','brush','build','burst',
+  'cabin','cache','chain','chaos','charm','chase','cheap','check','chess','chest','chief','chill','claim','clasp','class','clean','clear','click','cliff','cling','clone','close','cloud','cobra','comet','coral','count','court','cover','crack','craft','crane','crawl','craze','crest','creek','crime','crisp','cross','crown','crush','cycle',
+  'dance','decay','depth','dodge','doubt','draft','drain','drama','drape','dread','dream','dress','drift','drink','drive','dwarf','dwell',
+  'eagle','earth','elder','ember','enemy','epoch','equal','evade','extra',
+  'fable','faith','false','fancy','fatal','feast','feral','fiber','field','fiend','fight','flair','flame','flank','flare','flash','fleet','flesh','flick','flock','flood','floor','flute','focus','force','forge','found','frame','frank','front','fruit',
+  'ghost','given','glade','glare','glass','gleam','glide','gloom','gloss','glove','grace','grain','grant','grape','grasp','grass','grave','grind','groan','grill','group','grove','growl','guise','gusto',
+  'hazel','heavy','hedge','heist','herbs','heron','hinge','hoard','hoist','honor','horse','house','hover','human','humor','hurry','hyena',
+  'ideal','image','inner','input',
+  'judge','juice','jumbo',
+  'karma','kayak','kneel','knife','knock','known',
+  'laser','laugh','layer','leafy','learn','ledge','legal','lemur','level','lever','light','limit','liner','lingo','liver','local','lodge','logic','loose','lover','lucky','lyric',
+  'magic','major','maker','mango','manor','maple','march','marsh','match','maxim','mocha','model','money','month','moral','motor','mourn','mouse','mouth','music',
+  'naive','naval','nerve','night','ninja','noble','noise','north','novel','nurse','nymph',
+  'ocean','olive','orbit','order','outer','ozone',
+  'pagan','paint','panic','paper','party','pause','peace','pearl','piano','piece','pilot','pitch','pixel','pizza','place','plain','plane','plant','plead','pluck','plush','point','poker','polar','power','press','price','pride','prime','print','prism','prone','pulse','purge',
+  'quest','quill',
+  'raven','realm','rebel','radar','rally','raise','range','rapid','regal','reign','remix','reply','resin','rhino','rider','ridge','rifle','rigid','risky','rival','river','roast','robot','rogue','rouge','round','royal','ruler',
+  'saint','savor','savvy','scale','scare','scene','scone','scoop','score','scorn','scout','seize','sense','serve','shade','shaft','shake','shame','shape','sharp','sheen','sheer','shelf','shell','shift','shine','shiny','shirt','short','shout','sight','sigma','skill','sleep','slick','slide','slime','sling','sloth','small','smash','smell','smile','smite','smoke','snail','snake','sneak','solid','solve','sonic','south','space','spade','spawn','spear','speed','spend','spice','spike','spine','spite','squad','stack','staff','stage','stake','stale','stamp','stand','stark','start','steal','steel','stern','stiff','still','sting','stock','stone','store','storm','stray','strip','stuck','stunt','style','sugar','surge','swell','swamp','swarm','swear','sweep','sweet','swift','swipe','swirl','sword',
+  'taunt','theme','thick','thing','thorn','threw','throw','tiger','tight','titan','title','tonic','totem','tough','toxic','tower','trace','track','trail','train','trait','tread','treat','trend','tribe','troll','trove','truck','trust','truth','tulip','twist',
+  'ultra','unite','unity','valor','vault','verse','video','vigor','viral','visor','vista','vital','vivid','vocal',
+  'wagon','waste','watch','water','weary','whale','wheat','wheel','white','whole','wield','witty','wrath','wreck','wrong',
+  'yacht','yearn','yield','youth',
+  'zebra','zesty',
+];
+
 /* ── Combo generator ── */
 function getCharset() {
   if (selCs === 'nums')    return '0123456789';
@@ -554,6 +628,17 @@ function getCharset() {
 }
 
 function generateCombos(length, charset, count) {
+  if (selCs === 'words') {
+    const words = WORDLIST.filter(w => w.length === length);
+    if (words.length === 0) return [];
+    const take = count === 0 ? words.length : Math.min(count, words.length);
+    const shuffled = [...words];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return count === 0 ? shuffled : shuffled.slice(0, take);
+  }
   const space = Math.pow(charset.length, length);
   const MAX_EXHAUSTIVE = 500000;
   const take = count === 0 ? Math.min(space, MAX_EXHAUSTIVE) : Math.min(count, space);
@@ -888,6 +973,14 @@ snipeBtn.addEventListener('click', async () => {
 
   const charset = getCharset();
   const combos  = generateCombos(selLen, charset, selCount);
+  if (combos.length === 0) {
+    running = false;
+    snipeBtn.innerHTML = snipeBtnLabel();
+    snipeBtn.classList.remove('running');
+    addNotice(`no words in list for length ${selLen} · try a different length or charset`);
+    setStatus('', 'no words found');
+    return;
+  }
   const cfg     = PLATFORMS[platform];
   let checked   = 0, hits = 0, delay = 1100;
 
