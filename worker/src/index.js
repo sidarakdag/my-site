@@ -4,26 +4,36 @@ function cors(origin) {
   const allowed = ALLOWED.find(o => origin && origin.startsWith(o)) ?? 'https://kataly.cc';
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json',
   };
 }
 
 async function checkInstagram(username) {
-  // Don't follow redirects: non-existent profiles return 404, existing ones redirect (302) to login
+  // facebookexternalhit UA: Instagram (Meta) serves real profile/404 content to it
+  // instead of redirecting to login like it does for regular browser UA without cookies
   const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml',
-      'Accept-Language': 'en-US,en;q=0.9',
+      ‘User-Agent’: ‘facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)’,
+      ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
+      ‘Accept-Language’: ‘en-US’,
     },
-    redirect: 'manual',
+    redirect: ‘follow’,
   });
-  if (res.status === 404) return 'available';
-  if (res.status === 301 || res.status === 302 || res.status === 200) return 'taken';
-  if (res.status === 429) return 'ratelimit';
-  return 'error';
+  if (res.status === 404) return ‘available’;
+  if (res.status === 429) return ‘ratelimit’;
+  if (res.status !== 200) return ‘error’;
+  const html = await res.text();
+  if (
+    html.includes(‘Page Not Found’) ||
+    html.includes(‘"pageNotFound"’) ||
+    html.includes(‘Sorry, this page’) ||
+    html.includes(‘isn’t available’) ||
+    html.includes("isn’t available")
+  ) return ‘available’;
+  return ‘taken’;
 }
 
 async function checkTelegram(username) {
@@ -37,6 +47,15 @@ async function checkTelegram(username) {
 }
 
 async function checkDiscordAvailable(username) {
+  const superProps = btoa(JSON.stringify({
+    os: 'Windows', browser: 'Chrome', device: '',
+    system_locale: 'en-US',
+    browser_user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    browser_version: '120.0.0.0', os_version: '10',
+    release_channel: 'stable', client_build_number: 270580,
+    client_event_source: null,
+  }));
+
   const endpoints = [
     'https://discord.com/api/v10/unique-username/username-attempt-unauthed',
     'https://discord.com/api/v10/users/pomelo-attempt',
@@ -47,9 +66,11 @@ async function checkDiscordAvailable(username) {
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'X-Super-Properties': superProps,
+        'X-Discord-Locale': 'en-US',
         'Accept': '*/*',
         'Origin': 'https://discord.com',
-        'Referer': 'https://discord.com/',
+        'Referer': 'https://discord.com/register',
       },
       body: JSON.stringify({ username }),
     });
@@ -64,7 +85,6 @@ async function checkDiscordAvailable(username) {
 
 async function checkDiscordScan(username, token, original) {
   if (!original || original === username) {
-    // Can't check if we don't know the original or it's the same name
     const me = await fetch('https://discord.com/api/v10/users/@me', {
       headers: { 'Authorization': token },
     });
@@ -92,23 +112,19 @@ async function checkDiscordScan(username, token, original) {
   if (patch.status === 429) return 'ratelimit';
   if (patch.status !== 200) return 'error';
 
-  // Available — revert immediately
   const revert = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: original }),
   });
-  if (revert.status === 429) return 'changed'; // revert failed — username stuck
+  if (revert.status === 429) return 'changed';
   return 'available';
 }
 
 async function claimDiscord(username, token) {
   const res = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
-    headers: {
-      'Authorization': token,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ username }),
   });
 
@@ -135,8 +151,25 @@ export default {
 
     const url = new URL(request.url);
     const p = url.searchParams.get('p');
-    const u = url.searchParams.get('u');
 
+    // ── Batch endpoint (POST /check?p=ig|tg) ──────────────────────────────
+    if (request.method === 'POST' && (p === 'ig' || p === 'tg')) {
+      try {
+        const body = await request.json();
+        if (!Array.isArray(body) || body.length > 50 ||
+            !body.every(u => /^[a-zA-Z0-9_]{1,32}$/.test(u))) {
+          return Response.json({ error: 'invalid' }, { status: 400, headers });
+        }
+        const checkFn = p === 'ig' ? checkInstagram : checkTelegram;
+        const results = await Promise.all(body.map(async u => ({ u, s: await checkFn(u) })));
+        return Response.json(results, { headers });
+      } catch {
+        return Response.json({ error: 'error' }, { status: 500, headers });
+      }
+    }
+
+    // ── Single-username endpoint (GET) ─────────────────────────────────────
+    const u = url.searchParams.get('u');
     if (!u || !/^[a-zA-Z0-9_]{1,32}$/.test(u)) {
       return Response.json({ error: 'invalid' }, { status: 400, headers });
     }
