@@ -235,6 +235,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 #radialOverlay.rm-open #radialWrap{transform:scale(1) rotate(0deg);}
 #radialSvg{width:100%;height:100%;}
 .rm-seg{cursor:pointer;opacity:0;transition:opacity .28s ease;}
+.rm-seg--empty{cursor:default;pointer-events:none;}
+.rm-seg--empty .rm-seg-bg{fill:rgba(255,255,255,.006);stroke:rgba(255,255,255,.022);}
 .rm-seg:focus{outline:none;}
 #radialOverlay.rm-open .rm-seg{opacity:1;}
 .rm-seg-bg{fill:rgba(255,255,255,.022);stroke:rgba(255,255,255,.065);stroke-width:1;transition:fill .18s;}
@@ -311,9 +313,9 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         <span>get in touch</span>
         <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
-      <button type="button" class="rm-btn" id="rmTrigger" aria-label="Open username finder">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <span>username finder</span>
+      <button type="button" class="rm-btn" id="rmTrigger" aria-label="Open quick actions">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 8 16 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>
+        <span>quick actions</span>
       </button>
     </div>
     <div class="p-hero-figure" id="heroFigure">
@@ -1215,6 +1217,11 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     const ITEMS=[
       {label:'USERNAME\nFINDER',url:'/usernamefinder',color:[72,140,255],
        icon:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35'},
+      {empty:true},
+      {empty:true},
+      {empty:true},
+      {empty:true},
+      {empty:true},
     ];
 
     const N=ITEMS.length,GAP=9,R1=54,R2=142,CX=160,CY=160;
@@ -1236,13 +1243,25 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     ITEMS.forEach((item,i)=>{
       const cA=-90+i*STEP,a0=cA-HALF,a1=cA+HALF;
+      const gEl=document.createElementNS(NS,'g');
+      gEl.classList.add('rm-seg');
+
+      if(item.empty){
+        gEl.classList.add('rm-seg--empty');
+        const bg=document.createElementNS(NS,'path');
+        bg.setAttribute('d',arcPath(a0,a1,R1,R2));
+        bg.classList.add('rm-seg-bg');
+        gEl.appendChild(bg);
+        svgEl.appendChild(gEl);
+        segs.push(gEl);
+        return;
+      }
+
       const[r,g,b]=item.color;
       const lR=(R1+R2)/2+2;
       const lx=CX+Math.cos(cA*DEG)*lR;
       const ly=CY+Math.sin(cA*DEG)*lR;
 
-      const gEl=document.createElementNS(NS,'g');
-      gEl.classList.add('rm-seg');
       gEl.setAttribute('role','button');
       gEl.setAttribute('tabindex','0');
       gEl.setAttribute('aria-label',item.label.replace('\n',' '));
@@ -1314,7 +1333,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       rmTrig.focus();
     }
 
-    rmTrig.addEventListener('click',()=>navigate(ITEMS[0]));
+    rmTrig.addEventListener('click',openRM);
     rmClose.addEventListener('click',closeRM);
     overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.id==='radialDim')closeRM();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('rm-open'))closeRM();});
