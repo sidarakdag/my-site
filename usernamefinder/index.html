@@ -986,7 +986,22 @@ document.getElementById('webhookToggle').addEventListener('click', () => {
   body.classList.toggle('open');
 });
 
-/* ── Persist webhook URLs in localStorage (device-only) ── */
+/* ── Persist tokens/sessions and webhook URLs in localStorage (device-only) ── */
+[
+  ['igSession',   'save_ig_session'],
+  ['tgBotToken',  'save_tg_token'],
+  ['dcToken',     'save_dc_token'],
+].forEach(([id, key]) => {
+  const el = document.getElementById(id);
+  const saved = localStorage.getItem(key);
+  if (saved) el.value = saved;
+  el.addEventListener('input', () => {
+    const v = el.value.trim();
+    if (v) localStorage.setItem(key, v);
+    else localStorage.removeItem(key);
+  });
+});
+
 const WH_KEYS = { ig: 'wh_ig', tg: 'wh_tg', dc: 'wh_dc' };
 ['ig','tg','dc'].forEach(p => {
   const el = document.getElementById('webhook' + p.charAt(0).toUpperCase() + p.slice(1));
