@@ -436,12 +436,13 @@ async function checkTG(u) {
 async function checkIG(u) {
   try {
     const r = await fetch(
-      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(u)}`,
-      {headers:{'X-IG-App-ID':'936619743392459'},credentials:'include',signal:AbortSignal.timeout(9000)}
+      `${WORKER_URL}?p=ig&u=${encodeURIComponent(u)}`,
+      { signal: AbortSignal.timeout(10000) }
     );
-    if(r.status===200) return 'taken';
-    if(r.status===404) return 'available';
-    if(r.status===429||r.status===403) return 'ratelimit';
+    const data = await r.json();
+    if(data.status === 'available') return 'available';
+    if(data.status === 'taken')     return 'taken';
+    if(data.status === 'ratelimit') return 'ratelimit';
     return 'error';
   } catch { return 'error'; }
 }
@@ -588,7 +589,7 @@ snipeBtn.addEventListener('click', async () => {
         consecutiveErrors++;
         if(consecutiveErrors >= 3) {
           apiDown = true;
-          addNotice('instagram api unavailable · log into instagram in this browser to enable checking');
+          addNotice('instagram api unavailable · results will show as unverified');
         }
         addEntry(u, 'unverified', 'ig');
         checked++;

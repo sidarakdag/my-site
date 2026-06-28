@@ -10,6 +10,24 @@ function cors(origin) {
   };
 }
 
+async function checkInstagram(username) {
+  const res = await fetch(
+    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+    {
+      headers: {
+        'X-IG-App-ID': '936619743392459',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    }
+  );
+  if (res.status === 200) return 'taken';
+  if (res.status === 404) return 'available';
+  if (res.status === 429 || res.status === 403 || res.status === 401) return 'ratelimit';
+  return 'error';
+}
+
 async function checkTelegram(username) {
   const res = await fetch(`https://t.me/${encodeURIComponent(username)}`, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
@@ -60,6 +78,11 @@ export default {
     }
 
     try {
+      if (p === 'ig') {
+        const status = await checkInstagram(u);
+        return Response.json({ status }, { headers });
+      }
+
       if (p === 'tg') {
         const status = await checkTelegram(u);
         return Response.json({ status }, { headers });
