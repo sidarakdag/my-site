@@ -39,6 +39,7 @@ async function checkInstagram(username, session) {
 }
 
 async function checkTelegram(username) {
+  if (username.length < 5) return 'too_short';
   const res = await fetch(`https://t.me/${encodeURIComponent(username)}`, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
     redirect: 'follow',

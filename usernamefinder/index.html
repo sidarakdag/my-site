@@ -994,6 +994,7 @@ snipeBtn.addEventListener('click', async () => {
     let errStreak = 0, apiDown = false, sessionNoticed = false;
     const igHasSession = !!document.getElementById('igSession').value.trim();
     if(!igHasSession) addNotice('no session · instagram blocks server checks · add sessionid above for accurate results · names may show as unverified');
+    if(selCs === 'words') addNotice('checking real words · platforms often reserve common words or hold deleted account names · available = no public profile found');
     setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
     await runBatchWorkers(combos, 'ig', (u, s) => {
       if(apiDown) { addEntry(u, 'unverified', 'ig'); checked++; return; }
@@ -1035,10 +1036,12 @@ snipeBtn.addEventListener('click', async () => {
       }
     } else {
       let errStreak = 0, apiDown = false;
+      if(selLen < 5) addNotice('telegram requires 5+ character usernames · shorter names cannot be registered even if no profile exists');
+      if(selCs === 'words') addNotice('checking real words · platforms often reserve common words or hold deleted account names · available = no public profile found');
       setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
       await runBatchWorkers(combos, 'tg', (u, s) => {
         if(apiDown) { addEntry(u, 'unverified', 'tg'); checked++; return; }
-        if(s === 'unverified') {
+        if(s === 'too_short' || s === 'unverified') {
           addEntry(u, 'unverified', 'tg'); checked++;
           setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
           return;
