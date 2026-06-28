@@ -1413,6 +1413,12 @@ snipeBtn.addEventListener('click', async () => {
 });
 
 /* ── Platform tabs ── */
+(function initPlatformRows() {
+  document.getElementById('igSessionRow').style.display = 'block';
+  document.getElementById('dcTokenRow').style.display   = 'none';
+  document.getElementById('tgBotRow').style.display     = 'none';
+})();
+
 document.querySelectorAll('.ptab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
