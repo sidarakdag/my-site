@@ -723,7 +723,7 @@ document.querySelectorAll('.ptab').forEach(btn => {
     document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     platform = btn.dataset.p;
-    document.getElementById('dcTokenRow').style.display = platform === 'dc' ? '' : 'none';
+    document.getElementById('dcTokenRow').style.display = platform === 'dc' ? 'block' : 'none';
   });
 });
 
