@@ -24,7 +24,8 @@ async function checkInstagram(username, session) {
   });
   if (res.status === 404) return ‘available’;
   if (res.status === 429) return ‘ratelimit’;
-  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘taken’;
+  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘unverified’;
+  if (res.status === 403) return ‘unverified’;
   if (res.status !== 200) return ‘error’;
   const html = await res.text();
   if (

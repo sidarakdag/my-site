@@ -813,22 +813,6 @@ function addEntry(username, status, p) {
     btn.textContent = '✓ yours';
     btn.style.color = 'rgba(74,222,128,.7)';
     btn.style.pointerEvents = 'none';
-  } else if(p === 'dc' && status === 'clear') {
-    btn.textContent = 'claim →';
-    btn.onclick = async () => {
-      btn.textContent = 'claiming…';
-      btn.style.pointerEvents = 'none';
-      const token = document.getElementById('dcToken').value.trim();
-      const res = await checkDC(username, token, 'claim');
-      if(res === 'claimed') {
-        badge.textContent = 'claimed'; badge.className = 't-status claimed';
-        line.className = 't-line claimed';
-        btn.textContent = '✓ yours'; btn.style.color = 'rgba(74,222,128,.7)';
-      } else {
-        btn.textContent = res === 'taken' ? 'taken now' : 'failed';
-        btn.style.pointerEvents = 'none';
-      }
-    };
   } else if(cfg.url) {
     btn.href   = cfg.url(username);
     btn.target = '_blank';
@@ -915,6 +899,8 @@ snipeBtn.addEventListener('click', async () => {
 
   if(platform === 'ig') {
     let errStreak = 0, apiDown = false, sessionNoticed = false;
+    const igHasSession = !!document.getElementById('igSession').value.trim();
+    if(!igHasSession) addNotice('no session · instagram blocks server checks · add sessionid above for accurate results · names may show as unverified');
     setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
     await runBatchWorkers(combos, 'ig', (u, s) => {
       if(apiDown) { addEntry(u, 'unverified', 'ig'); checked++; return; }
@@ -923,14 +909,19 @@ snipeBtn.addEventListener('click', async () => {
           sessionNoticed = true;
           addNotice('instagram session expired · paste a fresh sessionid above for accurate results');
         }
-        addEntry(u, 'taken', 'ig'); checked++;
+        addEntry(u, 'unverified', 'ig'); checked++;
+        return;
+      }
+      if(s === 'unverified') {
+        addEntry(u, 'unverified', 'ig'); checked++;
+        setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
         return;
       }
       if(s === 'ratelimit' || s === 'error') {
         errStreak++;
-        if(errStreak >= parallel * 3) {
+        if(errStreak >= parallel * 10) {
           apiDown = true;
-          addNotice('instagram unavailable · results showing as unverified');
+          addNotice('instagram worker unavailable · remaining results showing as unverified');
         }
         addEntry(u, 'unverified', 'ig'); checked++;
         return;
@@ -954,9 +945,14 @@ snipeBtn.addEventListener('click', async () => {
       setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
       await runBatchWorkers(combos, 'tg', (u, s) => {
         if(apiDown) { addEntry(u, 'unverified', 'tg'); checked++; return; }
+        if(s === 'unverified') {
+          addEntry(u, 'unverified', 'tg'); checked++;
+          setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
+          return;
+        }
         if(s === 'error') {
           errStreak++;
-          if(errStreak >= parallel * 3) { apiDown = true; addNotice('telegram worker unavailable'); }
+          if(errStreak >= parallel * 10) { apiDown = true; addNotice('telegram worker unavailable · remaining results showing as unverified'); }
           addEntry(u, 'unverified', 'tg'); checked++;
           return;
         }
@@ -974,7 +970,7 @@ snipeBtn.addEventListener('click', async () => {
       addNotice('worker not deployed yet'); running = false;
     } else if(!token) {
       /* no-token: generate names, can't check availability without a token */
-      addNotice('no token · generating names only · paste your discord token above to check which are available');
+      addNotice('no token · paste your discord token above to check availability · discord requires auth to verify usernames');
       setStatus('running', 'generating', `0 / ${combos.length}`);
       for(let i=0; i<combos.length && running; i++) {
         const u = combos[i];
@@ -985,7 +981,7 @@ snipeBtn.addEventListener('click', async () => {
       }
     } else {
       /* with token: scan mode — check without permanently claiming, show CLAIM button per available name */
-      addNotice('scan mode · token present · username changes briefly for available names then reverts · click claim to keep one');
+      addNotice('checking availability · username reverts instantly after each check · copy any available name and change it manually in discord settings');
       let dcOriginal = '';
       for(let i=0; i<combos.length && running; i++) {
         const u = combos[i];
