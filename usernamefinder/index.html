@@ -313,6 +313,9 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   }
 })();
 
+/* ── Worker URL (set after deploying worker/) ── */
+const WORKER_URL = '';
+
 /* ── State ── */
 let platform   = 'ig';
 let selLen     = 3;
@@ -370,6 +373,20 @@ function generateCombos(length, charset, count) {
     if(!seen.has(s)){seen.add(s);result.push(s);}
   }
   return result;
+}
+
+/* ── Telegram check via Worker ── */
+async function checkTG(u) {
+  try {
+    const r = await fetch(
+      `${WORKER_URL}?p=tg&u=${encodeURIComponent(u)}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    const data = await r.json();
+    if (data.status === 'available') return 'available';
+    if (data.status === 'taken')    return 'taken';
+    return 'error';
+  } catch { return 'error'; }
 }
 
 /* ── Instagram API check ── */
@@ -542,15 +559,58 @@ snipeBtn.addEventListener('click', async () => {
       setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
       await sleep(delay);
     }
+  } else if (platform === 'tg') {
+    /* ── Telegram: real check via Worker if deployed, else stream unverified ── */
+    if (!WORKER_URL) {
+      addNotice('telegram checking not yet set up · deploy the worker first · showing generated names only');
+      for(let i=0; i<combos.length && running; i++) {
+        const u = combos[i];
+        setScanning(u);
+        addEntry(u, 'unverified', 'tg');
+        checked++;
+        setStatus('running', 'generating', `${checked} / ${combos.length}`);
+        await sleep(55);
+      }
+    } else {
+      if (selLen < 5) addNotice('telegram requires 5+ char usernames · short combos will show as unverified');
+      let consecutiveErrors = 0, apiDown = false;
+      for(let i=0; i<combos.length && running; i++) {
+        const u = combos[i];
+        setScanning(u);
+        if (selLen < 5) { addEntry(u, 'unverified', 'tg'); checked++; await sleep(30); continue; }
+        if (apiDown) {
+          addEntry(u, 'unverified', 'tg');
+          checked++;
+          setStatus('running', 'worker unavailable', `${checked} / ${combos.length}`);
+          await sleep(55);
+          continue;
+        }
+        const result = await checkTG(u);
+        if (result === 'error') {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 3) { apiDown = true; addNotice('telegram worker unavailable · check worker deployment'); }
+          addEntry(u, 'unverified', 'tg');
+          checked++;
+          continue;
+        }
+        consecutiveErrors = 0;
+        checked++;
+        if (result === 'available') { hits++; addEntry(u, 'clear', 'tg'); }
+        else { addEntry(u, 'taken', 'tg'); }
+        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
+        await sleep(600);
+      }
+    }
   } else {
-    /* ── Telegram / Discord: generate & stream ── */
+    /* ── Discord: no public API, copy-to-search ── */
+    addNotice('discord has no public username lookup api · names shown for manual search');
     for(let i=0; i<combos.length && running; i++) {
       const u = combos[i];
       setScanning(u);
-      addEntry(u, 'unverified', platform);
+      addEntry(u, 'unverified', 'dc');
       checked++;
       setStatus('running', 'generating', `${checked} / ${combos.length}`);
-      await sleep(55);
+      await sleep(40);
     }
   }
 
@@ -558,7 +618,7 @@ snipeBtn.addEventListener('click', async () => {
   setScanning(null);
   snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
   snipeBtn.classList.remove('running');
-  const summary = platform === 'ig'
+  const summary = (platform === 'ig' || (platform === 'tg' && WORKER_URL && selLen >= 5))
     ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
     : `${checked} generated`;
   document.getElementById('terminalStatus').textContent = summary;
