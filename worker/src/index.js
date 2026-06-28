@@ -62,6 +62,46 @@ async function checkDiscordAvailable(username) {
   return 'no_unauthed';
 }
 
+async function checkDiscordScan(username, token, original) {
+  if (!original || original === username) {
+    // Can't check if we don't know the original or it's the same name
+    const me = await fetch('https://discord.com/api/v10/users/@me', {
+      headers: { 'Authorization': token },
+    });
+    if (me.status === 401) return 'invalid_token';
+    if (me.status === 429) return 'ratelimit';
+    if (me.status !== 200) return 'error';
+    const data = await me.json();
+    original = data.username;
+    if (original === username) return 'taken';
+  }
+
+  const patch = await fetch('https://discord.com/api/v10/users/@me', {
+    method: 'PATCH',
+    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+
+  if (patch.status === 400) {
+    const data = await patch.json().catch(() => ({}));
+    const errs = data?.errors?.username?._errors ?? [];
+    if (errs.some(e => e.code === 'USERNAME_ALREADY_TAKEN')) return 'taken';
+    return 'error';
+  }
+  if (patch.status === 401) return 'invalid_token';
+  if (patch.status === 429) return 'ratelimit';
+  if (patch.status !== 200) return 'error';
+
+  // Available — revert immediately
+  const revert = await fetch('https://discord.com/api/v10/users/@me', {
+    method: 'PATCH',
+    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: original }),
+  });
+  if (revert.status === 429) return 'changed'; // revert failed — username stuck
+  return 'available';
+}
+
 async function claimDiscord(username, token) {
   const res = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
@@ -116,6 +156,12 @@ export default {
         const token = request.headers.get('X-Discord-Token');
         if (!token) {
           const status = await checkDiscordAvailable(u);
+          return Response.json({ status }, { headers });
+        }
+        const mode = url.searchParams.get('mode');
+        if (mode === 'scan') {
+          const original = request.headers.get('X-Discord-Original') || '';
+          const status = await checkDiscordScan(u, token, original);
           return Response.json({ status }, { headers });
         }
         const status = await claimDiscord(u, token);

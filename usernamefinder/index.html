@@ -422,12 +422,39 @@ function generateCombos(length, charset, count) {
   return result;
 }
 
+/* ── Concurrency helpers ── */
+function getConcurrency() {
+  if (platform === 'dc') return 1;
+  if (selCount <=   100) return 5;
+  if (selCount <=  1000) return 10;
+  if (selCount <= 10000) return 25;
+  return 50;
+}
+
+async function runWorkers(items, n, fn) {
+  let next = 0;
+  await Promise.all(Array.from({length: n}, async () => {
+    while (running && next < items.length) {
+      const i = next++;
+      if (i >= items.length) break;
+      await fn(items[i], i);
+    }
+  }));
+}
+
 /* ── Discord claim via Worker ── */
-async function checkDC(u, token) {
+async function checkDC(u, token, mode = 'claim', original = '') {
   try {
+    const qs = mode === 'scan' ? `&mode=scan` : '';
     const r = await fetch(
-      `${WORKER_URL}?p=dc&u=${encodeURIComponent(u)}`,
-      { headers: { 'X-Discord-Token': token }, signal: AbortSignal.timeout(10000) }
+      `${WORKER_URL}?p=dc&u=${encodeURIComponent(u)}${qs}`,
+      {
+        headers: {
+          'X-Discord-Token': token,
+          ...(original ? { 'X-Discord-Original': original } : {}),
+        },
+        signal: AbortSignal.timeout(15000),
+      }
     );
     const data = await r.json();
     return data.status ?? 'error';
@@ -494,6 +521,22 @@ function addEntry(username, status, p) {
     btn.textContent = '✓ yours';
     btn.style.color = 'rgba(74,222,128,.7)';
     btn.style.pointerEvents = 'none';
+  } else if(p === 'dc' && status === 'clear') {
+    btn.textContent = 'claim →';
+    btn.onclick = async () => {
+      btn.textContent = 'claiming…';
+      btn.style.pointerEvents = 'none';
+      const token = document.getElementById('dcToken').value.trim();
+      const res = await checkDC(username, token, 'claim');
+      if(res === 'claimed') {
+        badge.textContent = 'claimed'; badge.className = 't-status claimed';
+        line.className = 't-line claimed';
+        btn.textContent = '✓ yours'; btn.style.color = 'rgba(74,222,128,.7)';
+      } else {
+        btn.textContent = res === 'taken' ? 'taken now' : 'failed';
+        btn.style.pointerEvents = 'none';
+      }
+    };
   } else if(cfg.url) {
     btn.href   = cfg.url(username);
     btn.target = '_blank';
@@ -573,137 +616,110 @@ snipeBtn.addEventListener('click', async () => {
   document.getElementById('terminalStatus').textContent = '';
   setStatus('running', 'scanning', `0 / ${combos.length} · 0 hits`);
 
+  const n = getConcurrency();
+
   if(platform === 'ig') {
-    /* ── Instagram: real API check, fall back to unverified if API down ── */
-    let consecutiveErrors = 0;
-    let apiDown = false;
-
-    for(let i=0; i<combos.length && running; i++) {
-      const u = combos[i];
-      setScanning(u);
-
+    let errStreak = 0, apiDown = false;
+    setStatus('running', `scanning ×${n}`, `0 / ${combos.length}`);
+    await runWorkers(combos, n, async (u) => {
       if(apiDown) {
-        addEntry(u, 'unverified', 'ig');
-        checked++;
+        addEntry(u, 'unverified', 'ig'); checked++;
         setStatus('running', 'api unavailable', `${checked} / ${combos.length}`);
-        await sleep(55);
-        continue;
+        return;
       }
-
       const result = await checkIG(u);
-
       if(result === 'ratelimit') {
-        i--;
-        setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length} · ${hits} clear`);
         await sleep(5000);
-        delay = Math.min(delay * 1.5, 3000);
-        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
-        continue;
+        addEntry(u, 'unverified', 'ig'); checked++;
+        return;
       }
-
       if(result === 'error') {
-        consecutiveErrors++;
-        if(consecutiveErrors >= 3) {
+        errStreak++;
+        if(errStreak >= Math.max(n, 3)) {
           apiDown = true;
           addNotice('instagram api unavailable · results will show as unverified');
         }
-        addEntry(u, 'unverified', 'ig');
-        checked++;
-        continue;
+        addEntry(u, 'unverified', 'ig'); checked++;
+        return;
       }
+      errStreak = 0; checked++;
+      if(result === 'available') { hits++; addEntry(u, 'clear', 'ig'); }
+      else addEntry(u, 'taken', 'ig');
+      setStatus('running', `scanning ×${n}`, `${checked} / ${combos.length} · ${hits} clear`);
+    });
 
-      consecutiveErrors = 0;
-      checked++;
-      if(result === 'available') {
-        hits++;
-        addEntry(u, 'clear', 'ig');
-      } else {
-        addEntry(u, 'taken', 'ig');
-      }
-      setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
-      await sleep(delay);
-    }
-  } else if (platform === 'tg') {
-    /* ── Telegram: real check via Worker if deployed, else stream unverified ── */
-    if (!WORKER_URL) {
-      addNotice('telegram checking not yet set up · deploy the worker first · showing generated names only');
+  } else if(platform === 'tg') {
+    if(!WORKER_URL) {
+      addNotice('telegram checking not set up · showing generated names only');
       for(let i=0; i<combos.length && running; i++) {
-        const u = combos[i];
-        setScanning(u);
-        addEntry(u, 'unverified', 'tg');
-        checked++;
+        addEntry(combos[i], 'unverified', 'tg'); checked++;
         setStatus('running', 'generating', `${checked} / ${combos.length}`);
-        await sleep(55);
+        await sleep(30);
       }
     } else {
-      let consecutiveErrors = 0, apiDown = false;
-      for(let i=0; i<combos.length && running; i++) {
-        const u = combos[i];
-        setScanning(u);
-        if (apiDown) {
-          addEntry(u, 'unverified', 'tg');
-          checked++;
+      let errStreak = 0, apiDown = false;
+      setStatus('running', `scanning ×${n}`, `0 / ${combos.length}`);
+      await runWorkers(combos, n, async (u) => {
+        if(apiDown) {
+          addEntry(u, 'unverified', 'tg'); checked++;
           setStatus('running', 'worker unavailable', `${checked} / ${combos.length}`);
-          await sleep(55);
-          continue;
+          return;
         }
         const result = await checkTG(u);
-        if (result === 'error') {
-          consecutiveErrors++;
-          if (consecutiveErrors >= 3) { apiDown = true; addNotice('telegram worker unavailable · check worker deployment'); }
-          addEntry(u, 'unverified', 'tg');
-          checked++;
-          continue;
+        if(result === 'error') {
+          errStreak++;
+          if(errStreak >= Math.max(n, 3)) { apiDown = true; addNotice('telegram worker unavailable'); }
+          addEntry(u, 'unverified', 'tg'); checked++;
+          return;
         }
-        consecutiveErrors = 0;
-        checked++;
-        if (result === 'available') { hits++; addEntry(u, 'clear', 'tg'); }
-        else { addEntry(u, 'taken', 'tg'); }
-        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
-        await sleep(600);
-      }
+        errStreak = 0; checked++;
+        if(result === 'available') { hits++; addEntry(u, 'clear', 'tg'); }
+        else addEntry(u, 'taken', 'tg');
+        setStatus('running', `scanning ×${n}`, `${checked} / ${combos.length} · ${hits} clear`);
+      });
     }
+
   } else {
-    /* ── Discord: check-only (no token) or claim mode (with token) ── */
+    /* ── Discord ── */
     const token = document.getElementById('dcToken').value.trim();
-    if (!WORKER_URL) {
+    if(!WORKER_URL) {
       addNotice('worker not deployed yet · deploy worker/ to enable discord checking');
       running = false;
-    } else if (!token) {
-      addNotice('discord requires a token to check availability · paste your token in the field above');
+    } else if(!token) {
+      addNotice('discord requires a token · paste your token in the field above');
       running = false;
     } else {
-      /* claim mode — token present, stops on first success */
+      /* scan mode: check availability without permanently claiming */
+      addNotice('scan mode · checking availability · username will briefly change for available names');
+      let dcOriginal = '';
       for(let i=0; i<combos.length && running; i++) {
         const u = combos[i];
         setScanning(u);
-        const result = await checkDC(u, token);
-        if(result === 'claimed') {
-          hits++;
-          checked++;
-          addEntry(u, 'claimed', 'dc');
-          addNotice(`@${u} is now yours · your discord username has been changed`);
-          running = false;
-          break;
-        }
+        const result = await checkDC(u, token, 'scan', dcOriginal);
         if(result === 'invalid_token') {
-          addNotice('invalid discord token · check and try again');
-          running = false;
-          break;
+          addNotice('invalid discord token · check and try again'); running = false; break;
+        }
+        if(result === 'changed') {
+          addNotice(`⚠ username changed to @${u} · revert failed (rate limited) · change it back manually`);
+          addEntry(u, 'claimed', 'dc'); hits++; checked++;
+          running = false; break;
         }
         if(result === 'ratelimit') {
           i--;
-          setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length}`);
-          await sleep(5000);
+          setStatus('running', 'rate limited · waiting 10s', `${checked} / ${combos.length}`);
+          await sleep(10000);
           continue;
         }
         checked++;
-        if(result === 'taken') {
+        if(result === 'available') {
+          hits++;
+          addEntry(u, 'clear', 'dc');
+        } else if(result === 'taken') {
           addEntry(u, 'taken', 'dc');
         } else {
           addEntry(u, 'unverified', 'dc');
         }
-        setStatus('running', 'sniping', `${checked} / ${combos.length} · ${hits} claimed`);
+        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} available`);
       }
     }
     if(!running) {
