@@ -13,29 +13,29 @@ function cors(origin) {
 
 async function checkInstagram(username, session) {
   const hdrs = {
-    ‘User-Agent’: ‘Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36’,
-    ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
-    ‘Accept-Language’: ‘en-US,en;q=0.9’,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
   };
-  if (session) hdrs[‘Cookie’] = `sessionid=${session}`;
+  if (session) hdrs['Cookie'] = `sessionid=${session}`;
   const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
     headers: hdrs,
-    redirect: ‘follow’,
+    redirect: 'follow',
   });
-  if (res.status === 404) return ‘available’;
-  if (res.status === 429) return ‘ratelimit’;
-  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘unverified’;
-  if (res.status === 403) return ‘unverified’;
-  if (res.status !== 200) return ‘error’;
+  if (res.status === 404) return 'available';
+  if (res.status === 429) return 'ratelimit';
+  if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : 'unverified';
+  if (res.status === 403) return 'unverified';
+  if (res.status !== 200) return 'error';
   const html = await res.text();
   if (
-    html.includes(‘Page Not Found’) ||
-    html.includes(‘"pageNotFound"’) ||
-    html.includes(‘Sorry, this page’) ||
-    html.includes("isn’t available") ||
-    html.includes("isn’t available")
-  ) return ‘available’;
-  return ‘taken’;
+    html.includes('Page Not Found') ||
+    html.includes('"pageNotFound"') ||
+    html.includes('Sorry, this page') ||
+    html.includes("isn't available") ||
+    html.includes("’t available")
+  ) return 'available';
+  return 'taken';
 }
 
 async function checkTelegram(username) {
@@ -154,7 +154,7 @@ export default {
     const url = new URL(request.url);
     const p = url.searchParams.get('p');
 
-    // ── Batch endpoint (POST /check?p=ig|tg) ──────────────────────────────
+    // Batch endpoint (POST /check?p=ig|tg)
     if (request.method === 'POST' && (p === 'ig' || p === 'tg')) {
       try {
         const body = await request.json();
@@ -173,7 +173,7 @@ export default {
       }
     }
 
-    // ── Single-username endpoint (GET) ─────────────────────────────────────
+    // Single-username endpoint (GET)
     const u = url.searchParams.get('u');
     if (!u || !/^[a-zA-Z0-9_]{1,32}$/.test(u)) {
       return Response.json({ error: 'invalid' }, { status: 400, headers });
