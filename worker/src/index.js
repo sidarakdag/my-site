@@ -24,8 +24,7 @@ async function checkInstagram(username, session) {
   });
   if (res.status === 404) return ‘available’;
   if (res.status === 429) return ‘ratelimit’;
-  // Redirected to login = no valid session, can’t tell if username exists
-  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘no_session’;
+  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘taken’;
   if (res.status !== 200) return ‘error’;
   const html = await res.text();
   if (

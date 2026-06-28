@@ -347,8 +347,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     <!-- Instagram session input -->
     <div class="ig-session-row" id="igSessionRow">
-      <div class="ig-session-warn">instagram blocks server checks without a session · paste your sessionid cookie to check availability</div>
-      <input class="ig-session-input" type="password" id="igSession" placeholder="paste your instagram sessionid cookie value" autocomplete="off" spellcheck="false">
+      <div class="ig-session-warn">optional · without a session instagram redirects all checks so available names may show as taken · paste sessionid for accurate results</div>
+      <input class="ig-session-input" type="password" id="igSession" placeholder="optional: paste instagram sessionid cookie for accuracy" autocomplete="off" spellcheck="false">
       <div class="ig-session-hint">get it: log into instagram in browser → f12 → application → cookies → instagram.com → copy <code>sessionid</code> value</div>
     </div>
 
@@ -795,15 +795,12 @@ snipeBtn.addEventListener('click', async () => {
     setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
     await runBatchWorkers(combos, 'ig', (u, s) => {
       if(apiDown) { addEntry(u, 'unverified', 'ig'); checked++; return; }
-      if(s === 'no_session' || s === 'invalid_session') {
+      if(s === 'invalid_session') {
         if(!sessionNoticed) {
           sessionNoticed = true;
-          addNotice(s === 'invalid_session'
-            ? 'instagram session expired · paste a fresh sessionid above to check availability'
-            : 'instagram needs a session to check · paste your sessionid cookie above · without it results are unverified');
+          addNotice('instagram session expired · paste a fresh sessionid above for accurate results');
         }
-        addEntry(u, 'unverified', 'ig'); checked++;
-        setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length}`);
+        addEntry(u, 'taken', 'ig'); checked++;
         return;
       }
       if(s === 'ratelimit' || s === 'error') {
