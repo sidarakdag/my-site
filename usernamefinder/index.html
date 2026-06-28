@@ -637,6 +637,15 @@ document.getElementById('webhookToggle').addEventListener('click', () => {
   body.classList.toggle('open');
 });
 
+/* ── Persist webhook URLs in localStorage (device-only) ── */
+const WH_KEYS = { ig: 'wh_ig', tg: 'wh_tg', dc: 'wh_dc' };
+['ig','tg','dc'].forEach(p => {
+  const el = document.getElementById('webhook' + p.charAt(0).toUpperCase() + p.slice(1));
+  const saved = localStorage.getItem(WH_KEYS[p]);
+  if (saved) el.value = saved;
+  el.addEventListener('input', () => localStorage.setItem(WH_KEYS[p], el.value.trim()));
+});
+
 /* ── Send hit to Discord webhook ── */
 const PLATFORM_COLORS = { ig: 0xE1306C, tg: 0x2AABEE, dc: 0x5865F2 };
 const PLATFORM_NAMES  = { ig: 'Instagram', tg: 'Telegram', dc: 'Discord' };
