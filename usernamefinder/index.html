@@ -406,6 +406,18 @@ function svgArrow(){
   return `<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 }
 
+function addNotice(text) {
+  const feed  = document.getElementById('hitsFeed');
+  const empty = document.getElementById('emptyState');
+  const label = document.getElementById('feedLabel');
+  if(empty) empty.remove();
+  label.style.display = '';
+  const row = document.createElement('div');
+  row.style.cssText = 'padding:9px 14px;font-size:7.5px;letter-spacing:1.5px;color:rgba(255,190,60,.45);border:1px solid rgba(255,190,60,.1);border-radius:8px;line-height:1.6;';
+  row.textContent = '⚠  ' + text;
+  feed.appendChild(row);
+}
+
 /* ── Status helpers ── */
 function setStatus(state, text, counter='') {
   const dot = document.getElementById('statusDot');
@@ -452,10 +464,22 @@ snipeBtn.addEventListener('click', async () => {
   setStatus('running', 'scanning', `0 / ${combos.length} · 0 hits`);
 
   if(platform === 'ig') {
-    /* ── Instagram: real API check, show every result ── */
+    /* ── Instagram: real API check, fall back to unverified if API down ── */
+    let consecutiveErrors = 0;
+    let apiDown = false;
+
     for(let i=0; i<combos.length && running; i++) {
-      const u      = combos[i];
+      const u = combos[i];
       setScanning(u);
+
+      if(apiDown) {
+        addEntry(u, 'unverified', 'ig');
+        checked++;
+        setStatus('running', 'api unavailable', `${checked} / ${combos.length}`);
+        await sleep(55);
+        continue;
+      }
+
       const result = await checkIG(u);
 
       if(result === 'ratelimit') {
@@ -467,14 +491,25 @@ snipeBtn.addEventListener('click', async () => {
         continue;
       }
 
+      if(result === 'error') {
+        consecutiveErrors++;
+        if(consecutiveErrors >= 3) {
+          apiDown = true;
+          addNotice('instagram api unavailable · log into instagram in this browser to enable checking');
+        }
+        addEntry(u, 'unverified', 'ig');
+        checked++;
+        continue;
+      }
+
+      consecutiveErrors = 0;
       checked++;
       if(result === 'available') {
         hits++;
         addEntry(u, 'clear', 'ig');
-      } else if(result === 'taken') {
+      } else {
         addEntry(u, 'taken', 'ig');
       }
-      /* skip 'error' silently */
       setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} clear`);
       await sleep(delay);
     }
