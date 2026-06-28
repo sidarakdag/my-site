@@ -401,6 +401,13 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       <div class="ig-session-hint">get it: log into instagram in browser → f12 → application → cookies → instagram.com → copy <code>sessionid</code> value</div>
     </div>
 
+    <!-- Telegram bot token input -->
+    <div class="ig-session-row" id="tgBotRow" style="display:none">
+      <div class="ig-session-warn">optional · without a bot token telegram checks only detect public profiles and fragment listings · with a bot token the official api is used which catches reserved and non-public usernames too</div>
+      <input class="ig-session-input" type="password" id="tgBotToken" placeholder="optional: paste telegram bot token for accurate results" autocomplete="off" spellcheck="false">
+      <div class="ig-session-hint">get it: open telegram → message @botfather → /newbot → follow steps → copy the token it gives you</div>
+    </div>
+
     <!-- Discord token input -->
     <div class="dc-token-row" id="dcTokenRow">
       <div class="dc-token-warn">⚠ &nbsp; self-botting violates discord tos · use at your own risk · successful claim = your username changes immediately</div>
@@ -936,6 +943,10 @@ async function checkBatch(usernames, plat) {
       const sess = document.getElementById('igSession').value.trim();
       if (sess) hdrs['X-IG-Session'] = sess;
     }
+    if (plat === 'tg') {
+      const tok = document.getElementById('tgBotToken').value.trim();
+      if (tok) hdrs['X-TG-Bot-Token'] = tok;
+    }
     const r = await fetch(`${WORKER_URL}?p=${plat}`, {
       method: 'POST',
       headers: hdrs,
@@ -1294,13 +1305,19 @@ snipeBtn.addEventListener('click', async () => {
         await sleep(30);
       }
     } else {
-      let errStreak = 0, apiDown = false;
+      let errStreak = 0, apiDown = false, tokenInvalid = false;
+      const tgHasBot = !!document.getElementById('tgBotToken').value.trim();
       if(selLen < 5) addNotice('telegram requires 5+ character usernames · shorter names cannot be registered even if no profile exists');
+      if(!tgHasBot) addNotice('no bot token · telegram checks only detect public profiles · add a bot token above for accurate results (message @botfather to create a free bot)');
       if(selCs === 'words') addNotice('checking real words · platforms often reserve common words or hold deleted account names · available = no public profile found');
       setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
       await runBatchWorkers(combos, 'tg', (u, s) => {
         if(apiDown) { addEntry(u, 'unverified', 'tg'); checked++; return; }
-        if(s === 'too_short' || s === 'unverified') {
+        if(s === 'invalid_token' && !tokenInvalid) {
+          tokenInvalid = true;
+          addNotice('telegram bot token invalid · falling back to profile-only checks · get a valid token from @botfather');
+        }
+        if(s === 'too_short' || s === 'unverified' || s === 'invalid_token') {
           addEntry(u, 'unverified', 'tg'); checked++;
           setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length} · ${hits} clear`);
           return;
@@ -1388,6 +1405,7 @@ document.querySelectorAll('.ptab').forEach(btn => {
     platform = btn.dataset.p;
     document.getElementById('dcTokenRow').style.display = platform === 'dc' ? 'block' : 'none';
     document.getElementById('igSessionRow').style.display = platform === 'ig' ? 'block' : 'none';
+    document.getElementById('tgBotRow').style.display = platform === 'tg' ? 'block' : 'none';
   });
 });
 

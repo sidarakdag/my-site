@@ -5,7 +5,7 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original, X-IG-Session',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original, X-IG-Session, X-TG-Bot-Token',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json',
   };
@@ -73,6 +73,43 @@ async function checkTelegram(username) {
     if (lc.includes(uLc) && (lc.includes('ton') || lc.includes('auction') || lc.includes('js-bid'))) {
       return 'forsale';
     }
+  }
+
+  return 'available';
+}
+
+async function checkTelegramBot(username, token) {
+  if (username.length < 5) return 'too_short';
+
+  // Telegram Bot API getChat — authoritative: returns 200 if the entity exists, 400 if not
+  const [botRes, fragRes] = await Promise.all([
+    fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=%40${username}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    }).catch(() => null),
+    fetch(`https://fragment.com/username/@${username}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+    }).catch(() => null),
+  ]);
+
+  if (!botRes) return await checkTelegram(username);
+  if (botRes.status === 401) return 'invalid_token';
+
+  if (botRes.ok) {
+    const data = await botRes.json().catch(() => ({}));
+    if (data.ok) return 'taken';
+  }
+
+  // getChat returned 400 (not an active public entity) — check Fragment
+  if (fragRes && fragRes.ok) {
+    const fragHtml = await fragRes.text().catch(() => '');
+    const titleMatch = fragHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch && titleMatch[1].toLowerCase().includes('@' + username.toLowerCase())) return 'forsale';
+    const lc = fragHtml.toLowerCase();
+    if (lc.includes(username.toLowerCase()) && (lc.includes('ton') || lc.includes('auction') || lc.includes('js-bid'))) return 'forsale';
   }
 
   return 'available';
@@ -193,7 +230,10 @@ export default {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }
         const igSession = request.headers.get('X-IG-Session') || '';
-        const checkFn = p === 'ig' ? (u => checkInstagram(u, igSession)) : checkTelegram;
+        const tgBotToken = request.headers.get('X-TG-Bot-Token') || '';
+        const checkFn = p === 'ig'
+          ? (u => checkInstagram(u, igSession))
+          : tgBotToken ? (u => checkTelegramBot(u, tgBotToken)) : checkTelegram;
         const results = await Promise.all(
           body.map(async u => { try { return { u, s: await checkFn(u) }; } catch { return { u, s: 'error' }; } })
         );
@@ -217,7 +257,8 @@ export default {
       }
 
       if (p === 'tg') {
-        const status = await checkTelegram(u);
+        const tgBotToken = request.headers.get('X-TG-Bot-Token') || '';
+        const status = tgBotToken ? await checkTelegramBot(u, tgBotToken) : await checkTelegram(u);
         return Response.json({ status }, { headers });
       }
 
