@@ -234,6 +234,46 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .dc-token-hint{font-size:6.5px;letter-spacing:1.5px;color:rgba(255,255,255,.18);line-height:1.8;}
 .dc-token-hint code{color:rgba(88,101,242,.7);font-family:'Terminus TTF',monospace;}
 
+/* Webhook row */
+.webhook-row{
+  margin-bottom:20px;border-radius:12px;
+  background:rgba(74,222,128,.025);border:1px solid rgba(74,222,128,.12);
+  overflow:hidden;
+}
+.webhook-toggle{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  font-size:6.5px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(74,222,128,.45);background:none;border:none;
+  font-family:'Terminus TTF',monospace;width:100%;text-align:left;
+  transition:color .15s;
+}
+.webhook-toggle:hover{color:rgba(74,222,128,.75);}
+.webhook-toggle-arrow{margin-left:auto;transition:transform .2s;font-size:9px;}
+.webhook-toggle.open .webhook-toggle-arrow{transform:rotate(180deg);}
+.webhook-body{display:none;padding:0 16px 14px;}
+.webhook-body.open{display:block;}
+.webhook-fields{display:flex;flex-direction:column;gap:8px;}
+.webhook-field{display:flex;align-items:center;gap:10px;}
+.webhook-plat-label{
+  font-size:6px;letter-spacing:2px;text-transform:uppercase;
+  width:18px;flex-shrink:0;
+}
+.webhook-plat-label.ig{color:rgba(225,48,108,.6);}
+.webhook-plat-label.tg{color:rgba(42,171,238,.6);}
+.webhook-plat-label.dc{color:rgba(88,101,242,.6);}
+.webhook-input{
+  flex:1;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.07);border-radius:7px;
+  padding:8px 12px;font-family:'Terminus TTF',monospace;font-size:9px;
+  color:rgba(255,255,255,.6);letter-spacing:.5px;outline:none;
+  transition:border-color .18s;
+}
+.webhook-input::placeholder{color:rgba(255,255,255,.14);font-size:8px;}
+.webhook-input:focus{border-color:rgba(74,222,128,.3);}
+.webhook-hint{font-size:6px;letter-spacing:1.5px;color:rgba(255,255,255,.15);margin-top:8px;line-height:1.8;}
+
 /* Claimed line */
 .t-line.claimed{border-left-color:rgba(74,222,128,.9);background:rgba(74,222,128,.04);}
 .t-line.claimed .t-name{color:#fff;text-shadow:0 0 24px rgba(74,222,128,.35);}
@@ -357,6 +397,31 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       <div class="dc-token-warn">⚠ &nbsp; self-botting violates discord tos · use at your own risk · successful claim = your username changes immediately</div>
       <input class="dc-token-input" type="password" id="dcToken" placeholder="paste your discord user token" autocomplete="off" spellcheck="false">
       <div class="dc-token-hint">get token: open discord in browser → f12 → network tab → click any request → headers → copy the <code>authorization</code> value</div>
+    </div>
+
+    <!-- Discord webhooks -->
+    <div class="webhook-row">
+      <button class="webhook-toggle" id="webhookToggle">
+        discord webhooks · post hits to your channels
+        <span class="webhook-toggle-arrow">▾</span>
+      </button>
+      <div class="webhook-body" id="webhookBody">
+        <div class="webhook-fields">
+          <div class="webhook-field">
+            <span class="webhook-plat-label ig">ig</span>
+            <input class="webhook-input" id="webhookIg" type="text" placeholder="https://discord.com/api/webhooks/… · #hitsig" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="webhook-field">
+            <span class="webhook-plat-label tg">tg</span>
+            <input class="webhook-input" id="webhookTg" type="text" placeholder="https://discord.com/api/webhooks/… · #hitstg" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="webhook-field">
+            <span class="webhook-plat-label dc">dc</span>
+            <input class="webhook-input" id="webhookDc" type="text" placeholder="https://discord.com/api/webhooks/… · #hitsdc" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+        <div class="webhook-hint">server settings → integrations → webhooks → new webhook → copy url · paste each url above for the matching channel</div>
+      </div>
     </div>
 
     <!-- Config -->
@@ -564,6 +629,48 @@ async function runBatchWorkers(combos, plat, onResult) {
   }));
 }
 
+/* ── Webhook toggle ── */
+document.getElementById('webhookToggle').addEventListener('click', () => {
+  const toggle = document.getElementById('webhookToggle');
+  const body   = document.getElementById('webhookBody');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+});
+
+/* ── Send hit to Discord webhook ── */
+const PLATFORM_COLORS = { ig: 0xE1306C, tg: 0x2AABEE, dc: 0x5865F2 };
+const PLATFORM_NAMES  = { ig: 'Instagram', tg: 'Telegram', dc: 'Discord' };
+const PLATFORM_URLS   = {
+  ig: u => `https://www.instagram.com/${u}/`,
+  tg: u => `https://t.me/${u}`,
+  dc: null,
+};
+
+function sendWebhook(username, plat) {
+  const url = {
+    ig: document.getElementById('webhookIg').value.trim(),
+    tg: document.getElementById('webhookTg').value.trim(),
+    dc: document.getElementById('webhookDc').value.trim(),
+  }[plat];
+  if (!url || !url.startsWith('https://discord.com/api/webhooks/')) return;
+
+  const profUrl = PLATFORM_URLS[plat] ? PLATFORM_URLS[plat](username) : null;
+  const embed = {
+    color: PLATFORM_COLORS[plat],
+    description: profUrl
+      ? `**[${username}](${profUrl})**`
+      : `**${username}**`,
+    footer: { text: `${PLATFORM_NAMES[plat]} · available · kataly.cc/usernamefinder` },
+    timestamp: new Date().toISOString(),
+  };
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ embeds: [embed] }),
+  }).catch(() => {});
+}
+
 /* ── Available names box ── */
 let allHits = [];
 
@@ -735,7 +842,7 @@ function addEntry(username, status, p) {
   body.appendChild(line);
   body.scrollTop = body.scrollHeight;
 
-  if (status === 'clear') addHit(username, p);
+  if (status === 'clear') { addHit(username, p); sendWebhook(username, p); }
 }
 
 function addNotice(text) {
