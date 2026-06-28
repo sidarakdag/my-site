@@ -196,6 +196,25 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.1);
 }
 
+/* Instagram session input */
+.ig-session-row{
+  display:none;margin-bottom:20px;
+  padding:14px 16px;border-radius:12px;
+  background:rgba(225,48,108,.04);border:1px solid rgba(225,48,108,.15);
+}
+.ig-session-warn{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,190,60,.5);margin-bottom:10px;line-height:1.7;}
+.ig-session-input{
+  width:100%;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  padding:10px 14px;font-family:'Terminus TTF',monospace;font-size:10px;
+  color:rgba(255,255,255,.7);letter-spacing:1px;outline:none;margin-bottom:8px;
+  transition:border-color .18s;
+}
+.ig-session-input::placeholder{color:rgba(255,255,255,.18);}
+.ig-session-input:focus{border-color:rgba(225,48,108,.45);}
+.ig-session-hint{font-size:6.5px;letter-spacing:1.5px;color:rgba(255,255,255,.18);line-height:1.8;}
+.ig-session-hint code{color:rgba(225,48,108,.6);font-family:'Terminus TTF',monospace;}
+
 /* Discord token input */
 .dc-token-row{
   display:none;margin-bottom:20px;
@@ -324,6 +343,13 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         Discord
         <span class="ptab-sub">· copy to search</span>
       </button>
+    </div>
+
+    <!-- Instagram session input -->
+    <div class="ig-session-row" id="igSessionRow">
+      <div class="ig-session-warn">instagram blocks server checks without a session · paste your sessionid cookie to check availability</div>
+      <input class="ig-session-input" type="password" id="igSession" placeholder="paste your instagram sessionid cookie value" autocomplete="off" spellcheck="false">
+      <div class="ig-session-hint">get it: log into instagram in browser → f12 → application → cookies → instagram.com → copy <code>sessionid</code> value</div>
     </div>
 
     <!-- Discord token input -->
@@ -495,9 +521,14 @@ function getBatchCfg() {
 
 async function checkBatch(usernames, plat) {
   try {
+    const hdrs = { 'Content-Type': 'application/json' };
+    if (plat === 'ig') {
+      const sess = document.getElementById('igSession').value.trim();
+      if (sess) hdrs['X-IG-Session'] = sess;
+    }
     const r = await fetch(`${WORKER_URL}?p=${plat}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: hdrs,
       body: JSON.stringify(usernames),
       signal: AbortSignal.timeout(30000),
     });
@@ -760,15 +791,26 @@ snipeBtn.addEventListener('click', async () => {
   resetHits();
 
   if(platform === 'ig') {
-    let errStreak = 0, apiDown = false;
+    let errStreak = 0, apiDown = false, sessionNoticed = false;
     setStatus('running', `scanning ×${parallel * size}`, `0 / ${combos.length}`);
     await runBatchWorkers(combos, 'ig', (u, s) => {
       if(apiDown) { addEntry(u, 'unverified', 'ig'); checked++; return; }
+      if(s === 'no_session' || s === 'invalid_session') {
+        if(!sessionNoticed) {
+          sessionNoticed = true;
+          addNotice(s === 'invalid_session'
+            ? 'instagram session expired · paste a fresh sessionid above to check availability'
+            : 'instagram needs a session to check · paste your sessionid cookie above · without it results are unverified');
+        }
+        addEntry(u, 'unverified', 'ig'); checked++;
+        setStatus('running', `scanning ×${parallel * size}`, `${checked} / ${combos.length}`);
+        return;
+      }
       if(s === 'ratelimit' || s === 'error') {
         errStreak++;
         if(errStreak >= parallel * 3) {
           apiDown = true;
-          addNotice('instagram api unavailable · results showing as unverified');
+          addNotice('instagram unavailable · results showing as unverified');
         }
         addEntry(u, 'unverified', 'ig'); checked++;
         return;
@@ -873,6 +915,7 @@ document.querySelectorAll('.ptab').forEach(btn => {
     btn.classList.add('active');
     platform = btn.dataset.p;
     document.getElementById('dcTokenRow').style.display = platform === 'dc' ? 'block' : 'none';
+    document.getElementById('igSessionRow').style.display = platform === 'ig' ? 'block' : 'none';
   });
 });
 

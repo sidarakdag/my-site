@@ -5,28 +5,27 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original, X-IG-Session',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json',
   };
 }
 
-async function checkInstagram(username) {
-  // Googlebot UA: Instagram must serve real content (not a login redirect) to
-  // Google’s crawler for SEO. Non-existing users get 404; existing get 200.
+async function checkInstagram(username, session) {
+  const hdrs = {
+    ‘User-Agent’: ‘Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36’,
+    ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
+    ‘Accept-Language’: ‘en-US,en;q=0.9’,
+  };
+  if (session) hdrs[‘Cookie’] = `sessionid=${session}`;
   const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
-    headers: {
-      ‘User-Agent’: ‘Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)’,
-      ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
-      ‘Accept-Language’: ‘en-US,en;q=0.5’,
-      ‘From’: ‘googlebot(at)googlebot.com’,
-    },
+    headers: hdrs,
     redirect: ‘follow’,
   });
   if (res.status === 404) return ‘available’;
   if (res.status === 429) return ‘ratelimit’;
-  // If we ended up on the login page despite Googlebot UA, assume user exists
-  if (res.url && res.url.includes(‘/accounts/login/’)) return ‘taken’;
+  // Redirected to login = no valid session, can’t tell if username exists
+  if (res.url && res.url.includes(‘/accounts/login/’)) return session ? ‘invalid_session’ : ‘no_session’;
   if (res.status !== 200) return ‘error’;
   const html = await res.text();
   if (
@@ -163,7 +162,8 @@ export default {
             !body.every(u => /^[a-zA-Z0-9_]{1,32}$/.test(u))) {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }
-        const checkFn = p === 'ig' ? checkInstagram : checkTelegram;
+        const igSession = request.headers.get('X-IG-Session') || '';
+        const checkFn = p === 'ig' ? (u => checkInstagram(u, igSession)) : checkTelegram;
         const results = await Promise.all(
           body.map(async u => { try { return { u, s: await checkFn(u) }; } catch { return { u, s: 'error' }; } })
         );
@@ -181,7 +181,8 @@ export default {
 
     try {
       if (p === 'ig') {
-        const status = await checkInstagram(u);
+        const igSession = request.headers.get('X-IG-Session') || '';
+        const status = await checkInstagram(u, igSession);
         return Response.json({ status }, { headers });
       }
 
