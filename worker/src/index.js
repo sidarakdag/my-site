@@ -46,8 +46,12 @@ async function checkTelegram(username) {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
       redirect: 'follow',
     }),
-    fetch(`https://fragment.com/username/${encodeURIComponent('@' + username)}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+    fetch(`https://fragment.com/username/@${username}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
       redirect: 'follow',
     }).catch(() => null),
   ]);
@@ -58,14 +62,17 @@ async function checkTelegram(username) {
 
   if (fragRes && fragRes.ok) {
     const fragHtml = await fragRes.text().catch(() => '');
-    if (
-      fragHtml.includes('table-cell-value') ||
-      fragHtml.includes('ton-crystal') ||
-      fragHtml.includes('js-bid') ||
-      fragHtml.includes('"sold"') ||
-      fragHtml.includes('"active"') ||
-      fragHtml.includes('"ongoing"')
-    ) return 'forsale';
+    // Fragment listing pages include @username in their <title>
+    const titleMatch = fragHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch && titleMatch[1].toLowerCase().includes('@' + username.toLowerCase())) {
+      return 'forsale';
+    }
+    // Fallback: TON + auction/bid/sold keywords alongside the username
+    const lc = fragHtml.toLowerCase();
+    const uLc = username.toLowerCase();
+    if (lc.includes(uLc) && (lc.includes('ton') || lc.includes('auction') || lc.includes('js-bid'))) {
+      return 'forsale';
+    }
   }
 
   return 'available';
