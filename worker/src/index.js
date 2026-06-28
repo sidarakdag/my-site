@@ -11,16 +11,17 @@ function cors(origin) {
 }
 
 async function checkInstagram(username) {
-  // Profile page URL: 404 = username doesn't exist, 200 = exists (even if login-gated)
+  // Don't follow redirects: non-existent profiles return 404, existing ones redirect (302) to login
   const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
     headers: {
-      'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'en-US,en;q=0.9',
     },
-    redirect: 'follow',
+    redirect: 'manual',
   });
   if (res.status === 404) return 'available';
-  if (res.status === 200) return 'taken';
+  if (res.status === 301 || res.status === 302 || res.status === 200) return 'taken';
   if (res.status === 429) return 'ratelimit';
   return 'error';
 }

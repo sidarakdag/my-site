@@ -300,6 +300,15 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
           <button class="cfg-btn" data-cs="mix">mix</button>
         </div>
       </div>
+      <div class="cfg-group">
+        <span class="cfg-label">COUNT</span>
+        <div class="cfg-btns">
+          <button class="cfg-btn active" data-count="100">100</button>
+          <button class="cfg-btn" data-count="1000">1k</button>
+          <button class="cfg-btn" data-count="10000">10k</button>
+          <button class="cfg-btn" data-count="100000">100k</button>
+        </div>
+      </div>
     </div>
 
     <!-- Start button -->
@@ -351,7 +360,14 @@ const WORKER_URL = 'https://kataly-username-checker.sidarakdag1.workers.dev';
 let platform   = 'ig';
 let selLen     = 3;
 let selCs      = 'letters';
+let selCount   = 100;
 let running    = false;
+
+function snipeBtnLabel() {
+  const n = selCount;
+  const label = n >= 1000 ? (n / 1000) + 'K' : n;
+  return `▶ &nbsp; SNIPE ${label} NAMES`;
+}
 
 /* ── Platform config ── */
 const PLATFORMS = {
@@ -534,7 +550,7 @@ const snipeBtn = document.getElementById('snipeBtn');
 snipeBtn.addEventListener('click', async () => {
   if(running) {
     running = false;
-    snipeBtn.textContent = '▶  SNIPE 100 NAMES';
+    snipeBtn.innerHTML = snipeBtnLabel();
     snipeBtn.classList.remove('running');
     setStatus('', 'stopped');
     setScanning(null);
@@ -550,7 +566,7 @@ snipeBtn.addEventListener('click', async () => {
   snipeBtn.classList.add('running');
 
   const charset = getCharset();
-  const combos  = generateCombos(selLen, charset, 100);
+  const combos  = generateCombos(selLen, charset, selCount);
   const cfg     = PLATFORMS[platform];
   let checked   = 0, hits = 0, delay = 1100;
 
@@ -654,36 +670,8 @@ snipeBtn.addEventListener('click', async () => {
       addNotice('worker not deployed yet · deploy worker/ to enable discord checking');
       running = false;
     } else if (!token) {
-      /* check-only mode — no username change, just availability */
-      addNotice('no token · checking availability only · add token above to enable sniping');
-      let dcCheckFailed = false;
-      for(let i=0; i<combos.length && running; i++) {
-        const u = combos[i];
-        setScanning(u);
-        const result = await checkDC(u, '');
-        if(result === 'no_unauthed') {
-          addNotice('discord check without token isn\'t available · paste your token above to snipe');
-          running = false;
-          dcCheckFailed = true;
-          break;
-        }
-        if(result === 'ratelimit') {
-          i--;
-          setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length}`);
-          await sleep(5000);
-          continue;
-        }
-        checked++;
-        if(result === 'available') {
-          hits++;
-          addEntry(u, 'clear', 'dc');
-        } else if(result === 'taken') {
-          addEntry(u, 'taken', 'dc');
-        } else {
-          addEntry(u, 'unverified', 'dc');
-        }
-        setStatus('running', 'checking', `${checked} / ${combos.length} · ${hits} clear`);
-      }
+      addNotice('discord requires a token to check availability · paste your token in the field above');
+      running = false;
     } else {
       /* claim mode — token present, stops on first success */
       for(let i=0; i<combos.length && running; i++) {
@@ -719,14 +707,14 @@ snipeBtn.addEventListener('click', async () => {
       }
     }
     if(!running) {
-      snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
+      snipeBtn.innerHTML = snipeBtnLabel();
       snipeBtn.classList.remove('running');
     }
   }
 
   running = false;
   setScanning(null);
-  snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
+  snipeBtn.innerHTML = snipeBtnLabel();
   snipeBtn.classList.remove('running');
   const summary = WORKER_URL
     ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
@@ -758,6 +746,14 @@ document.querySelectorAll('[data-cs]').forEach(btn => {
     document.querySelectorAll('[data-cs]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selCs = btn.dataset.cs;
+  });
+});
+document.querySelectorAll('[data-count]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-count]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selCount = parseInt(btn.dataset.count);
+    snipeBtn.innerHTML = snipeBtnLabel();
   });
 });
 
