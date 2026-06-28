@@ -81,6 +81,14 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 }
 .cfg-btn:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);}
 .cfg-btn.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.88);}
+.cfg-len-input{
+  width:40px;padding:5px 8px;border-radius:100px;text-align:center;
+  border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.88);font-family:'Terminus TTF',monospace;font-size:8px;letter-spacing:1px;
+  -moz-appearance:textfield;outline:none;
+}
+.cfg-len-input::-webkit-inner-spin-button,.cfg-len-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.cfg-len-input:focus{border-color:rgba(255,255,255,.4);}
 
 /* ── Snipe button ── */
 .snipe-btn{
@@ -429,24 +437,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     <div class="config-row">
       <div class="cfg-group">
         <span class="cfg-label">LEN</span>
-        <div class="cfg-btns">
-          <button class="cfg-btn" data-len="1">1</button>
-          <button class="cfg-btn" data-len="2">2</button>
-          <button class="cfg-btn active" data-len="3">3</button>
-          <button class="cfg-btn" data-len="4">4</button>
-          <button class="cfg-btn" data-len="5">5</button>
-          <button class="cfg-btn" data-len="6">6</button>
-          <button class="cfg-btn" data-len="7">7</button>
-          <button class="cfg-btn" data-len="8">8</button>
-          <button class="cfg-btn" data-len="9">9</button>
-          <button class="cfg-btn" data-len="10">10</button>
-          <button class="cfg-btn" data-len="11">11</button>
-          <button class="cfg-btn" data-len="12">12</button>
-          <button class="cfg-btn" data-len="13">13</button>
-          <button class="cfg-btn" data-len="14">14</button>
-          <button class="cfg-btn" data-len="15">15</button>
-          <button class="cfg-btn" data-len="16">16</button>
-        </div>
+        <input type="number" id="lenInput" class="cfg-len-input" min="1" max="32" value="3">
       </div>
       <div class="cfg-group">
         <span class="cfg-label">CHARS</span>
@@ -867,6 +858,20 @@ const WORDLIST = [
   'unconquerablehero',
 ];
 
+/* ── Word list (lazy-loaded) ── */
+let wordCache = null;
+async function loadWordList() {
+  if (wordCache) return wordCache;
+  try {
+    const r = await fetch('./words.txt');
+    const text = await r.text();
+    wordCache = text.split('\n').map(w => w.trim()).filter(w => w.length > 0);
+  } catch {
+    wordCache = WORDLIST;
+  }
+  return wordCache;
+}
+
 /* ── Combo generator ── */
 function getCharset() {
   if (selCs === 'nums')    return '0123456789';
@@ -876,7 +881,8 @@ function getCharset() {
 
 function generateCombos(length, charset, count) {
   if (selCs === 'words') {
-    const words = WORDLIST.filter(w => w.length === length);
+    const list = wordCache || WORDLIST;
+    const words = list.filter(w => w.length === length);
     if (words.length === 0) return [];
     const take = count === 0 ? words.length : Math.min(count, words.length);
     const shuffled = [...words];
@@ -1218,6 +1224,11 @@ snipeBtn.addEventListener('click', async () => {
   snipeBtn.innerHTML = '■ &nbsp; STOP';
   snipeBtn.classList.add('running');
 
+  if (selCs === 'words' && !wordCache) {
+    setStatus('loading', 'loading word list…');
+    await loadWordList();
+  }
+
   const charset = getCharset();
   const combos  = generateCombos(selLen, charset, selCount);
   if (combos.length === 0) {
@@ -1381,12 +1392,16 @@ document.querySelectorAll('.ptab').forEach(btn => {
 });
 
 /* ── Config buttons ── */
-document.querySelectorAll('[data-len]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-len]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selLen = parseInt(btn.dataset.len);
-  });
+document.getElementById('lenInput').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  if (v >= 1 && v <= 32) selLen = v;
+});
+document.getElementById('lenInput').addEventListener('change', e => {
+  let v = parseInt(e.target.value);
+  if (!v || v < 1) v = 1;
+  if (v > 32) v = 32;
+  e.target.value = v;
+  selLen = v;
 });
 document.querySelectorAll('[data-cs]').forEach(btn => {
   btn.addEventListener('click', () => {
