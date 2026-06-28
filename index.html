@@ -222,6 +222,34 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .p-music-icon{width:10px;height:10px;fill:rgba(255,255,255,.22);flex-shrink:0;transition:fill .2s;}
 .p-music.playing .p-music-icon{fill:rgba(255,255,255,.52);}
 
+/* ═══ RADIAL MENU ═══ */
+.rm-btn{display:inline-flex;align-items:center;gap:10px;margin-top:20px;padding:11px 24px;border:1px solid rgba(255,255,255,.065);border-radius:100px;background:transparent;color:rgba(255,255,255,.3);font-family:'Terminus TTF',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:background .22s,border-color .22s,color .22s,transform .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.rm-btn:hover{background:rgba(255,255,255,.042);border-color:rgba(255,255,255,.16);color:rgba(255,255,255,.68);}
+.rm-btn:active{transform:scale(.95);}
+.rm-btn svg{flex-shrink:0;}
+
+#radialOverlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s,visibility .22s;}
+#radialOverlay.rm-open{opacity:1;visibility:visible;pointer-events:all;}
+#radialDim{position:absolute;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+#radialWrap{position:relative;z-index:1;width:320px;height:320px;transform:scale(.72) rotate(-18deg);transition:transform .44s cubic-bezier(.34,1.46,.64,1);}
+#radialOverlay.rm-open #radialWrap{transform:scale(1) rotate(0deg);}
+#radialSvg{width:100%;height:100%;}
+.rm-seg{cursor:pointer;opacity:0;transition:opacity .28s ease;}
+.rm-seg:focus{outline:none;}
+#radialOverlay.rm-open .rm-seg{opacity:1;}
+.rm-seg-bg{fill:rgba(255,255,255,.022);stroke:rgba(255,255,255,.065);stroke-width:1;transition:fill .18s;}
+.rm-seg:hover .rm-seg-bg,.rm-seg:focus-visible .rm-seg-bg{fill:rgba(255,255,255,.065);}
+.rm-seg-hi{fill:none;stroke-width:1.5;opacity:0;transition:opacity .18s;}
+.rm-seg:hover .rm-seg-hi,.rm-seg:focus-visible .rm-seg-hi{opacity:1;}
+.rm-seg-lbl{font-family:'Terminus TTF',monospace;fill:rgba(255,255,255,.42);font-size:6.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-anchor:middle;pointer-events:none;transition:fill .18s;}
+.rm-seg:hover .rm-seg-lbl,.rm-seg:focus-visible .rm-seg-lbl{fill:rgba(255,255,255,.95);}
+.rm-seg-ico{fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;transition:filter .18s;}
+.rm-seg:hover .rm-seg-ico,.rm-seg:focus-visible .rm-seg-ico{filter:brightness(2.8);}
+#rmCenterBtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:background .2s,border-color .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+#rmCenterBtn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);}
+#rmCenterBtn svg{stroke:rgba(255,255,255,.36);fill:none;stroke-width:2;stroke-linecap:round;transition:stroke .18s;}
+#rmCenterBtn:hover svg{stroke:rgba(255,255,255,.82);}
+
 /* ═══ REDUCED MOTION ═══ */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.15ms!important;}
@@ -283,6 +311,10 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         <span>get in touch</span>
         <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
+      <button type="button" class="rm-btn" id="rmTrigger" aria-label="Open navigation wheel" aria-haspopup="dialog">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="2.5" r="1.3" opacity=".6"/><circle cx="13.5" cy="8" r="1.3" opacity=".6"/><circle cx="8" cy="13.5" r="1.3" opacity=".6"/><circle cx="2.5" cy="8" r="1.3" opacity=".6"/><circle cx="8" cy="8" r="1.8"/></svg>
+        <span>explore</span>
+      </button>
     </div>
     <div class="p-hero-figure" id="heroFigure">
       <div class="p-hero-fig-ring"></div>
@@ -291,7 +323,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     </div>
   </section>
 
-  <section class="p-contact">
+  <section class="p-contact" id="p-contact">
     <div class="p-section-eyebrow">
       <span class="p-eyebrow-line"></span>
       <span class="p-eyebrow-text">reach out</span>
@@ -332,6 +364,17 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     </div>
   </section>
 
+</div>
+
+<!-- Radial Menu -->
+<div id="radialOverlay" role="dialog" aria-label="Quick navigation" aria-hidden="true" aria-modal="true">
+  <div id="radialDim"></div>
+  <div id="radialWrap">
+    <svg id="radialSvg" viewBox="0 0 320 320" aria-hidden="true"></svg>
+    <button type="button" id="rmCenterBtn" aria-label="Close navigation">
+      <svg width="14" height="14" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
 </div>
 
 <!-- FAB -->
@@ -1166,6 +1209,122 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     .then(r=>r.json())
     .then(c=>initSite(c))
     .catch(()=>initSite({}));
+
+  /* ── Radial Navigation Wheel ── */
+  (function(){
+    const ITEMS=[
+      {label:'USERNAME\nFINDER',url:'/usernamefinder',color:[72,140,255],
+       icon:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35'},
+      {label:'TOOLS',url:'/tools',color:[255,88,148],
+       icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'},
+      {label:'CONTACT',url:'#contact',color:[72,220,140],
+       icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'},
+      {label:'GITHUB',url:'https://github.com/sidarakdag',color:[190,108,255],
+       icon:'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'}
+    ];
+
+    const N=ITEMS.length,GAP=9,R1=54,R2=142,CX=160,CY=160;
+    const STEP=360/N,HALF=(STEP-GAP)/2,DEG=Math.PI/180;
+    const NS='http://www.w3.org/2000/svg';
+
+    function arcPath(a0,a1,r1,r2){
+      const pt=(a,r)=>[CX+Math.cos(a*DEG)*r, CY+Math.sin(a*DEG)*r];
+      const[x0,y0]=pt(a0,r2),[x1,y1]=pt(a1,r2),[x2,y2]=pt(a1,r1),[x3,y3]=pt(a0,r1);
+      const lg=(a1-a0)>180?1:0;
+      return`M${x0},${y0}A${r2},${r2},0,${lg},1,${x1},${y1}L${x2},${y2}A${r1},${r1},0,${lg},0,${x3},${y3}Z`;
+    }
+
+    const overlay=document.getElementById('radialOverlay');
+    const svgEl=document.getElementById('radialSvg');
+    const rmTrig=document.getElementById('rmTrigger');
+    const rmClose=document.getElementById('rmCenterBtn');
+    const segs=[];
+
+    ITEMS.forEach((item,i)=>{
+      const cA=-90+i*STEP,a0=cA-HALF,a1=cA+HALF;
+      const[r,g,b]=item.color;
+      const lR=(R1+R2)/2+2;
+      const lx=CX+Math.cos(cA*DEG)*lR;
+      const ly=CY+Math.sin(cA*DEG)*lR;
+
+      const gEl=document.createElementNS(NS,'g');
+      gEl.classList.add('rm-seg');
+      gEl.setAttribute('role','button');
+      gEl.setAttribute('tabindex','0');
+      gEl.setAttribute('aria-label',item.label.replace('\n',' '));
+
+      const bg=document.createElementNS(NS,'path');
+      bg.setAttribute('d',arcPath(a0,a1,R1,R2));
+      bg.classList.add('rm-seg-bg');
+
+      const hi=document.createElementNS(NS,'path');
+      hi.setAttribute('d',arcPath(a0,a1,R1,R2));
+      hi.classList.add('rm-seg-hi');
+      hi.setAttribute('stroke',`rgba(${r},${g},${b},.7)`);
+      hi.setAttribute('fill',`rgba(${r},${g},${b},.055)`);
+
+      const sc=16/24;
+      const icoG=document.createElementNS(NS,'g');
+      icoG.setAttribute('transform',`translate(${(lx-12*sc).toFixed(1)},${(ly-20-12*sc).toFixed(1)}) scale(${sc.toFixed(3)})`);
+      const icoP=document.createElementNS(NS,'path');
+      icoP.setAttribute('d',item.icon);
+      icoP.classList.add('rm-seg-ico');
+      icoP.style.stroke=`rgba(${r},${g},${b},.55)`;
+      icoG.appendChild(icoP);
+
+      const lines=item.label.split('\n');
+      const lineH=9,nL=lines.length;
+      const txtCY=ly+5;
+      const txt=document.createElementNS(NS,'text');
+      txt.classList.add('rm-seg-lbl');
+      lines.forEach((line,li)=>{
+        const ts=document.createElementNS(NS,'tspan');
+        ts.setAttribute('x',lx.toFixed(1));
+        ts.setAttribute('y',(txtCY-((nL-1)*lineH/2)+li*lineH).toFixed(1));
+        ts.textContent=line;
+        txt.appendChild(ts);
+      });
+
+      gEl.addEventListener('click',()=>navigate(item));
+      gEl.addEventListener('keydown',e=>{
+        if(e.key==='Enter'||e.key===' '){e.preventDefault();navigate(item);}
+      });
+
+      gEl.appendChild(bg);gEl.appendChild(hi);gEl.appendChild(icoG);gEl.appendChild(txt);
+      svgEl.appendChild(gEl);
+      segs.push(gEl);
+    });
+
+    function navigate(item){
+      closeRM();
+      if(item.url==='#contact'){
+        const t=document.getElementById('p-contact');
+        if(t) setTimeout(()=>t.scrollIntoView({behavior:'smooth',block:'start'}),220);
+      } else if(item.url.startsWith('http')){
+        setTimeout(()=>window.open(item.url,'_blank','noopener noreferrer'),100);
+      } else {
+        setTimeout(()=>{window.location.href=item.url;},120);
+      }
+    }
+
+    function openRM(){
+      segs.forEach((s,i)=>{s.style.transitionDelay=`${i*65}ms`;});
+      overlay.classList.add('rm-open');
+      overlay.setAttribute('aria-hidden','false');
+      setTimeout(()=>rmClose.focus(),80);
+    }
+    function closeRM(){
+      segs.forEach(s=>{s.style.transitionDelay='0ms';});
+      overlay.classList.remove('rm-open');
+      overlay.setAttribute('aria-hidden','true');
+      rmTrig.focus();
+    }
+
+    rmTrig.addEventListener('click',openRM);
+    rmClose.addEventListener('click',closeRM);
+    overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.id==='radialDim')closeRM();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('rm-open'))closeRM();});
+  })();
 </script>
 </body>
 </html>
