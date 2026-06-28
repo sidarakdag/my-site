@@ -16,9 +16,32 @@ async function checkTelegram(username) {
     redirect: 'follow',
   });
   const html = await res.text();
-  // t.me pages for existing users/channels have tgme_page_title; non-existent usernames don't
   const taken = html.includes('tgme_page_title') || html.includes('tgme_page_photo');
   return taken ? 'taken' : 'available';
+}
+
+async function claimDiscord(username, token) {
+  const res = await fetch('https://discord.com/api/v10/users/@me', {
+    method: 'PATCH',
+    headers: {
+      'Authorization': token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username }),
+  });
+
+  if (res.status === 200) return 'claimed';
+
+  if (res.status === 400) {
+    const data = await res.json().catch(() => ({}));
+    const errs = data?.errors?.username?._errors ?? [];
+    if (errs.some(e => e.code === 'USERNAME_ALREADY_TAKEN')) return 'taken';
+    return 'error';
+  }
+
+  if (res.status === 401) return 'invalid_token';
+  if (res.status === 429) return 'ratelimit';
+  return 'error';
 }
 
 export default {
@@ -41,6 +64,14 @@ export default {
         const status = await checkTelegram(u);
         return Response.json({ status }, { headers });
       }
+
+      if (p === 'dc') {
+        const token = request.headers.get('X-Discord-Token');
+        if (!token) return Response.json({ status: 'no_token' }, { headers });
+        const status = await claimDiscord(u, token);
+        return Response.json({ status }, { headers });
+      }
+
       return Response.json({ error: 'unsupported platform' }, { status: 400, headers });
     } catch {
       return Response.json({ status: 'error' }, { headers });

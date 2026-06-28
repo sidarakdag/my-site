@@ -196,6 +196,30 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.1);
 }
 
+/* Discord token input */
+.dc-token-row{
+  display:none;margin-bottom:20px;
+  padding:14px 16px;border-radius:12px;
+  background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.15);
+}
+.dc-token-warn{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,190,60,.5);margin-bottom:10px;line-height:1.7;}
+.dc-token-input{
+  width:100%;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  padding:10px 14px;font-family:'Terminus TTF',monospace;font-size:10px;
+  color:rgba(255,255,255,.7);letter-spacing:1px;outline:none;margin-bottom:8px;
+  transition:border-color .18s;
+}
+.dc-token-input::placeholder{color:rgba(255,255,255,.18);}
+.dc-token-input:focus{border-color:rgba(88,101,242,.45);}
+.dc-token-hint{font-size:6.5px;letter-spacing:1.5px;color:rgba(255,255,255,.18);line-height:1.8;}
+.dc-token-hint code{color:rgba(88,101,242,.7);font-family:'Terminus TTF',monospace;}
+
+/* Claimed line */
+.t-line.claimed{border-left-color:rgba(74,222,128,.9);background:rgba(74,222,128,.04);}
+.t-line.claimed .t-name{color:#fff;text-shadow:0 0 24px rgba(74,222,128,.35);}
+.t-status.claimed{color:#4ade80;letter-spacing:3px;}
+
 /* Platform colors */
 [data-p="ig"]{--p-color:rgba(225,48,108,.7);}
 [data-p="tg"]{--p-color:rgba(42,171,238,.7);}
@@ -248,6 +272,13 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
         Discord
         <span class="ptab-sub">· copy to search</span>
       </button>
+    </div>
+
+    <!-- Discord token input -->
+    <div class="dc-token-row" id="dcTokenRow">
+      <div class="dc-token-warn">⚠ &nbsp; self-botting violates discord tos · use at your own risk · successful claim = your username changes immediately</div>
+      <input class="dc-token-input" type="password" id="dcToken" placeholder="paste your discord user token" autocomplete="off" spellcheck="false">
+      <div class="dc-token-hint">get token: open discord in browser → f12 → network tab → click any request → headers → copy the <code>authorization</code> value</div>
     </div>
 
     <!-- Config -->
@@ -375,6 +406,18 @@ function generateCombos(length, charset, count) {
   return result;
 }
 
+/* ── Discord claim via Worker ── */
+async function checkDC(u, token) {
+  try {
+    const r = await fetch(
+      `${WORKER_URL}?p=dc&u=${encodeURIComponent(u)}`,
+      { headers: { 'X-Discord-Token': token }, signal: AbortSignal.timeout(10000) }
+    );
+    const data = await r.json();
+    return data.status ?? 'error';
+  } catch { return 'error'; }
+}
+
 /* ── Telegram check via Worker ── */
 async function checkTG(u) {
   try {
@@ -423,14 +466,18 @@ function addEntry(username, status, p) {
 
   const badge = document.createElement('span');
   badge.className = 't-status ' + status;
-  badge.textContent = status === 'clear' ? 'clear' : status === 'taken' ? 'taken' : '—';
+  badge.textContent = status === 'clear' ? 'clear' : status === 'claimed' ? 'claimed' : status === 'taken' ? 'taken' : '—';
 
   const spacer = document.createElement('span');
   spacer.className = 't-spacer';
 
   const btn = document.createElement(cfg.url ? 'a' : 'button');
   btn.className = 't-action';
-  if(cfg.url) {
+  if(status === 'claimed') {
+    btn.textContent = '✓ yours';
+    btn.style.color = 'rgba(74,222,128,.7)';
+    btn.style.pointerEvents = 'none';
+  } else if(cfg.url) {
     btn.href   = cfg.url(username);
     btn.target = '_blank';
     btn.rel    = 'noopener noreferrer';
@@ -602,15 +649,60 @@ snipeBtn.addEventListener('click', async () => {
       }
     }
   } else {
-    /* ── Discord: no public API, copy-to-search ── */
-    addNotice('discord has no public username lookup api · names shown for manual search');
-    for(let i=0; i<combos.length && running; i++) {
-      const u = combos[i];
-      setScanning(u);
-      addEntry(u, 'unverified', 'dc');
-      checked++;
-      setStatus('running', 'generating', `${checked} / ${combos.length}`);
-      await sleep(40);
+    /* ── Discord: token-based sniper (PATCH /users/@me) ── */
+    const token = document.getElementById('dcToken').value.trim();
+    if (!WORKER_URL) {
+      addNotice('worker not deployed yet · deploy worker/ to enable discord sniping');
+      running = false;
+    } else if (!token) {
+      addNotice('paste your discord token above to start sniping');
+      running = false;
+    } else {
+      let dcDelay = 1500;
+      for(let i=0; i<combos.length && running; i++) {
+        const u = combos[i];
+        setScanning(u);
+        const result = await checkDC(u, token);
+        if(result === 'claimed') {
+          hits++;
+          checked++;
+          addEntry(u, 'claimed', 'dc');
+          addNotice(`@${u} is now yours · your discord username has been changed`);
+          running = false;
+          break;
+        }
+        if(result === 'invalid_token') {
+          addNotice('invalid discord token · check and try again');
+          running = false;
+          break;
+        }
+        if(result === 'no_token') {
+          addNotice('worker did not receive token · check worker deployment');
+          running = false;
+          break;
+        }
+        if(result === 'ratelimit') {
+          i--;
+          setStatus('running', 'rate limited · waiting 10s', `${checked} / ${combos.length}`);
+          await sleep(10000);
+          dcDelay = Math.min(dcDelay * 1.5, 5000);
+          setStatus('running', 'sniping', `${checked} / ${combos.length}`);
+          continue;
+        }
+        if(result === 'taken') {
+          checked++;
+          addEntry(u, 'taken', 'dc');
+        } else {
+          checked++;
+          addEntry(u, 'unverified', 'dc');
+        }
+        setStatus('running', 'sniping', `${checked} / ${combos.length} · ${hits} claimed`);
+        await sleep(dcDelay);
+      }
+    }
+    if(!running) {
+      snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
+      snipeBtn.classList.remove('running');
     }
   }
 
@@ -631,6 +723,7 @@ document.querySelectorAll('.ptab').forEach(btn => {
     document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     platform = btn.dataset.p;
+    document.getElementById('dcTokenRow').style.display = platform === 'dc' ? '' : 'none';
   });
 });
 
