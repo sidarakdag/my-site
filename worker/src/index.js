@@ -12,29 +12,31 @@ function cors(origin) {
 }
 
 async function checkInstagram(username) {
-  // Instagram’s internal JSON API — returns 404 for non-existing users without
-  // redirecting to the login page (which HTML scraping always lands on)
-  const res = await fetch(
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-    {
-      headers: {
-        ‘User-Agent’: ‘Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36’,
-        ‘X-IG-App-ID’: ‘936619743392459’,
-        ‘Accept’: ‘*/*’,
-        ‘Accept-Language’: ‘en-US,en;q=0.9’,
-        ‘Referer’: ‘https://www.instagram.com/’,
-        ‘Origin’: ‘https://www.instagram.com’,
-      },
-    }
-  );
+  // Googlebot UA: Instagram must serve real content (not a login redirect) to
+  // Google’s crawler for SEO. Non-existing users get 404; existing get 200.
+  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+    headers: {
+      ‘User-Agent’: ‘Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)’,
+      ‘Accept’: ‘text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8’,
+      ‘Accept-Language’: ‘en-US,en;q=0.5’,
+      ‘From’: ‘googlebot(at)googlebot.com’,
+    },
+    redirect: ‘follow’,
+  });
   if (res.status === 404) return ‘available’;
   if (res.status === 429) return ‘ratelimit’;
-  if (res.status === 200) {
-    const data = await res.json().catch(() => null);
-    if (!data?.data?.user) return ‘available’;
-    return ‘taken’;
-  }
-  return ‘error’;
+  // If we ended up on the login page despite Googlebot UA, assume user exists
+  if (res.url && res.url.includes(‘/accounts/login/’)) return ‘taken’;
+  if (res.status !== 200) return ‘error’;
+  const html = await res.text();
+  if (
+    html.includes(‘Page Not Found’) ||
+    html.includes(‘"pageNotFound"’) ||
+    html.includes(‘Sorry, this page’) ||
+    html.includes("isn’t available") ||
+    html.includes("isn’t available")
+  ) return ‘available’;
+  return ‘taken’;
 }
 
 async function checkTelegram(username) {
@@ -162,7 +164,9 @@ export default {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }
         const checkFn = p === 'ig' ? checkInstagram : checkTelegram;
-        const results = await Promise.all(body.map(async u => ({ u, s: await checkFn(u) })));
+        const results = await Promise.all(
+          body.map(async u => { try { return { u, s: await checkFn(u) }; } catch { return { u, s: 'error' }; } })
+        );
         return Response.json(results, { headers });
       } catch {
         return Response.json({ error: 'error' }, { status: 500, headers });

@@ -516,7 +516,9 @@ async function runBatchWorkers(combos, plat, onResult) {
       if (start >= combos.length) break;
       const batch = combos.slice(start, Math.min(start + size, combos.length));
       const results = await checkBatch(batch, plat);
-      for (const { u, s } of results) {
+      // If batch failed (empty array), emit 'error' for each username so they're never silently dropped
+      const items = results.length > 0 ? results : batch.map(u => ({ u, s: 'error' }));
+      for (const { u, s } of items) {
         if (!running) break;
         onResult(u, s);
       }
