@@ -11,20 +11,17 @@ function cors(origin) {
 }
 
 async function checkInstagram(username) {
-  const res = await fetch(
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-    {
-      headers: {
-        'X-IG-App-ID': '936619743392459',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    }
-  );
-  if (res.status === 200) return 'taken';
+  // Profile page URL: 404 = username doesn't exist, 200 = exists (even if login-gated)
+  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+    headers: {
+      'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+      'Accept': 'text/html,application/xhtml+xml',
+    },
+    redirect: 'follow',
+  });
   if (res.status === 404) return 'available';
-  if (res.status === 429 || res.status === 403 || res.status === 401) return 'ratelimit';
+  if (res.status === 200) return 'taken';
+  if (res.status === 429) return 'ratelimit';
   return 'error';
 }
 
@@ -39,20 +36,29 @@ async function checkTelegram(username) {
 }
 
 async function checkDiscordAvailable(username) {
-  const res = await fetch('https://discord.com/api/v10/unique-username/username-attempt-unauthed', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    },
-    body: JSON.stringify({ username }),
-  });
-  if (res.status === 200) {
-    const data = await res.json().catch(() => ({}));
-    return data.taken ? 'taken' : 'available';
+  const endpoints = [
+    'https://discord.com/api/v10/unique-username/username-attempt-unauthed',
+    'https://discord.com/api/v10/users/pomelo-attempt',
+  ];
+  for (const url of endpoints) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Origin': 'https://discord.com',
+        'Referer': 'https://discord.com/',
+      },
+      body: JSON.stringify({ username }),
+    });
+    if (res.status === 200) {
+      const data = await res.json().catch(() => ({}));
+      if ('taken' in data) return data.taken ? 'taken' : 'available';
+    }
+    if (res.status === 429) return 'ratelimit';
   }
-  if (res.status === 429) return 'ratelimit';
-  return 'error';
+  return 'no_unauthed';
 }
 
 async function claimDiscord(username, token) {
