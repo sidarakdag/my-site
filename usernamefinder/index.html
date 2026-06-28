@@ -646,7 +646,7 @@ function addEntry(username, status, p) {
 
   const badge = document.createElement('span');
   badge.className = 't-status ' + status;
-  badge.textContent = status === 'clear' ? 'clear' : status === 'claimed' ? 'claimed' : status === 'taken' ? 'taken' : '—';
+  badge.textContent = status === 'clear' ? 'available' : status === 'claimed' ? 'claimed' : status === 'taken' ? 'taken' : '—';
 
   const spacer = document.createElement('span');
   spacer.className = 't-spacer';
