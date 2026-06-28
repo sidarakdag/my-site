@@ -38,6 +38,23 @@ async function checkTelegram(username) {
   return taken ? 'taken' : 'available';
 }
 
+async function checkDiscordAvailable(username) {
+  const res = await fetch('https://discord.com/api/v10/unique-username/username-attempt-unauthed', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    },
+    body: JSON.stringify({ username }),
+  });
+  if (res.status === 200) {
+    const data = await res.json().catch(() => ({}));
+    return data.taken ? 'taken' : 'available';
+  }
+  if (res.status === 429) return 'ratelimit';
+  return 'error';
+}
+
 async function claimDiscord(username, token) {
   const res = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
@@ -90,7 +107,10 @@ export default {
 
       if (p === 'dc') {
         const token = request.headers.get('X-Discord-Token');
-        if (!token) return Response.json({ status: 'no_token' }, { headers });
+        if (!token) {
+          const status = await checkDiscordAvailable(u);
+          return Response.json({ status }, { headers });
+        }
         const status = await claimDiscord(u, token);
         return Response.json({ status }, { headers });
       }

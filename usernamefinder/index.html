@@ -648,16 +648,37 @@ snipeBtn.addEventListener('click', async () => {
       }
     }
   } else {
-    /* ── Discord: token-based sniper (PATCH /users/@me) ── */
+    /* ── Discord: check-only (no token) or claim mode (with token) ── */
     const token = document.getElementById('dcToken').value.trim();
     if (!WORKER_URL) {
-      addNotice('worker not deployed yet · deploy worker/ to enable discord sniping');
+      addNotice('worker not deployed yet · deploy worker/ to enable discord checking');
       running = false;
     } else if (!token) {
-      addNotice('paste your discord token above to start sniping');
-      running = false;
+      /* check-only mode — no username change, just availability */
+      addNotice('no token · checking availability only · add token above to enable sniping');
+      for(let i=0; i<combos.length && running; i++) {
+        const u = combos[i];
+        setScanning(u);
+        const result = await checkDC(u, '');
+        if(result === 'ratelimit') {
+          i--;
+          setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length}`);
+          await sleep(5000);
+          continue;
+        }
+        checked++;
+        if(result === 'available') {
+          hits++;
+          addEntry(u, 'clear', 'dc');
+        } else if(result === 'taken') {
+          addEntry(u, 'taken', 'dc');
+        } else {
+          addEntry(u, 'unverified', 'dc');
+        }
+        setStatus('running', 'checking', `${checked} / ${combos.length} · ${hits} clear`);
+      }
     } else {
-      let dcDelay = 1500;
+      /* claim mode — token present, stops on first success */
       for(let i=0; i<combos.length && running; i++) {
         const u = combos[i];
         setScanning(u);
@@ -675,28 +696,19 @@ snipeBtn.addEventListener('click', async () => {
           running = false;
           break;
         }
-        if(result === 'no_token') {
-          addNotice('worker did not receive token · check worker deployment');
-          running = false;
-          break;
-        }
         if(result === 'ratelimit') {
           i--;
-          setStatus('running', 'rate limited · waiting 10s', `${checked} / ${combos.length}`);
-          await sleep(10000);
-          dcDelay = Math.min(dcDelay * 1.5, 5000);
-          setStatus('running', 'sniping', `${checked} / ${combos.length}`);
+          setStatus('running', 'rate limited · waiting 5s', `${checked} / ${combos.length}`);
+          await sleep(5000);
           continue;
         }
+        checked++;
         if(result === 'taken') {
-          checked++;
           addEntry(u, 'taken', 'dc');
         } else {
-          checked++;
           addEntry(u, 'unverified', 'dc');
         }
         setStatus('running', 'sniping', `${checked} / ${combos.length} · ${hits} claimed`);
-        await sleep(dcDelay);
       }
     }
     if(!running) {
@@ -709,7 +721,7 @@ snipeBtn.addEventListener('click', async () => {
   setScanning(null);
   snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
   snipeBtn.classList.remove('running');
-  const summary = (platform === 'ig' || (platform === 'tg' && WORKER_URL && selLen >= 5))
+  const summary = WORKER_URL
     ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
     : `${checked} generated`;
   document.getElementById('terminalStatus').textContent = summary;
