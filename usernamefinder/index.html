@@ -117,59 +117,82 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 }
 #scanningRow span{color:rgba(255,255,255,.45);}
 
-/* ── Results feed ── */
-.feed-label{
-  font-size:6.5px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.14);
-  margin-bottom:10px;display:flex;align-items:center;gap:10px;
+/* ── Terminal output ── */
+.terminal{
+  border-radius:12px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(3,5,14,.92);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
 }
-.feed-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05);}
-
-#hitsFeed{display:flex;flex-direction:column;gap:6px;}
-
-.hit-row{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 14px;border-radius:11px;
-  background:rgba(6,8,20,.65);border:1px solid rgba(255,255,255,.055);
-  border-left:3px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  animation:hitIn .22s cubic-bezier(.22,1,.36,1) both;
-  position:relative;overflow:hidden;
+.terminal-header{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.025);
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-.hit-row.clear{border-left-color:rgba(74,222,128,.55);background:rgba(4,18,10,.7);}
-.hit-row.taken{border-left-color:rgba(255,65,55,.35);opacity:.72;}
-.hit-row::before{content:'';position:absolute;inset:0;pointer-events:none;}
-.hit-row.clear::before{background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(74,222,128,.04),transparent 60%);}
-@keyframes hitIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:translateX(0);}}
+.t-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.t-dot-r{background:rgba(255,95,87,.55);}
+.t-dot-y{background:rgba(255,189,46,.45);}
+.t-dot-g{background:rgba(39,201,63,.45);}
+.t-title{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-left:4px;flex:1;}
+.t-hstatus{font-size:7px;letter-spacing:2px;color:rgba(255,255,255,.14);}
 
-.hit-name{
-  font-size:15px;font-weight:700;letter-spacing:.04em;flex-shrink:0;min-width:52px;
-  color:#fff;
+#terminalBody{
+  height:420px;
+  overflow-y:auto;
+  padding:10px 0;
+  display:flex;flex-direction:column;gap:0;
+  scroll-behavior:smooth;
 }
-.hit-row.taken .hit-name{color:rgba(255,255,255,.4);}
+#terminalBody::-webkit-scrollbar{width:3px;}
+#terminalBody::-webkit-scrollbar-track{background:transparent;}
+#terminalBody::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
 
-.hit-status{
-  font-size:7px;letter-spacing:2.5px;text-transform:uppercase;flex-shrink:0;
-  padding:3px 9px;border-radius:100px;border:1px solid;
+.t-line{
+  display:flex;align-items:center;gap:0;
+  padding:4px 16px;
+  font-size:12px;line-height:1.5;
+  animation:tLineIn .12s ease-out both;
+  border-left:2px solid transparent;
+  transition:background .1s;
 }
-.hit-status.clear{color:rgba(74,222,128,.95);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07);}
-.hit-status.taken{color:rgba(255,65,55,.8);border-color:rgba(255,65,55,.22);background:rgba(255,65,55,.05);}
-.hit-status.unverified{color:rgba(255,255,255,.2);border-color:rgba(255,255,255,.07);background:transparent;}
+.t-line:hover{background:rgba(255,255,255,.022);}
+.t-line.clear{border-left-color:rgba(74,222,128,.5);}
+.t-line.taken{border-left-color:rgba(255,60,50,.28);}
+@keyframes tLineIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
 
-.hit-spacer{flex:1;}
-
-.hit-action{
-  flex-shrink:0;padding:5px 13px;border-radius:100px;
-  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);
-  color:rgba(255,255,255,.32);font-family:'Terminus TTF',monospace;font-size:7px;letter-spacing:2px;
-  cursor:pointer;text-decoration:none;
-  transition:background .15s,color .15s,border-color .15s;
-  -webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;gap:5px;
+.t-prompt{color:rgba(255,255,255,.18);margin-right:12px;flex-shrink:0;user-select:none;}
+.t-name{
+  font-size:13px;font-weight:700;letter-spacing:.04em;
+  min-width:72px;flex-shrink:0;margin-right:14px;
 }
-.hit-action:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:rgba(255,255,255,.78);}
-.hit-action svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0;}
+.t-line.clear .t-name{color:rgba(255,255,255,.9);}
+.t-line.taken .t-name{color:rgba(255,255,255,.32);}
+.t-line.unverified .t-name{color:rgba(255,255,255,.55);}
 
-.empty-state{
-  padding:32px 0;text-align:center;
+.t-status{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;flex-shrink:0;}
+.t-status.clear{color:rgba(74,222,128,.9);}
+.t-status.taken{color:rgba(255,65,50,.65);}
+.t-status.unverified{color:rgba(255,255,255,.18);}
+
+.t-spacer{flex:1;}
+
+.t-action{
+  font-size:7px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.18);text-decoration:none;cursor:pointer;
+  background:none;border:none;font-family:'Terminus TTF',monospace;
+  padding:2px 0;transition:color .15s;
+  -webkit-tap-highlight-color:transparent;flex-shrink:0;
+}
+.t-action:hover{color:rgba(255,255,255,.7);}
+
+.t-notice{
+  padding:6px 16px;font-size:7.5px;letter-spacing:1.5px;
+  color:rgba(255,190,60,.45);line-height:1.6;
+  border-left:2px solid rgba(255,190,60,.2);margin:4px 0;
+}
+.t-placeholder{
+  padding:80px 0;text-align:center;
   font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.1);
 }
 
@@ -261,10 +284,18 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
     <!-- Scanning indicator -->
     <div id="scanningRow">scanning &nbsp;<span id="scanningName">—</span></div>
 
-    <!-- Results feed -->
-    <div class="feed-label" id="feedLabel" style="display:none">results</div>
-    <div id="hitsFeed">
-      <div class="empty-state" id="emptyState">pick a platform and hit snipe</div>
+    <!-- Terminal output -->
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="t-dot t-dot-r"></span>
+        <span class="t-dot t-dot-y"></span>
+        <span class="t-dot t-dot-g"></span>
+        <span class="t-title">output</span>
+        <span class="t-hstatus" id="terminalStatus"></span>
+      </div>
+      <div id="terminalBody">
+        <div class="t-placeholder" id="emptyState">pick a platform and hit snipe</div>
+      </div>
     </div>
   </div>
 </div>
@@ -357,65 +388,63 @@ async function checkIG(u) {
 
 /* ── Add an entry row (any status) ── */
 function addEntry(username, status, p) {
-  const cfg   = PLATFORMS[p];
-  const feed  = document.getElementById('hitsFeed');
+  const cfg  = PLATFORMS[p];
+  const body = document.getElementById('terminalBody');
   const empty = document.getElementById('emptyState');
-  const label = document.getElementById('feedLabel');
   if(empty) empty.remove();
-  label.style.display = '';
 
-  const row = document.createElement('div');
-  row.className = 'hit-row ' + status;
+  const line = document.createElement('div');
+  line.className = 't-line ' + status;
+
+  const prompt = document.createElement('span');
+  prompt.className = 't-prompt';
+  prompt.textContent = '$';
 
   const name = document.createElement('span');
-  name.className = 'hit-name';
+  name.className = 't-name';
   name.textContent = username;
 
   const badge = document.createElement('span');
-  badge.className = 'hit-status ' + status;
-  badge.textContent = status === 'clear' ? 'clear' : status === 'taken' ? 'taken' : 'unverified';
+  badge.className = 't-status ' + status;
+  badge.textContent = status === 'clear' ? 'clear' : status === 'taken' ? 'taken' : '—';
 
   const spacer = document.createElement('span');
-  spacer.className = 'hit-spacer';
+  spacer.className = 't-spacer';
 
   const btn = document.createElement(cfg.url ? 'a' : 'button');
-  btn.className = 'hit-action';
+  btn.className = 't-action';
   if(cfg.url) {
     btn.href   = cfg.url(username);
     btn.target = '_blank';
     btn.rel    = 'noopener noreferrer';
-    btn.innerHTML = svgArrow() + ' open';
+    btn.textContent = 'open →';
   } else {
-    btn.innerHTML = svgArrow() + ' copy';
+    btn.textContent = 'copy';
     btn.onclick = () => {
       navigator.clipboard?.writeText(username).catch(()=>{});
-      btn.textContent = 'copied';
-      setTimeout(() => { btn.innerHTML = svgArrow() + ' copy'; }, 1200);
+      btn.textContent = 'copied!';
+      setTimeout(() => { btn.textContent = 'copy'; }, 1200);
     };
   }
 
-  row.appendChild(name);
-  row.appendChild(badge);
-  row.appendChild(spacer);
-  row.appendChild(btn);
-  feed.appendChild(row);
-  row.scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-
-function svgArrow(){
-  return `<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  line.appendChild(prompt);
+  line.appendChild(name);
+  line.appendChild(badge);
+  line.appendChild(spacer);
+  line.appendChild(btn);
+  body.appendChild(line);
+  body.scrollTop = body.scrollHeight;
 }
 
 function addNotice(text) {
-  const feed  = document.getElementById('hitsFeed');
+  const body  = document.getElementById('terminalBody');
   const empty = document.getElementById('emptyState');
-  const label = document.getElementById('feedLabel');
   if(empty) empty.remove();
-  label.style.display = '';
-  const row = document.createElement('div');
-  row.style.cssText = 'padding:9px 14px;font-size:7.5px;letter-spacing:1.5px;color:rgba(255,190,60,.45);border:1px solid rgba(255,190,60,.1);border-radius:8px;line-height:1.6;';
-  row.textContent = '⚠  ' + text;
-  feed.appendChild(row);
+  const notice = document.createElement('div');
+  notice.className = 't-notice';
+  notice.textContent = '⚠  ' + text;
+  body.appendChild(notice);
+  body.scrollTop = body.scrollHeight;
 }
 
 /* ── Status helpers ── */
@@ -447,10 +476,9 @@ snipeBtn.addEventListener('click', async () => {
     return;
   }
 
-  /* Reset feed */
-  const feed = document.getElementById('hitsFeed');
-  feed.innerHTML = '<div class="empty-state" id="emptyState">scanning...</div>';
-  document.getElementById('feedLabel').style.display = 'none';
+  /* Reset terminal */
+  const body = document.getElementById('terminalBody');
+  body.innerHTML = '';
 
   running = true;
   snipeBtn.innerHTML = '■ &nbsp; STOP';
@@ -461,6 +489,7 @@ snipeBtn.addEventListener('click', async () => {
   const cfg     = PLATFORMS[platform];
   let checked   = 0, hits = 0, delay = 1100;
 
+  document.getElementById('terminalStatus').textContent = '';
   setStatus('running', 'scanning', `0 / ${combos.length} · 0 hits`);
 
   if(platform === 'ig') {
@@ -527,13 +556,12 @@ snipeBtn.addEventListener('click', async () => {
 
   running = false;
   setScanning(null);
-  const empty = document.getElementById('emptyState');
-  if(empty) empty.textContent = 'no results · try different settings';
   snipeBtn.innerHTML = '▶ &nbsp; SNIPE 100 NAMES';
   snipeBtn.classList.remove('running');
   const summary = platform === 'ig'
     ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
     : `${checked} generated`;
+  document.getElementById('terminalStatus').textContent = summary;
   setStatus('done', 'done', summary);
 });
 
