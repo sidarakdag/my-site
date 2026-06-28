@@ -157,7 +157,7 @@ export default {
     if (request.method === 'POST' && (p === 'ig' || p === 'tg')) {
       try {
         const body = await request.json();
-        if (!Array.isArray(body) || body.length > 50 ||
+        if (!Array.isArray(body) || body.length > 100 ||
             !body.every(u => /^[a-zA-Z0-9_]{1,32}$/.test(u))) {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }

@@ -385,6 +385,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
           <button class="cfg-btn" data-count="1000">1k</button>
           <button class="cfg-btn" data-count="10000">10k</button>
           <button class="cfg-btn" data-count="100000">100k</button>
+          <button class="cfg-btn" data-count="0">∞</button>
         </div>
       </div>
     </div>
@@ -452,6 +453,7 @@ let selCount   = 100;
 let running    = false;
 
 function snipeBtnLabel() {
+  if (selCount === 0) return '▶ &nbsp; SNIPE ALL';
   const n = selCount;
   const label = n >= 1000 ? (n / 1000) + 'K' : n;
   return `▶ &nbsp; SNIPE ${label} NAMES`;
@@ -488,18 +490,22 @@ function getCharset() {
 
 function generateCombos(length, charset, count) {
   const space = Math.pow(charset.length, length);
-  const take  = Math.min(count, space);
-  if (space <= 5000) {
+  const MAX_EXHAUSTIVE = 500000;
+  const take = count === 0 ? Math.min(space, MAX_EXHAUSTIVE) : Math.min(count, space);
+  if (space <= 5000 || (count === 0 && space <= MAX_EXHAUSTIVE)) {
     const all = [];
     (function rec(s){
       if(s.length===length){all.push(s);return;}
       for(const c of charset) rec(s+c);
     })('');
-    for(let i=all.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [all[i],all[j]]=[all[j],all[i]];
+    if (count !== 0) {
+      for(let i=all.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [all[i],all[j]]=[all[j],all[i]];
+      }
+      return all.slice(0, take);
     }
-    return all.slice(0, take);
+    return all;
   }
   const seen=new Set(), result=[];
   while(result.length<take){
@@ -513,6 +519,7 @@ function generateCombos(length, charset, count) {
 /* ── Batch + concurrency helpers ── */
 function getBatchCfg() {
   if (platform === 'dc') return { size: 1, parallel: 1 };
+  if (selCount === 0)    return { size: 50, parallel: 30 };
   if (selCount <=   100) return { size: 10, parallel: 3  };
   if (selCount <=  1000) return { size: 20, parallel: 5  };
   if (selCount <= 10000) return { size: 20, parallel: 15 };
