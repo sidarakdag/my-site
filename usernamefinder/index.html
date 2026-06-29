@@ -350,6 +350,16 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
           <button class="cfg-btn active" data-cs="letters">a–z</button>
           <button class="cfg-btn" data-cs="nums">0–9</button>
           <button class="cfg-btn" data-cs="mix">mix</button>
+          <button class="cfg-btn" data-cs="words">words</button>
+        </div>
+      </div>
+      <div class="cfg-group" id="langGroup" style="display:none">
+        <span class="cfg-label">LANG</span>
+        <div class="cfg-btns">
+          <button class="cfg-btn active" data-lang="en">EN</button>
+          <button class="cfg-btn" data-lang="tr">TR</button>
+          <button class="cfg-btn" data-lang="es">ES</button>
+          <button class="cfg-btn" data-lang="fr">FR</button>
         </div>
       </div>
       <div class="cfg-group">
@@ -422,6 +432,7 @@ const WORKER_URL = 'https://kataly-username-checker.sidarakdag1.workers.dev';
 let platform   = 'ig';
 let selLen     = 3;
 let selCs      = 'letters';
+let selLang    = 'en';
 let selCount   = 100;
 let running    = false;
 
@@ -452,6 +463,195 @@ const PLATFORMS = {
     action: 'copy',
   },
 };
+
+/* ── Word lists (inline fallbacks; real files loaded lazily) ── */
+const WORDLIST = [
+  'ace','age','aid','aim','air','arc','ark','arm','art','ash','axe',
+  'bat','bay','bit','bow','bug','cab','cap','cat','cod','cog','cow','cup','cut',
+  'day','den','dew','dig','dip','dog','dot','dye','ear','eat','egg','elf','elk',
+  'elm','emu','era','eve','eye','fan','fat','fee','fig','fin','fit','fix','fly',
+  'fog','foe','fox','fun','fur','gap','gas','god','gum','guy','gym','ham','hat',
+  'hay','hip','hit','hog','hop','hot','hub','hug','ice','imp','ink','ivy','jam',
+  'jar','jaw','jet','joy','jug','kin','kit','lag','lap','law','lay','leg','lid',
+  'lip','log','low','mad','man','map','mat','mob','mud','mug','net','oak','oat',
+  'oil','orb','ore','owl','pad','pal','pan','paw','pay','pea','pen','pie','pig',
+  'pin','pod','pop','pro','pub','pun','pup','raw','ray','red','ref','rep','rib',
+  'rig','rod','row','rum','run','rye','sap','saw','set','shy','sin','sip','ski',
+  'sky','sob','son','spy','sub','sun','tan','tar','tax','tea','tin','tip','toe',
+  'ton','toy','tug','tub','van','vim','vow','war','wax','way','web','wig','win',
+  'wit','woe','yam','yap','yew','zip','zoo',
+  'able','acid','aged','also','area','army','away','baby','back','ball','band',
+  'bank','base','bath','beam','bear','beat','been','bell','best','bird','bite',
+  'blue','boat','body','bold','bolt','bond','bone','book','boot','born','both',
+  'bulk','burn','byte','cage','cake','call','calm','came','card','care','cart',
+  'case','cash','cast','cave','cell','chef','city','clam','clap','clay','clip',
+  'club','coal','coat','code','coin','cold','come','cook','cool','cope','copy',
+  'core','corn','cost','cozy','crab','crew','crop','crow','curl','cute','dark',
+  'dart','data','date','dawn','dead','deal','dear','deck','deed','deep','deer',
+  'deny','desk','diet','dirt','disk','dive','dock','dome','done','door','dose',
+  'dove','down','draw','drip','drop','drum','dual','duel','duke','dull','dump',
+  'dune','dust','each','earl','earn','east','edge','emit','epic','even','ever',
+  'exam','exit','face','fact','fade','fail','fair','fake','fall','fame','farm',
+  'fast','fate','fawn','feed','feel','felt','file','fill','film','find','fire',
+  'firm','fish','fist','flag','flat','flaw','flew','flip','flow','foam','fold',
+  'folk','fond','font','food','foot','ford','fork','form','fort','four','free',
+  'frog','from','fuel','full','fume','fund','fuse','gain','gale','game','gang',
+  'gate','gave','gear','gene','gift','girl','give','glad','glow','glue','goal',
+  'goat','gold','golf','gone','good','grab','gray','grew','grid','grim','grip',
+  'grow','gulf','gust','hack','hail','hair','half','hall','halt','hand','hang',
+  'hard','harm','harp','hate','haul','have','hawk','head','heal','heap','hear',
+  'heat','heel','herd','hero','hide','high','hike','hill','hire','hold','hole',
+  'home','hood','hook','horn','host','hour','huge','hull','hung','hunt','hymn',
+  'icon','idea','idle','into','iron','isle','item','jade','jail','jerk','join',
+  'joke','jump','just','keen','keep','kick','kill','kind','king','kiss','knee',
+  'knew','knit','knob','knot','know','lace','lack','lake','lamb','lamp','land',
+  'lane','last','late','lead','leaf','lean','leap','left','lend','less','life',
+  'lift','lime','line','link','lion','list','live','load','loan','lock','loft',
+  'lone','long','look','lord','lore','lure','lust','lynx','made','mail','main',
+  'make','mall','mane','mare','mark','mars','mast','mate','maze','meal','mean',
+  'meet','melt','memo','mere','mesh','milk','mill','mind','mine','mint','miss',
+  'mist','mode','mold','mole','mood','moon','more','most','moth','move','much',
+  'myth','nail','name','navy','near','neat','neck','need','next','nice','nick',
+  'nine','node','none','noon','norm','nose','note','noun','once','only','open',
+  'over','owns','pace','pack','page','pain','pair','park','part','pass','past',
+  'path','peak','peel','peel','peer','pick','pile','pine','pipe','pity','plan',
+  'play','plot','plow','plug','plus','poem','poet','pole','pool','poor','pork',
+  'port','pose','post','pour','pray','prey','prod','prop','pull','pump','pure',
+  'push','quit','race','rack','rage','raid','rail','rain','ramp','rank','rant',
+  'rare','rate','rave','read','real','reap','rear','reed','reel','rely','rent',
+  'rest','rice','rich','ride','ring','riot','rise','risk','rite','road','roam',
+  'roar','robe','rock','role','roof','room','root','rope','rose','rule','rush',
+  'rust','safe','saga','sage','sail','sake','sale','sand','sane','sang','sank',
+  'seal','seam','seed','seek','seem','self','sell','sent','shed','shin','ship',
+  'shop','shot','show','sign','silk','sill','sing','sink','site','size','skin',
+  'skip','slab','slam','slap','slim','slip','slow','slug','snap','snow','soak',
+  'soft','soil','sole','soma','song','soon','sore','sort','soul','soup','spot',
+  'star','stay','stem','step','stop','strap','such','suit','sure','swap','swim',
+  'task','tear','tell','tend','tent','term','than','that','then','they','thin',
+  'this','thou','till','time','tiny','tire','toad','told','toll','tome','tone',
+  'tore','torn','toss','tour','town','trap','tree','trim','trio','trip','true',
+  'tune','turf','turn','twin','type','ugly','undo','unit','upon','urge','user',
+  'vain','vale','vast','verb','very','vest','view','vine','void','wake','walk',
+  'wall','wane','ward','warm','warn','warp','wash','wave','weak','weld','well',
+  'went','west','what','when','whom','wide','wife','wild','will','wind','wine',
+  'wing','wink','wire','wise','wish','with','wolf','wood','word','wore','work',
+  'worm','worn','wrap','writ','yard','yarn','year','yell','your','zero','zone',
+];
+
+const WORDLIST_TR = [
+  'ada','adi','aga','ahi','ala','ali','ana','ani','ara','ari','ark','arpa','ask',
+  'aslan','at','ata','ate','atik','atlas','ates','av','avi','ay','ayak','ayar',
+  'ayi','ayis','baba','bag','bal','bali','balik','bas','basi','basit','bat','bay',
+  'baz','bayrak','beg','ben','bes','bilge','bilim','bilir','bitis','bol','borc',
+  'boru','boy','boyut','boz','bul','bulut','bur','caba','cad','cam','can','cay',
+  'cem','cep','ces','ceza','cin','cins','cok','col','dag','dal','dam','dan','dar',
+  'data','dava','dede','deger','deli','den','deniz','dep','dere','deva','dizi',
+  'dog','dogal','dost','dosya','doz','dua','duman','dun','durus','durum','edip',
+  'egit','ekin','elit','emir','erik','esit','eser','etki','ev','evet','evin',
+  'fabrika','fal','fidan','fikir','filiz','finans','firtina','fiyat','fon','form',
+  'gece','gel','gemi','gen','genc','genellikle','geri','ges','gib','gib','gidis',
+  'giz','gol','golge','gorus','goz','gun','gunes','guzel','hedef','hak','hakim',
+  'ham','hamur','han','hane','hap','hata','hava','hayat','hazir','hediye','hem',
+  'hic','hiz','hoca','icat','icat','iddia','ilan','ilac','ileri','ilik','imge',
+  'inci','isim','istek','it','iyilik','iz','izzet','jet','kader','kadro','kahve',
+  'kalip','kalite','kanat','kap','kara','karar','karga','kasik','kayak','kayit',
+  'kaynak','kaza','keder','kenar','kerem','keskin','kibir','kimlik','kir','kisa',
+  'kol','kolay','konu','korum','koy','kurul','kuzey','liman','lider','liste',
+  'lojik','mavi','meclis','merak','mercan','merkez','mesaj','metal','miras','mor',
+  'mucit','murit','nefes','nesil','niyet','not','ocak','oran','orman','oyun',
+  'pazar','plan','platin','polis','pozitif','puan','rakam','rapor','rant','raf',
+  'reis','resim','ritim','ruh','rüzgar','sac','safir','sakin','salon','sanat',
+  'sarki','sefer','sehir','sekil','selam','seçim','siber','simge','sitem','siyah',
+  'sohbet','son','sorun','strateji','sure','tabiat','takim','takvim','talip',
+  'tarafsiz','tarih','tasarim','tema','temel','tren','tur','ucak','umit','ulus',
+  'uyum','uzak','vatan','veri','vizyon','yasa','yakin','yalan','yaprak','yazı',
+  'yıldiz','yol','yorum','zafer','zaman','zemin','zor',
+];
+
+const WORDLIST_ES = [
+  'ala','alba','alce','alma','aloe','alto','amor','anca','apio','arco','ares',
+  'aria','ario','arma','aro','arpa','arte','asno','atun','aura','auto','avion',
+  'azul','bala','balo','baya','beso','bien','boca','bola','bolo','bote','bravo',
+  'buho','cabo','cafe','caja','cala','callo','cama','campo','cana','caña','cara',
+  'caro','casa','caso','caza','cepa','cerdo','cima','clan','clavo','coco','cola',
+  'colmo','como','copa','copla','coral','corte','cosa','coste','coto','cubo',
+  'cuero','culpa','cura','dato','dedo','demo','dentro','dios','disco','duda',
+  'duelo','dulce','duna','ebano','edad','elfo','empu','ente','eras','espiga',
+  'estar','etica','fama','fardo','faro','fase','feria','filo','firma','foca',
+  'fondo','foro','fosa','fruta','fuga','ganso','garra','gato','gema','genio',
+  'genoma','giron','globo','grano','grupo','guion','gusto','hada','hedor','hero',
+  'hijo','hipno','hielo','hilo','hito','hogar','hongo','honor','hubris','imagen',
+  'impo','insta','isla','item','jaguar','jabon','jarra','jerga','joven','juego',
+  'label','labio','lazo','leche','lecho','leño','leon','limon','linea','lista',
+  'llave','lluvia','logo','lomo','lucha','lunes','manga','marco','mariz','matiz',
+  'menta','mesa','meta','metro','miedo','mirlo','mismo','mito','modo','monte',
+  'moral','mural','nivel','norte','nuevo','numen','nunca','ocaso','oeste','oliva',
+  'onda','orden','osito','ozono','padre','palco','panda','panel','para','pared',
+  'pasto','patria','perla','pesca','pico','pilar','pinon','pirata','plata','pleno',
+  'poema','polvo','pompa','porte','posada','prima','prisa','proeza','prosa','puerta',
+  'pulso','punto','queja','quema','rabia','rama','rango','raptor','rayo','razon',
+  'reino','reloj','remo','retiro','rima','ritmo','roca','rodeo','rojo','rumor',
+  'sabor','saga','sapo','sierra','signo','silbo','sisma','soga','sombra','suave',
+  'tabla','tallo','tarea','templo','tesis','texto','tiara','tinto','tipo','tiro',
+  'titulo','tono','torpe','trazo','trigo','trozo','turno','unico','valor','vent',
+  'verso','viaje','viejo','vigor','vino','vista','vitola','volar','vuelo','yerno',
+  'zorro','zurdo',
+];
+
+const WORDLIST_FR = [
+  'abeille','acier','agile','aigle','aimer','amont','ancre','arbre','ardeur','argent',
+  'arme','astre','atout','aube','audace','autour','azur','balle','barque','baume',
+  'berne','biche','bilan','bison','bleu','bonheur','bord','branche','brave','bruine',
+  'bulle','bureau','calme','canal','canon','carpe','castor','cerise','cerf','cerre',
+  'charme','chasse','chemin','cheval','chien','cible','ciel','clair','clan','clef',
+  'coeur','colis','colombe','combat','comte','conque','conte','coque','corail',
+  'corbeau','cordon','cosmos','coude','couleur','coupe','courbe','crane','creuse',
+  'cristal','croix','culte','dague','danse','dauphin','debut','delta','destin',
+  'devoir','diamant','digit','droit','durée','eclat','ecran','ecu','effet','elan',
+  'emeu','encre','enfer','envol','epee','epoque','epreuve','equipe','erable','esprit',
+  'etang','etape','etoile','exploit','facette','fagot','falaise','faucon','feler',
+  'fendre','ferveur','feuille','feutre','fievre','flair','flamme','fleche','flore',
+  'fluide','flute','fontaine','force','foret','forge','fouet','foudre','fraction',
+  'frappe','fresque','fruit','fugue','fusee','galere','gazon','genie','glacier',
+  'gloire','golfe','gorge','griffe','groupe','guerrier','guide','harpe','hauteur',
+  'herbe','hibou','horizon','humeur','icare','icone','image','impact','impasse',
+  'instant','intrepide','iris','ivoire','jade','jais','jasmin','joyau','lance',
+  'laurier','legende','liege','lien','ligue','lionne','lisere','livre','lueur',
+  'lumiere','lune','lutte','maitre','marbre','marche','matin','melee','mentor',
+  'mere','merle','mettle','minuit','miracle','mirage','miroir','moder','monnaie',
+  'moral','moteur','moulin','naiade','nature','noeud','nombre','nuit','nuage',
+  'nuance','ocean','oiseau','ombre','onde','orbite','orvet','palme','panorama',
+  'pardon','parole','paysage','perle','phase','phoque','picard','pierre','pilote',
+  'piment','plante','platine','plume','pointe','portail','preux','prime','prisme',
+  'quartz','quete','racine','rayon','regard','rempart','repere','reseau','resonance',
+  'reveil','rivage','riviere','roche','rondeur','rubis','ruche','ruisseau','sagesse',
+  'saphir','saule','savoir','secret','sillon','socle','soleil','sommet','source',
+  'spectre','sphere','sprint','statue','style','succès','sujet','symbole','talent',
+  'temple','terrain','tigre','tirant','tissu','topaze','totem','trace','trait',
+  'traitre','tresor','tronc','valeur','vague','vaillant','vapeur','vecteur','vegetal',
+  'verite','verre','vestige','vigueur','vision','vivace','voile','volcan','voyage',
+];
+
+const _wc   = { en: null, tr: null, es: null, fr: null };
+const _wfb  = { en: WORDLIST, tr: WORDLIST_TR, es: WORDLIST_ES, fr: WORDLIST_FR };
+const _wfile = { en: './words.txt', tr: './words_tr.txt', es: './words_es.txt', fr: './words_fr.txt' };
+
+async function loadWordList(lang) {
+  lang = lang || 'en';
+  if (_wc[lang]) return _wc[lang];
+  try {
+    const r = await fetch(_wfile[lang]);
+    if (!r.ok) throw new Error();
+    const text = await r.text();
+    _wc[lang] = text.split('\n').map(w => w.trim().toLowerCase()).filter(w => /^[a-z]{2,}$/.test(w));
+    if (_wc[lang].length < 10) throw new Error();
+  } catch {
+    _wc[lang] = _wfb[lang];
+  }
+  return _wc[lang];
+}
+
+function getWordList() { return _wc[selLang] || _wfb[selLang]; }
 
 /* ── Combo generator ── */
 function getCharset() {
@@ -746,8 +946,20 @@ snipeBtn.addEventListener('click', async () => {
   snipeBtn.innerHTML = '■ &nbsp; STOP';
   snipeBtn.classList.add('running');
 
-  const charset = getCharset();
-  const combos  = generateCombos(selLen, charset, selCount);
+  if (selCs === 'words' && !_wc[selLang]) {
+    setStatus('loading', 'loading word list…');
+    await loadWordList(selLang);
+  }
+
+  let combos;
+  if (selCs === 'words') {
+    const wl = getWordList();
+    const shuffled = [...wl].sort(() => Math.random() - 0.5);
+    combos = shuffled.slice(0, Math.min(selCount, shuffled.length));
+  } else {
+    const charset = getCharset();
+    combos = generateCombos(selLen, charset, selCount);
+  }
   const cfg     = PLATFORMS[platform];
   let checked   = 0, hits = 0, delay = 1100;
 
@@ -887,6 +1099,14 @@ document.querySelectorAll('[data-cs]').forEach(btn => {
     document.querySelectorAll('[data-cs]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selCs = btn.dataset.cs;
+    document.getElementById('langGroup').style.display = selCs === 'words' ? '' : 'none';
+  });
+});
+document.querySelectorAll('[data-lang]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-lang]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selLang = btn.dataset.lang;
   });
 });
 document.querySelectorAll('[data-count]').forEach(btn => {
