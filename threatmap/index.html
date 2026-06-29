@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000">
+<title>cyber threat map · kataly</title>
+<style>
+@font-face{font-family:'Terminus TTF';src:url('../assets/fonts/Terminus.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Terminus TTF',monospace;font-weight:500;color:#fff;}
+
+/* ── Globe ── */
+#globe-wrap{position:fixed;inset:0;z-index:1;}
+#globe-wrap canvas{display:block;}
+
+/* ── Loading ── */
+#loading{
+  position:fixed;inset:0;z-index:500;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .8s ease;
+}
+#loading.fade{opacity:0;pointer-events:none;}
+.ld-bar{width:200px;height:1px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden;}
+.ld-fill{height:100%;background:rgba(239,68,68,.7);border-radius:1px;animation:ldFill 3s ease-out forwards;}
+@keyframes ldFill{from{width:0}to{width:100%}}
+.ld-text{font-size:7px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.2);}
+
+/* ── Nav ── */
+.ct-nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:54px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+  background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,255,255,.04);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+}
+.ct-back{
+  display:flex;align-items:center;gap:8px;text-decoration:none;
+  color:rgba(255,255,255,.28);font-size:7px;letter-spacing:3px;text-transform:uppercase;
+  transition:color .2s;-webkit-tap-highlight-color:transparent;
+}
+.ct-back:hover{color:rgba(255,255,255,.7);}
+.ct-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.ct-nav-title{font-size:8px;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.12);}
+.ct-live-badge{
+  display:flex;align-items:center;gap:6px;
+  font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(239,68,68,.75);
+}
+.ct-live-badge::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:#ef4444;flex-shrink:0;
+  animation:liveDot 1.4s ease-in-out infinite;
+}
+@keyframes liveDot{0%,100%{opacity:.35}50%{opacity:1;box-shadow:0 0 5px rgba(239,68,68,.7);}}
+
+/* ── Stats ── */
+.ct-stats{
+  position:fixed;top:74px;right:20px;z-index:100;
+  display:flex;flex-direction:column;gap:8px;
+}
+.ct-stat{
+  background:rgba(0,0,0,.52);border:1px solid rgba(255,255,255,.07);
+  border-radius:7px;padding:10px 16px;backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);min-width:130px;
+}
+.ct-stat-val{display:block;font-size:20px;color:#fff;letter-spacing:.5px;line-height:1;margin-bottom:5px;}
+.ct-stat-lbl{display:block;font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);}
+
+/* ── Feed ── */
+.ct-feed{
+  position:fixed;bottom:20px;left:20px;z-index:100;
+  width:min(340px,calc(100vw - 40px));
+  display:flex;flex-direction:column;gap:5px;
+  pointer-events:none;
+}
+.ct-feed-item{
+  background:rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.07);
+  border-left-width:2px;border-radius:5px;padding:7px 10px;
+  display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  animation:feedIn .22s ease-out;
+}
+@keyframes feedIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.ct-feed-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ct-feed-route{font-size:8px;letter-spacing:.4px;color:rgba(255,255,255,.5);flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.ct-feed-type{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);flex-shrink:0;}
+
+/* ── Legend ── */
+.ct-legend{
+  position:fixed;bottom:20px;right:20px;z-index:100;
+  background:rgba(0,0,0,.52);border:1px solid rgba(255,255,255,.07);
+  border-radius:7px;padding:12px 16px;backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  display:flex;flex-direction:column;gap:7px;
+}
+.ct-legend-hd{font-size:6px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.18);margin-bottom:2px;}
+.ct-legend-row{display:flex;align-items:center;gap:9px;}
+.ct-legend-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ct-legend-lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);}
+
+/* ── Responsive ── */
+@media(max-width:580px){
+  .ct-stats{top:64px;right:12px;}
+  .ct-stat{min-width:110px;padding:8px 12px;}
+  .ct-stat-val{font-size:16px;}
+  .ct-feed{left:12px;bottom:12px;width:calc(100vw - 24px);}
+  .ct-legend{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="ld-text">initializing threat map</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+
+<!-- Globe -->
+<div id="globe-wrap"></div>
+
+<!-- Nav -->
+<nav class="ct-nav">
+  <a href="/" class="ct-back" aria-label="back to kataly">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    kataly
+  </a>
+  <span class="ct-nav-title">cyber threat map</span>
+  <span class="ct-live-badge" aria-label="live data">live</span>
+</nav>
+
+<!-- Stats -->
+<div class="ct-stats" aria-label="attack statistics">
+  <div class="ct-stat">
+    <span class="ct-stat-val" id="statTotal">—</span>
+    <span class="ct-stat-lbl">attacks today</span>
+  </div>
+  <div class="ct-stat">
+    <span class="ct-stat-val" id="statPerMin">—</span>
+    <span class="ct-stat-lbl">per minute</span>
+  </div>
+  <div class="ct-stat">
+    <span class="ct-stat-val" id="statActive">0</span>
+    <span class="ct-stat-lbl">active now</span>
+  </div>
+</div>
+
+<!-- Live feed -->
+<div class="ct-feed" id="feedEl" aria-label="live attack feed" aria-live="polite"></div>
+
+<!-- Legend -->
+<div class="ct-legend" aria-label="attack type legend">
+  <div class="ct-legend-hd">attack types</div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#ef4444"></div><span class="ct-legend-lbl">DDoS</span></div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#f97316"></div><span class="ct-legend-lbl">Malware</span></div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#eab308"></div><span class="ct-legend-lbl">Exploit</span></div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#a855f7"></div><span class="ct-legend-lbl">Brute Force</span></div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#3b82f6"></div><span class="ct-legend-lbl">Port Scan</span></div>
+  <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#22c55e"></div><span class="ct-legend-lbl">Phishing</span></div>
+</div>
+
+<script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+
+const SOURCES = [
+  { city:'Beijing',       country:'China',        lat:39.91, lng:116.39, w:14 },
+  { city:'Shanghai',      country:'China',        lat:31.23, lng:121.47, w:9  },
+  { city:'Guangzhou',     country:'China',        lat:23.13, lng:113.26, w:7  },
+  { city:'Shenzhen',      country:'China',        lat:22.55, lng:114.09, w:6  },
+  { city:'Moscow',        country:'Russia',       lat:55.75, lng:37.62,  w:9  },
+  { city:'St Petersburg', country:'Russia',       lat:59.95, lng:30.32,  w:4  },
+  { city:'Chicago',       country:'USA',          lat:41.85, lng:-87.65, w:5  },
+  { city:'Los Angeles',   country:'USA',          lat:34.05, lng:-118.24,w:5  },
+  { city:'New York',      country:'USA',          lat:40.71, lng:-74.01, w:5  },
+  { city:'Amsterdam',     country:'Netherlands',  lat:52.37, lng:4.90,   w:7  },
+  { city:'Frankfurt',     country:'Germany',      lat:50.11, lng:8.68,   w:5  },
+  { city:'São Paulo',     country:'Brazil',       lat:-23.55,lng:-46.63, w:4  },
+  { city:'Mumbai',        country:'India',        lat:19.08, lng:72.88,  w:3  },
+  { city:'Kyiv',          country:'Ukraine',      lat:50.45, lng:30.52,  w:4  },
+  { city:'Bucharest',     country:'Romania',      lat:44.43, lng:26.10,  w:3  },
+  { city:'Tehran',        country:'Iran',         lat:35.69, lng:51.42,  w:3  },
+  { city:'Pyongyang',     country:'North Korea',  lat:39.03, lng:125.75, w:2  },
+  { city:'Hanoi',         country:'Vietnam',      lat:21.03, lng:105.85, w:2  },
+  { city:'Jakarta',       country:'Indonesia',    lat:-6.21, lng:106.85, w:2  },
+  { city:'Istanbul',      country:'Turkey',       lat:41.01, lng:28.95,  w:2  },
+  { city:'Seoul',         country:'South Korea',  lat:37.57, lng:126.98, w:2  },
+  { city:'Paris',         country:'France',       lat:48.86, lng:2.35,   w:3  },
+  { city:'London',        country:'UK',           lat:51.51, lng:-0.13,  w:3  },
+  { city:'Warsaw',        country:'Poland',       lat:52.23, lng:21.01,  w:2  },
+  { city:'Toronto',       country:'Canada',       lat:43.65, lng:-79.38, w:2  },
+  { city:'Hong Kong',     country:'Hong Kong',    lat:22.32, lng:114.17, w:3  },
+  { city:'Tokyo',         country:'Japan',        lat:35.69, lng:139.69, w:2  },
+  { city:'Singapore',     country:'Singapore',    lat:1.35,  lng:103.82, w:3  },
+  { city:'Karachi',       country:'Pakistan',     lat:24.86, lng:67.01,  w:2  },
+  { city:'Lagos',         country:'Nigeria',      lat:6.52,  lng:3.38,   w:2  },
+];
+
+const TARGETS = [
+  { city:'Ashburn VA',    country:'USA',          lat:39.04, lng:-77.49, w:14 },
+  { city:'San Jose CA',   country:'USA',          lat:37.34, lng:-121.89,w:8  },
+  { city:'New York',      country:'USA',          lat:40.71, lng:-74.01, w:7  },
+  { city:'Seattle WA',    country:'USA',          lat:47.61, lng:-122.33,w:5  },
+  { city:'Frankfurt',     country:'Germany',      lat:50.11, lng:8.68,   w:8  },
+  { city:'Dublin',        country:'Ireland',      lat:53.33, lng:-6.25,  w:5  },
+  { city:'London',        country:'UK',           lat:51.51, lng:-0.13,  w:6  },
+  { city:'Tokyo',         country:'Japan',        lat:35.69, lng:139.69, w:5  },
+  { city:'Singapore',     country:'Singapore',    lat:1.35,  lng:103.82, w:5  },
+  { city:'Sydney',        country:'Australia',    lat:-33.87,lng:151.21, w:3  },
+  { city:'Amsterdam',     country:'Netherlands',  lat:52.37, lng:4.90,   w:5  },
+  { city:'Paris',         country:'France',       lat:48.86, lng:2.35,   w:4  },
+  { city:'Montreal',      country:'Canada',       lat:45.50, lng:-73.57, w:3  },
+  { city:'São Paulo',     country:'Brazil',       lat:-23.55,lng:-46.63, w:3  },
+  { city:'Mumbai',        country:'India',        lat:19.08, lng:72.88,  w:4  },
+  { city:'Seoul',         country:'South Korea',  lat:37.57, lng:126.98, w:3  },
+  { city:'Taipei',        country:'Taiwan',       lat:25.05, lng:121.53, w:3  },
+  { city:'Moscow',        country:'Russia',       lat:55.75, lng:37.62,  w:3  },
+  { city:'Beijing',       country:'China',        lat:39.91, lng:116.39, w:3  },
+  { city:'Dubai',         country:'UAE',          lat:25.20, lng:55.27,  w:2  },
+  { city:'Tel Aviv',      country:'Israel',       lat:32.08, lng:34.78,  w:2  },
+  { city:'Stockholm',     country:'Sweden',       lat:59.33, lng:18.07,  w:2  },
+  { city:'Zurich',        country:'Switzerland',  lat:47.38, lng:8.54,   w:2  },
+  { city:'Warsaw',        country:'Poland',       lat:52.23, lng:21.01,  w:2  },
+  { city:'Mexico City',   country:'Mexico',       lat:19.43, lng:-99.13, w:2  },
+  { city:'Kyiv',          country:'Ukraine',      lat:50.45, lng:30.52,  w:2  },
+  { city:'Hong Kong',     country:'Hong Kong',    lat:22.32, lng:114.17, w:2  },
+  { city:'Cape Town',     country:'South Africa', lat:-33.92,lng:18.42,  w:1  },
+  { city:'Johannesburg',  country:'South Africa', lat:-26.20,lng:28.04,  w:1  },
+  { city:'São Paulo',     country:'Brazil',       lat:-23.55,lng:-46.63, w:2  },
+];
+
+const ATTACK_TYPES = [
+  { name:'DDoS',        color:'#ef4444', w:25 },
+  { name:'Malware',     color:'#f97316', w:20 },
+  { name:'Exploit',     color:'#eab308', w:15 },
+  { name:'Brute Force', color:'#a855f7', w:20 },
+  { name:'Port Scan',   color:'#3b82f6', w:15 },
+  { name:'Phishing',    color:'#22c55e', w:5  },
+];
+
+function weightedPick(arr) {
+  const total = arr.reduce((s, x) => s + x.w, 0);
+  let r = Math.random() * total;
+  for (const x of arr) { r -= x.w; if (r <= 0) return x; }
+  return arr[arr.length - 1];
+}
+
+function hexToRgb(hex) {
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)] : [255,255,255];
+}
+
+// ── Config ─────────────────────────────────────────────────────────────────
+const mobile    = window.innerWidth < 768;
+const MAX_ARCS  = mobile ? 8  : 20;
+const SPAWN_MS  = mobile ? 1400 : 850;
+const ARC_ANIM  = 2400;
+
+// ── State ──────────────────────────────────────────────────────────────────
+let arcsData  = [];
+let ringsData = [];
+let arcId     = 0;
+let totalToday = 150000 + Math.floor(Math.random() * 120000);
+let recentTs  = [];
+
+// ── Globe ──────────────────────────────────────────────────────────────────
+const world = Globe({ animateIn: false })(document.getElementById('globe-wrap'));
+
+world
+  .width(window.innerWidth)
+  .height(window.innerHeight)
+  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+  .atmosphereColor('rgba(30,60,220,0.8)')
+  .atmosphereAltitude(0.15)
+  // Arcs
+  .arcsData([])
+  .arcStartLat(d => d.srcLat)
+  .arcStartLng(d => d.srcLng)
+  .arcEndLat(d => d.dstLat)
+  .arcEndLng(d => d.dstLng)
+  .arcColor(d => d.color)
+  .arcAltitude(d => d.alt)
+  .arcStroke(d => d.stroke)
+  .arcDashLength(0.38)
+  .arcDashGap(0.12)
+  .arcDashAnimateTime(ARC_ANIM)
+  .arcDashInitialGapOffset(d => d.offset)
+  // Rings at destinations
+  .ringsData([])
+  .ringLat(d => d.lat)
+  .ringLng(d => d.lng)
+  .ringColor(d => {
+    const [r,g,b] = hexToRgb(d.color);
+    return t => `rgba(${r},${g},${b},${(1 - t) * 0.7})`;
+  })
+  .ringMaxRadius(3.5)
+  .ringPropagationSpeed(3)
+  .ringRepeatPeriod(ARC_ANIM / 3)
+  // Points: city dots
+  .pointsData([
+    ...SOURCES.map(s => ({ ...s, ptType:'src' })),
+    ...TARGETS.map(t => ({ ...t, ptType:'dst' })),
+  ])
+  .pointLat(d => d.lat)
+  .pointLng(d => d.lng)
+  .pointAltitude(0.005)
+  .pointRadius(d => 0.15 + d.w * 0.015)
+  .pointColor(d => d.ptType === 'src'
+    ? 'rgba(239,68,68,0.22)'
+    : 'rgba(59,130,246,0.22)'
+  );
+
+// Camera + controls
+world.controls().autoRotate = true;
+world.controls().autoRotateSpeed = 0.28;
+world.controls().enableZoom = true;
+world.controls().minDistance = 150;
+world.controls().maxDistance = 600;
+world.pointOfView({ lat: 28, lng: 18, altitude: 2.6 }, 0);
+
+world.onGlobeReady(() => {
+  const ld = document.getElementById('loading');
+  ld.classList.add('fade');
+  setTimeout(() => { ld.style.display = 'none'; }, 900);
+  // Kick off simulation after globe ready
+  for (let i = 0; i < Math.min(5, MAX_ARCS); i++) {
+    setTimeout(spawnAttack, i * 280);
+  }
+  setTimeout(loop, 1500);
+});
+
+window.addEventListener('resize', () => {
+  world.width(window.innerWidth).height(window.innerHeight);
+});
+
+// ── Spawn ──────────────────────────────────────────────────────────────────
+function spawnAttack() {
+  const src  = weightedPick(SOURCES);
+  let   dst  = weightedPick(TARGETS);
+  let   tries = 0;
+  while (dst.country === src.country && tries++ < 8) dst = weightedPick(TARGETS);
+  const type = weightedPick(ATTACK_TYPES);
+  const id   = ++arcId;
+
+  const jitter = () => (Math.random() - 0.5) * 1.5;
+  const arc = {
+    id,
+    srcLat: src.lat + jitter(), srcLng: src.lng + jitter(),
+    dstLat: dst.lat + jitter(), dstLng: dst.lng + jitter(),
+    color:  type.color,
+    alt:    0.12 + Math.random() * 0.38,
+    stroke: 0.28 + Math.random() * 0.35,
+    offset: Math.random(),
+    srcCity: src.city, srcCountry: src.country,
+    dstCity: dst.city, dstCountry: dst.country,
+    typeName: type.name,
+  };
+
+  arcsData = [...arcsData.slice(-(MAX_ARCS - 1)), arc];
+  world.arcsData(arcsData);
+
+  // Ring appears as arc "arrives"
+  const ringDelay = ARC_ANIM * 0.62;
+  setTimeout(() => {
+    const ring = { lat: arc.dstLat, lng: arc.dstLng, color: type.color, id };
+    ringsData = [...ringsData, ring];
+    world.ringsData(ringsData);
+    setTimeout(() => {
+      ringsData = ringsData.filter(r => r.id !== id);
+      world.ringsData(ringsData);
+    }, 2000);
+  }, ringDelay);
+
+  // Clean up arc after it completes
+  setTimeout(() => {
+    arcsData = arcsData.filter(a => a.id !== id);
+    world.arcsData(arcsData);
+    updateStats();
+  }, ARC_ANIM + 500);
+
+  // Stats + feed
+  totalToday++;
+  recentTs.push(Date.now());
+  recentTs = recentTs.filter(t => Date.now() - t < 60000);
+  updateStats();
+  addFeedItem(arc);
+}
+
+function loop() {
+  const delay = SPAWN_MS * (0.55 + Math.random() * 0.9);
+  setTimeout(() => { spawnAttack(); loop(); }, delay);
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('statTotal').textContent   = totalToday.toLocaleString();
+  document.getElementById('statPerMin').textContent  = recentTs.length;
+  document.getElementById('statActive').textContent  = arcsData.length;
+}
+
+setInterval(() => {
+  totalToday += 1 + Math.floor(Math.random() * 4);
+  document.getElementById('statTotal').textContent = totalToday.toLocaleString();
+}, 2800);
+
+// ── Feed ───────────────────────────────────────────────────────────────────
+const feedEl  = document.getElementById('feedEl');
+const MAX_FEED = 6;
+
+function addFeedItem(arc) {
+  const el = document.createElement('div');
+  el.className = 'ct-feed-item';
+  el.style.borderLeftColor = arc.color;
+  el.innerHTML = `
+    <div class="ct-feed-dot" style="background:${arc.color}"></div>
+    <span class="ct-feed-route">${arc.srcCity}, ${arc.srcCountry} → ${arc.dstCity}, ${arc.dstCountry}</span>
+    <span class="ct-feed-type">${arc.typeName}</span>
+  `;
+  feedEl.prepend(el);
+  while (feedEl.children.length > MAX_FEED) feedEl.removeChild(feedEl.lastChild);
+}
+</script>
+</body>
+</html>
