@@ -185,15 +185,21 @@ window.addEventListener('resize',resize);
 const STARS=Array.from({length:180},()=>({x:Math.random(),y:Math.random(),r:Math.random()<0.85?0.6:1.1,a:0.1+Math.random()*0.45}));
 
 // ── Projection ─────────────────────────────────────────────────────────────
-let lon0=18; // initial center longitude
+let lon0=18,lat0=0; // center longitude + vertical tilt
 
 function proj(lat,lng){
   const la=lat*D2R;
   const dlo=((lng-lon0+540)%360-180)*D2R;
-  const sx=Math.cos(la)*Math.sin(dlo);
-  const sy=-Math.sin(la);
-  const sz=Math.cos(la)*Math.cos(dlo);
-  return{px:W/2+sx*R,py:H/2+sy*R,vis:sz>-0.05};
+  // Post-Y-rotation components
+  const xr=Math.cos(la)*Math.sin(dlo);
+  const yr=Math.sin(la);
+  const zr=Math.cos(la)*Math.cos(dlo);
+  // Apply X-axis tilt by lat0
+  const lt=lat0*D2R;
+  const sx=xr;
+  const sy=yr*Math.cos(lt)-zr*Math.sin(lt);
+  const sz=yr*Math.sin(lt)+zr*Math.cos(lt);
+  return{px:W/2+sx*R,py:H/2-sy*R,vis:sz>-0.05};
 }
 function vproj(v){const {lat,lng}=v2ll(v);return proj(lat,lng);}
 
@@ -210,6 +216,61 @@ function drawGlobe(){
   const sg=cx2.createRadialGradient(W/2-R*0.28,H/2-R*0.28,R*0.04,W/2,H/2,R);
   sg.addColorStop(0,'#0d2244');sg.addColorStop(0.55,'#061426');sg.addColorStop(1,'#020810');
   cx2.fillStyle=sg;cx2.beginPath();cx2.arc(W/2,H/2,R,0,TAU);cx2.fill();
+}
+
+// ── Countries ──────────────────────────────────────────────────────────────
+let geoFeatures=null;
+(async function loadGeo(){
+  try{
+    const [,data]=await Promise.all([
+      new Promise(res=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';s.onload=s.onerror=res;document.head.appendChild(s);}),
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json())
+    ]);
+    if(typeof topojson!=='undefined') geoFeatures=topojson.feature(data,data.objects.countries).features;
+  }catch(e){}
+})();
+
+function drawCountries(){
+  if(!geoFeatures)return;
+  cx2.save();
+  cx2.beginPath();cx2.arc(W/2,H/2,R,0,TAU);cx2.clip();
+  // Land fill
+  cx2.fillStyle='rgba(22,58,110,0.13)';
+  for(const f of geoFeatures){
+    if(!f.geometry)continue;
+    const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];
+    for(const poly of polys){
+      cx2.beginPath();
+      for(const ring of poly){
+        let on=false;
+        for(const[lng,lat]of ring){
+          const p=proj(lat,lng);
+          if(p.vis){if(!on){cx2.moveTo(p.px,p.py);on=true;}else cx2.lineTo(p.px,p.py);}
+          else if(on){cx2.closePath();on=false;}
+        }
+        if(on)cx2.closePath();
+      }
+      cx2.fill('evenodd');
+    }
+  }
+  // Border strokes
+  cx2.strokeStyle='rgba(70,140,230,0.22)';cx2.lineWidth=0.55;
+  for(const f of geoFeatures){
+    if(!f.geometry)continue;
+    const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];
+    for(const poly of polys){
+      for(const ring of poly){
+        let on=false;cx2.beginPath();
+        for(const[lng,lat]of ring){
+          const p=proj(lat,lng);
+          if(p.vis){if(!on){cx2.moveTo(p.px,p.py);on=true;}else cx2.lineTo(p.px,p.py);}
+          else if(on){cx2.stroke();cx2.beginPath();on=false;}
+        }
+        if(on)cx2.stroke();
+      }
+    }
+  }
+  cx2.restore();
 }
 
 function drawGrid(){
@@ -348,28 +409,42 @@ function addFeed(arc){
   while(feedEl.children.length>5)feedEl.removeChild(feedEl.lastChild);
 }
 
-// ── Drag / rotate ──────────────────────────────────────────────────────────
-let rotVel=0.04,dragging=false,lastDX=0;
-function onDragStart(x){dragging=true;lastDX=x;rotVel=0;}
-function onDragMove(x){if(!dragging)return;lon0+=(x-lastDX)*0.28;lastDX=x;}
-function onDragEnd(vx){dragging=false;rotVel=vx||0;}
-cv.addEventListener('mousedown',e=>onDragStart(e.clientX));
-cv.addEventListener('mousemove',e=>{if(dragging)onDragMove(e.clientX);});
-cv.addEventListener('mouseup',()=>onDragEnd(0.04));
-cv.addEventListener('mouseleave',()=>onDragEnd(0.04));
-let lastTouchX=0,lastTouchT=0;
-cv.addEventListener('touchstart',e=>{onDragStart(e.touches[0].clientX);lastTouchX=e.touches[0].clientX;lastTouchT=performance.now();e.preventDefault();},{passive:false});
-cv.addEventListener('touchmove',e=>{
-  const tx=e.touches[0].clientX,tnow=performance.now();
-  const vel=(tx-lastTouchX)/(tnow-lastTouchT+1)*14;
-  onDragMove(tx);lastTouchX=tx;lastTouchT=tnow;rotVel=vel*0.28;
-  e.preventDefault();
+// ── Drag / rotate (horizontal = lon0, vertical = lat0) ────────────────────
+let rotVel=0.04,rotVelY=0,dragging=false,lastDX=0,lastDY=0;
+function onDragStart(x,y){dragging=true;lastDX=x;lastDY=y;rotVel=0;rotVelY=0;}
+function onDragMove(x,y){
+  if(!dragging)return;
+  lon0+=(x-lastDX)*0.28;
+  lat0=Math.max(-75,Math.min(75,lat0-(y-lastDY)*0.28));
+  lastDX=x;lastDY=y;
+}
+function onDragEnd(){dragging=false;}
+cv.addEventListener('mousedown',e=>onDragStart(e.clientX,e.clientY));
+cv.addEventListener('mousemove',e=>{if(dragging)onDragMove(e.clientX,e.clientY);});
+cv.addEventListener('mouseup',onDragEnd);
+cv.addEventListener('mouseleave',onDragEnd);
+let lastTX=0,lastTY=0,lastTT=0;
+cv.addEventListener('touchstart',e=>{
+  const t=e.touches[0];onDragStart(t.clientX,t.clientY);
+  lastTX=t.clientX;lastTY=t.clientY;lastTT=performance.now();e.preventDefault();
 },{passive:false});
-cv.addEventListener('touchend',()=>{dragging=false;});
+cv.addEventListener('touchmove',e=>{
+  const t=e.touches[0],now=performance.now(),dt=now-lastTT+1;
+  rotVel=(t.clientX-lastTX)/dt*14*0.28;
+  rotVelY=-(t.clientY-lastTY)/dt*14*0.28;
+  onDragMove(t.clientX,t.clientY);
+  lastTX=t.clientX;lastTY=t.clientY;lastTT=now;e.preventDefault();
+},{passive:false});
+cv.addEventListener('touchend',onDragEnd);
 
 // ── Render loop ────────────────────────────────────────────────────────────
 function render(now){
-  if(!dragging){rotVel+=(0.04-rotVel)*0.04;lon0=(lon0+rotVel)%360;}
+  if(!dragging){
+    rotVel+=(0.04-rotVel)*0.04;
+    rotVelY*=0.92;
+    lon0=(lon0+rotVel)%360;
+    lat0=Math.max(-75,Math.min(75,lat0+rotVelY));
+  }
 
   updateArcs(now);updateRings(now);
 
@@ -385,6 +460,7 @@ function render(now){
   drawGlobe();
 
   cx2.save();cx2.beginPath();cx2.arc(W/2,H/2,R,0,TAU);cx2.clip();
+  drawCountries();
   drawGrid();
   drawArcs();
   drawCities();
