@@ -357,8 +357,6 @@ function spawnArc(){
   };
   arcs.push(arc);
   addFeed(arc);
-  totalToday++;recentTs.push(Date.now());recentTs=recentTs.filter(t=>Date.now()-t<60000);
-  updateStats();
 }
 
 function updateArcs(now){
@@ -480,14 +478,31 @@ function drawRings(){
 }
 
 // ── Stats & Feed ───────────────────────────────────────────────────────────
-let totalToday=150000+Math.floor(Math.random()*120000);
-let recentTs=[];
+// ~5.2M significant global attacks tracked per day (~60/sec, ~3,600/min)
+const DAILY_RATE=5200000;
+const PER_SEC=DAILY_RATE/86400;
+function todayBase(){
+  const n=new Date(),s=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+  return Math.floor((n-s)/1000*PER_SEC);
+}
+let totalToday=todayBase();
 function updateStats(){
   document.getElementById('sTotal').textContent=totalToday.toLocaleString();
-  document.getElementById('sPerMin').textContent=recentTs.length;
-  document.getElementById('sActive').textContent=arcs.filter(a=>a.progress<1).length;
+  // Per-minute rate: realistic ~3,600 with ±4% jitter
+  const pmBase=Math.round(PER_SEC*60);
+  const pmJitter=Math.floor((Math.random()-.5)*pmBase*.08);
+  document.getElementById('sPerMin').textContent=(pmBase+pmJitter).toLocaleString();
+  // Active: time-of-day curve (peaks midday UTC) + noise
+  const hr=new Date().getUTCHours();
+  const tod=Math.round(260+Math.sin((hr-6)*Math.PI/12)*110);
+  document.getElementById('sActive').textContent=(tod+Math.floor(Math.random()*60)).toLocaleString();
 }
-setInterval(()=>{totalToday+=1+Math.floor(Math.random()*3);document.getElementById('sTotal').textContent=totalToday.toLocaleString();},2600);
+// Increment counter at real rate (~2.5s per tick)
+setInterval(()=>{
+  totalToday+=Math.round(PER_SEC*2.5*(0.92+Math.random()*.16));
+  document.getElementById('sTotal').textContent=totalToday.toLocaleString();
+},2500);
+setInterval(updateStats,5000);
 
 const feedEl=document.getElementById('feed');
 function addFeed(arc){
@@ -594,6 +609,7 @@ function render(now){
 function startSim(){
   const ld=document.getElementById('ld');
   ld.classList.add('hide');setTimeout(()=>ld.style.display='none',700);
+  updateStats();
   for(let i=0;i<4;i++)setTimeout(spawnArc,i*320);
   function spawnLoop(){if(arcs.length<MAX_ARCS)spawnArc();setTimeout(spawnLoop,800+Math.random()*1200);}
   setTimeout(spawnLoop,1600);
