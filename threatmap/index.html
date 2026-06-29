@@ -262,9 +262,23 @@ let totalToday = 150000 + Math.floor(Math.random() * 120000);
 let recentTs  = [];
 
 // ── Globe ──────────────────────────────────────────────────────────────────
-const world = Globe({ animateIn: false })(document.getElementById('globe-wrap'));
+let simStarted = false;
 
-world
+function startSim() {
+  if (simStarted) return;
+  simStarted = true;
+  const ld = document.getElementById('loading');
+  ld.classList.add('fade');
+  setTimeout(() => { ld.style.display = 'none'; }, 800);
+  for (let i = 0; i < Math.min(5, MAX_ARCS); i++) setTimeout(spawnAttack, i * 280);
+  setTimeout(loop, 1500);
+}
+
+// Hard fallback: reveal after 6 s regardless of texture state
+setTimeout(startSim, 6000);
+
+// Globe is configured BEFORE mounting so onGlobeReady is registered in time
+const world = Globe({ animateIn: false })
   .width(window.innerWidth)
   .height(window.innerHeight)
   .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
@@ -305,10 +319,9 @@ world
   .pointLng(d => d.lng)
   .pointAltitude(0.005)
   .pointRadius(d => 0.15 + d.w * 0.015)
-  .pointColor(d => d.ptType === 'src'
-    ? 'rgba(239,68,68,0.22)'
-    : 'rgba(59,130,246,0.22)'
-  );
+  .pointColor(d => d.ptType === 'src' ? 'rgba(239,68,68,0.22)' : 'rgba(59,130,246,0.22)')
+  .onGlobeReady(startSim)
+  (document.getElementById('globe-wrap'));  // mount last
 
 // Camera + controls
 world.controls().autoRotate = true;
@@ -317,17 +330,6 @@ world.controls().enableZoom = true;
 world.controls().minDistance = 150;
 world.controls().maxDistance = 600;
 world.pointOfView({ lat: 28, lng: 18, altitude: 2.6 }, 0);
-
-world.onGlobeReady(() => {
-  const ld = document.getElementById('loading');
-  ld.classList.add('fade');
-  setTimeout(() => { ld.style.display = 'none'; }, 900);
-  // Kick off simulation after globe ready
-  for (let i = 0; i < Math.min(5, MAX_ARCS); i++) {
-    setTimeout(spawnAttack, i * 280);
-  }
-  setTimeout(loop, 1500);
-});
 
 window.addEventListener('resize', () => {
   world.width(window.innerWidth).height(window.innerHeight);
