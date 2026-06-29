@@ -12,29 +12,27 @@ function cors(origin) {
 }
 
 async function checkInstagram(username) {
-  // Instagram’s internal JSON API — returns 404 for non-existing users without
-  // redirecting to the login page (which HTML scraping always lands on)
   const res = await fetch(
     `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
     {
       headers: {
-        ‘User-Agent’: ‘Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36’,
-        ‘X-IG-App-ID’: ‘936619743392459’,
-        ‘Accept’: ‘*/*’,
-        ‘Accept-Language’: ‘en-US,en;q=0.9’,
-        ‘Referer’: ‘https://www.instagram.com/’,
-        ‘Origin’: ‘https://www.instagram.com’,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'X-IG-App-ID': '936619743392459',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.instagram.com/',
+        'Origin': 'https://www.instagram.com',
       },
     }
   );
-  if (res.status === 404) return ‘available’;
-  if (res.status === 429) return ‘ratelimit’;
+  if (res.status === 404) return 'available';
+  if (res.status === 429) return 'ratelimit';
   if (res.status === 200) {
     const data = await res.json().catch(() => null);
-    if (!data?.data?.user) return ‘available’;
-    return ‘taken’;
+    if (!data?.data?.user) return 'available';
+    return 'taken';
   }
-  return ‘error’;
+  return 'error';
 }
 
 async function checkTelegram(username) {
@@ -143,6 +141,102 @@ async function claimDiscord(username, token) {
   return 'error';
 }
 
+async function checkX(username) {
+  try {
+    const res = await fetch(`https://x.com/${encodeURIComponent(username)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
+    });
+    if (res.status === 404) return 'available';
+    if (res.status === 200) {
+      const html = await res.text();
+      if (html.includes("This account doesn") || html.includes("doesn’t exist")) {
+        return 'available';
+      }
+      return 'taken';
+    }
+    return 'error';
+  } catch {
+    return 'error';
+  }
+}
+
+async function checkTikTok(username) {
+  try {
+    const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(username)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
+    });
+    if (res.status === 404) return 'available';
+    if (res.status === 200) {
+      const html = await res.text();
+      if (html.includes("Couldn't find this account") || html.includes("couldn’t find")) {
+        return 'available';
+      }
+      return 'taken';
+    }
+    return 'error';
+  } catch {
+    return 'error';
+  }
+}
+
+async function checkYouTube(username) {
+  try {
+    const res = await fetch(`https://www.youtube.com/@${encodeURIComponent(username)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
+    });
+    if (res.status === 404) return 'available';
+    if (res.status === 200) return 'taken';
+    return 'error';
+  } catch {
+    return 'error';
+  }
+}
+
+async function checkTrademark(query) {
+  try {
+    const encoded = encodeURIComponent(`"${query}"`);
+    const res = await fetch(
+      `https://efts.uspto.gov/LATEST/search-index?query=${encoded}&searchInput=${encoded}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          'Accept': 'application/json, text/plain, */*',
+          'Referer': 'https://tmsearch.uspto.gov/',
+          'Origin': 'https://tmsearch.uspto.gov',
+        },
+      }
+    );
+    if (!res.ok) return { count: 0, error: true };
+    const data = await res.json();
+    const count = data?.hits?.total?.value ?? 0;
+    const hits = (data?.hits?.hits ?? []).slice(0, 5).map(h => ({
+      mark: h._source?.markVerbalElementText ?? '',
+      status: h._source?.statusCode ?? '',
+      serial: h._source?.serialNumber ?? '',
+    }));
+    return { count, hits };
+  } catch {
+    return { count: 0, error: true };
+  }
+}
+
+const BATCH_PLATFORMS = new Set(['ig', 'tg', 'x', 'tt', 'yt']);
+
 export default {
   async fetch(request) {
     const origin = request.headers.get('Origin') ?? '';
@@ -153,19 +247,33 @@ export default {
     const url = new URL(request.url);
     const p = url.searchParams.get('p');
 
-    // ── Batch endpoint (POST /check?p=ig|tg) ──────────────────────────────
-    if (request.method === 'POST' && (p === 'ig' || p === 'tg')) {
+    // ── Batch endpoint (POST) ──────────────────────────────────────────────
+    if (request.method === 'POST' && BATCH_PLATFORMS.has(p)) {
       try {
         const body = await request.json();
         if (!Array.isArray(body) || body.length > 50 ||
             !body.every(u => /^[a-zA-Z0-9_]{1,32}$/.test(u))) {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }
-        const checkFn = p === 'ig' ? checkInstagram : checkTelegram;
-        const results = await Promise.all(body.map(async u => ({ u, s: await checkFn(u) })));
+        const fns = { ig: checkInstagram, tg: checkTelegram, x: checkX, tt: checkTikTok, yt: checkYouTube };
+        const results = await Promise.all(body.map(async u => ({ u, s: await fns[p](u) })));
         return Response.json(results, { headers });
       } catch {
         return Response.json({ error: 'error' }, { status: 500, headers });
+      }
+    }
+
+    // ── Trademark check ────────────────────────────────────────────────────
+    if (p === 'tm') {
+      const q = url.searchParams.get('q');
+      if (!q || q.length < 1 || q.length > 50) {
+        return Response.json({ error: 'invalid' }, { status: 400, headers });
+      }
+      try {
+        const result = await checkTrademark(q);
+        return Response.json(result, { headers });
+      } catch {
+        return Response.json({ count: 0, error: true }, { headers });
       }
     }
 
@@ -199,6 +307,21 @@ export default {
           return Response.json({ status }, { headers });
         }
         const status = await claimDiscord(u, token);
+        return Response.json({ status }, { headers });
+      }
+
+      if (p === 'x') {
+        const status = await checkX(u);
+        return Response.json({ status }, { headers });
+      }
+
+      if (p === 'tt') {
+        const status = await checkTikTok(u);
+        return Response.json({ status }, { headers });
+      }
+
+      if (p === 'yt') {
+        const status = await checkYouTube(u);
         return Response.json({ status }, { headers });
       }
 
