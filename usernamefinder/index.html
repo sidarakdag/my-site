@@ -481,6 +481,15 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
           <button class="cfg-btn" data-cs="words">words</button>
         </div>
       </div>
+      <div class="cfg-group" id="langGroup" style="display:none">
+        <span class="cfg-label">LANG</span>
+        <div class="cfg-btns">
+          <button class="cfg-btn active" data-lang="en">EN</button>
+          <button class="cfg-btn" data-lang="tr">TR</button>
+          <button class="cfg-btn" data-lang="es">ES</button>
+          <button class="cfg-btn" data-lang="fr">FR</button>
+        </div>
+      </div>
       <div class="cfg-group">
         <span class="cfg-label">COUNT</span>
         <div class="cfg-btns">
@@ -562,6 +571,7 @@ const WORKER_URL = 'https://kataly-username-checker.sidarakdag1.workers.dev';
 let platform   = 'ig';
 let selLen     = 3;
 let selCs      = 'letters';
+let selLang    = 'en';
 let selCount   = 100;
 let running    = false;
 
@@ -901,7 +911,76 @@ const WORDLIST = [
   'unconquerablehero',
 ];
 
-/* ── Word list (lazy-loaded) ── */
+/* ── Language word lists (diacritics stripped — platforms allow a–z only) ── */
+const WORDLIST_TR = [
+  // 3-letter
+  'dag','gol','yol','buz','koy','tas','gul','bal','nar','sis','tur','top','kap','zor',
+  'son','tek','tam','hep','net','yok','ses','yuz','goz','tan','sac','yak','yas','bak',
+  'git','gel','gor','ver','bil','sil','kes','tut','duz','kum','kar','pul','sal','yem',
+  'cep','cag','aci','ada','adi','aga','aki','ala','ali','ani','asi','ata','ati','aya',
+  // 4-letter
+  'dost','kaya','tepe','gece','dere','yaka','hava','ates','kara','koru','yeni','eski',
+  'uzak','kisa','uzun','saat','doga','yurt','kuyu','gemi','rota','baba','anne','arpa',
+  'elma','taze','sert','dolu','kuru','sari','mavi','alev','aziz','boru','cati','dami',
+  'dizi','duman','elde','gece','ince','iste','kedi','koyu','kurt','mavi','nehir','onur',
+  'ordu','peri','sarp','sema','serv','sila','sipo','talh','tura','uzay','yali','yuce',
+  // 5-letter
+  'aslan','kalin','kucuk','buyuk','guzel','kolay','zaman','insan','hayat','deniz',
+  'sahil','bulut','orman','sokak','kopek','nehir','cicek','duman','yurek','altin',
+  'gumus','demir','tahta','beton','cadde','bayir','tavan','meyva','soluk','solak',
+  'kapak','genel','ozelk','kural','dogal','fizik','kimya','tarih','coğraf','ahlak',
+];
+
+const WORDLIST_ES = [
+  // 3-letter
+  'sol','rio','paz','luz','ley','voz','rey','ojo','fin','oro','pan','sal','red','mar',
+  'son','dia','mes','dos','uno','pie','col','pez','ron','ego','ola','mas','hoy','tan',
+  'era','don','feo','osa','oso','leo','geo','tia','tio','haz','asi','los','las','esa',
+  'cal','caz','cid','cos','dar','des','dip','dos','eco','faz','gas','gel','gen','hoz',
+  // 4-letter
+  'amor','luna','vida','alma','mano','gato','lobo','agua','nube','rosa','obra','arte',
+  'vino','lago','beso','vela','hora','foto','rana','toro','pino','roca','rico','rojo',
+  'duro','seco','frio','solo','poco','otro','loco','fino','puro','fuga','cola','copa',
+  'cuna','dama','fama','faro','gema','isla','lema','lima','lira','mapa','masa','mesa',
+  'meta','moda','mora','musa','nada','nave','nota','onda','paso','pena','peso','plan',
+  'polo','pose','pozo','raza','sumo','taza','tema','toca','tofu','tono','topo','toro',
+  // 5-letter
+  'playa','monte','verde','cielo','noche','tarde','mundo','campo','dulce','noble',
+  'sabor','color','rumor','fondo','punto','marco','largo','corto','firme','suave',
+  'bravo','negro','claro','danza','delta','drama','baile','chico','cueva','dicha',
+  'ficha','flota','fuego','golpe','guapo','honor','joven','juego','lucha','magia',
+  'mayor','menor','moral','nueva','padre','pausa','poder','primo','radio','salvo',
+  'tigre','tinto','torpe','valor','vapor','viaje','vicio','viejo','zurdo','zunno',
+];
+
+const WORDLIST_FR = [
+  // 3-letter
+  'mer','lac','air','foi','loi','rue','roi','arc','age','art','ble','but','cap','col',
+  'dos','feu','fil','gel','jus','mal','mot','nef','nom','oui','pas','pli','sac','sel',
+  'sol','son','sur','the','val','via','vie','vin','vol','vue','eau','cle','mur','bal',
+  'bec','bol','cri','ile','jet','lis','mas','pie','ras','ris','rot','cou','pou','due',
+  // 4-letter
+  'bleu','noir','rose','vent','rive','lune','peur','robe','bois','pays','cher','doux',
+  'fier','gris','haut','mois','mort','nuit','paix','part','pont','port','rang','rien',
+  'sang','saut','seul','soin','sort','tour','vide','vrai','cage','cave','chef','clef',
+  'code','coup','cour','cure','dame','dent','dieu','dune','fait','faim','fils','flot',
+  'fond','fume','gare','haie','idee','joue','jupe','lait','lame','lieu','loin','loup',
+  'luxe','mare','mode','mure','muse','nage','noel','onde','page','pave','pied','poil',
+  'rade','reve','ride','rime','robe','roue','roux','sage','seve','sire','site','soie',
+  'tact','tare','taux','teck','tete','thon','tige','toit','tome','trop','trou','tune',
+  // 5-letter
+  'bleus','blanc','rouge','verre','poeme','piste','plage','foret','nuage','reves',
+  'fleur','chien','magie','monde','terre','eclat','faire','flair','force','forme',
+  'genre','glace','globe','grace','grand','grave','greve','hotel','image','jeune',
+  'jouet','large','lutte','maree','marin','meute','mince','monte','moule','noble',
+  'notre','olive','ordre','paire','panne','palme','perle','place','plain','plein',
+  'poche','poete','pomme','porte','prise','prose','reine','repas','repos','retro',
+  'ronde','sabre','saint','serve','sirop','sobre','suite','table','theme','titre',
+  'tombe','tonne','tramp','ultra','vague','value','verge','verse','vieux','villa',
+  'volee','voter','voute','vitre','royal','droit','noeud','choux','genou','bijou',
+];
+
+/* ── Word list (lazy-loaded English from words.txt) ── */
 let wordCache = null;
 async function loadWordList() {
   if (wordCache) return wordCache;
@@ -915,6 +994,13 @@ async function loadWordList() {
   return wordCache;
 }
 
+function getWordList() {
+  if (selLang === 'tr') return WORDLIST_TR;
+  if (selLang === 'es') return WORDLIST_ES;
+  if (selLang === 'fr') return WORDLIST_FR;
+  return wordCache || WORDLIST;
+}
+
 /* ── Combo generator ── */
 function getCharset() {
   if (selCs === 'nums')    return '0123456789';
@@ -924,7 +1010,7 @@ function getCharset() {
 
 function generateCombos(length, charset, count) {
   if (selCs === 'words') {
-    const list = wordCache || WORDLIST;
+    const list = getWordList();
     const words = list.filter(w => w.length === length);
     if (words.length === 0) return [];
     const take = count === 0 ? words.length : Math.min(count, words.length);
@@ -1285,7 +1371,7 @@ snipeBtn.addEventListener('click', async () => {
 
   if (selCount === 0 && platform !== 'dc') startBgScan();
 
-  if (selCs === 'words' && !wordCache) {
+  if (selCs === 'words' && selLang === 'en' && !wordCache) {
     setStatus('loading', 'loading word list…');
     await loadWordList();
   }
@@ -1482,6 +1568,14 @@ document.querySelectorAll('[data-cs]').forEach(btn => {
     document.querySelectorAll('[data-cs]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selCs = btn.dataset.cs;
+    document.getElementById('langGroup').style.display = selCs === 'words' ? '' : 'none';
+  });
+});
+document.querySelectorAll('[data-lang]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-lang]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selLang = btn.dataset.lang;
   });
 });
 document.querySelectorAll('[data-count]').forEach(btn => {
