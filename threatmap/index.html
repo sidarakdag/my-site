@@ -69,6 +69,40 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000308;font-family:
 .lg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .lg-lbl{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);}
 
+/* Country info popup */
+.info{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;
+  width:min(320px,calc(100vw - 28px));
+  background:rgba(0,4,18,.95);border:1px solid rgba(255,255,255,.1);border-top:2px solid rgba(60,140,255,.5);
+  border-radius:14px;padding:20px 20px 18px;
+  backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);
+  box-shadow:0 20px 60px rgba(0,0,0,.85),0 0 40px rgba(0,60,200,.15),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:opacity .22s ease,transform .22s ease;}
+.info.hide{opacity:0;pointer-events:none;transform:translate(-50%,-47%);}
+.info-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.25);
+  font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;font-family:inherit;
+  transition:color .15s;-webkit-tap-highlight-color:transparent;}
+.info-close:hover{color:rgba(255,255,255,.8);}
+.info-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.info-flag{width:58px;height:auto;border-radius:5px;box-shadow:0 2px 14px rgba(0,0,0,.55);flex-shrink:0;}
+.info-hdr-text{min-width:0;}
+.info-country{font-size:16px;font-weight:700;letter-spacing:-.4px;margin-bottom:5px;
+  background:linear-gradient(135deg,#fff,rgba(180,215,255,.9));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.info-sub{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.24);}
+.info-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.info-stat{text-align:center;padding:11px 6px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);border-radius:9px;}
+.info-stat-val{display:block;font-size:15px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px;
+  background:linear-gradient(135deg,#fff,rgba(160,200,255,.85));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.info-stat-lbl{font-size:6px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.22);}
+.info-threat{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;padding:0 1px;}
+.info-threat-lbl{font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.2);}
+.info-threat-val{font-size:10px;font-weight:700;letter-spacing:2.5px;}
+.info-bar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+.info-bar-fill{height:100%;border-radius:2px;transition:width .5s ease,background .5s ease;}
+
 @media(max-width:580px){
   .stats{top:58px;right:10px;}
   .stat{min-width:114px;padding:10px 12px;}
@@ -107,6 +141,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000308;font-family:
   <div class="lg-row"><div class="lg-dot" style="background:#a855f7"></div><span class="lg-lbl">Brute Force</span></div>
   <div class="lg-row"><div class="lg-dot" style="background:#3b82f6"></div><span class="lg-lbl">Port Scan</span></div>
   <div class="lg-row"><div class="lg-dot" style="background:#22c55e"></div><span class="lg-lbl">Phishing</span></div>
+</div>
+
+<div id="info" class="info hide">
+  <button class="info-close" onclick="hideInfo()">×</button>
+  <div class="info-header">
+    <img class="info-flag" id="infoFlag" src="" alt="flag" onerror="this.style.display='none'">
+    <div class="info-hdr-text">
+      <div class="info-country" id="infoName">—</div>
+      <div class="info-sub" id="infoSub">—</div>
+    </div>
+  </div>
+  <div class="info-stats">
+    <div class="info-stat"><span class="info-stat-val" id="infoSent">—</span><span class="info-stat-lbl">attacks sent today</span></div>
+    <div class="info-stat"><span class="info-stat-val" id="infoRecv">—</span><span class="info-stat-lbl">attacks received</span></div>
+  </div>
+  <div class="info-threat">
+    <span class="info-threat-lbl">threat level</span>
+    <span class="info-threat-val" id="infoThr">—</span>
+  </div>
+  <div class="info-bar"><div class="info-bar-fill" id="infoBarFill" style="width:0%"></div></div>
 </div>
 
 <script>
@@ -335,24 +389,6 @@ function drawGrid(){
     for(let i=0;i<=STEPS;i++){const p=proj(-90+(180/STEPS)*i,lng);if(p.vis){if(!on){cx2.moveTo(p.px,p.py);on=true;}else cx2.lineTo(p.px,p.py);}else if(on){cx2.stroke();cx2.beginPath();on=false;}}
     if(on)cx2.stroke();
   }
-  cx2.restore();
-}
-
-function drawScan(now){
-  cx2.save();
-  const angle=now*0.00018%TAU;
-  const WAKE=PI/5;
-  cx2.globalCompositeOperation='lighter';
-  for(let i=0;i<22;i++){
-    const a=angle-(WAKE*i/22);
-    const t=1-i/22;
-    cx2.strokeStyle=`rgba(0,210,90,${(0.022*t*t).toFixed(4)})`;
-    cx2.lineWidth=R/7;
-    cx2.beginPath();cx2.moveTo(W/2,H/2);cx2.lineTo(W/2+Math.cos(a)*R,H/2+Math.sin(a)*R);cx2.stroke();
-  }
-  cx2.shadowColor='rgba(0,255,80,.9)';cx2.shadowBlur=9;
-  cx2.strokeStyle='rgba(0,255,100,.5)';cx2.lineWidth=1;
-  cx2.beginPath();cx2.moveTo(W/2,H/2);cx2.lineTo(W/2+Math.cos(angle)*R,H/2+Math.sin(angle)*R);cx2.stroke();
   cx2.restore();
 }
 
@@ -619,20 +655,134 @@ function addFeed(arc){
   while(feedEl.children.length>5)feedEl.removeChild(feedEl.lastChild);
 }
 
+// ── Country click ──────────────────────────────────────────────────────────
+const CDATA={
+  4:{n:'Afghanistan',c:'af'},8:{n:'Albania',c:'al'},12:{n:'Algeria',c:'dz'},
+  24:{n:'Angola',c:'ao'},32:{n:'Argentina',c:'ar'},36:{n:'Australia',c:'au'},
+  40:{n:'Austria',c:'at'},50:{n:'Bangladesh',c:'bd'},56:{n:'Belgium',c:'be'},
+  64:{n:'Bhutan',c:'bt'},68:{n:'Bolivia',c:'bo'},76:{n:'Brazil',c:'br'},
+  100:{n:'Bulgaria',c:'bg'},116:{n:'Cambodia',c:'kh'},124:{n:'Canada',c:'ca'},
+  144:{n:'Sri Lanka',c:'lk'},152:{n:'Chile',c:'cl'},156:{n:'China',c:'cn'},
+  158:{n:'Taiwan',c:'tw'},170:{n:'Colombia',c:'co'},191:{n:'Croatia',c:'hr'},
+  192:{n:'Cuba',c:'cu'},203:{n:'Czechia',c:'cz'},208:{n:'Denmark',c:'dk'},
+  218:{n:'Ecuador',c:'ec'},231:{n:'Ethiopia',c:'et'},246:{n:'Finland',c:'fi'},
+  250:{n:'France',c:'fr'},276:{n:'Germany',c:'de'},288:{n:'Ghana',c:'gh'},
+  300:{n:'Greece',c:'gr'},320:{n:'Guatemala',c:'gt'},344:{n:'Hong Kong',c:'hk'},
+  348:{n:'Hungary',c:'hu'},356:{n:'India',c:'in'},360:{n:'Indonesia',c:'id'},
+  364:{n:'Iran',c:'ir'},368:{n:'Iraq',c:'iq'},372:{n:'Ireland',c:'ie'},
+  376:{n:'Israel',c:'il'},380:{n:'Italy',c:'it'},392:{n:'Japan',c:'jp'},
+  398:{n:'Kazakhstan',c:'kz'},404:{n:'Kenya',c:'ke'},408:{n:'North Korea',c:'kp'},
+  410:{n:'South Korea',c:'kr'},422:{n:'Lebanon',c:'lb'},428:{n:'Latvia',c:'lv'},
+  440:{n:'Lithuania',c:'lt'},458:{n:'Malaysia',c:'my'},484:{n:'Mexico',c:'mx'},
+  496:{n:'Mongolia',c:'mn'},504:{n:'Morocco',c:'ma'},528:{n:'Netherlands',c:'nl'},
+  554:{n:'New Zealand',c:'nz'},566:{n:'Nigeria',c:'ng'},578:{n:'Norway',c:'no'},
+  586:{n:'Pakistan',c:'pk'},608:{n:'Philippines',c:'ph'},616:{n:'Poland',c:'pl'},
+  620:{n:'Portugal',c:'pt'},634:{n:'Qatar',c:'qa'},642:{n:'Romania',c:'ro'},
+  643:{n:'Russia',c:'ru'},682:{n:'Saudi Arabia',c:'sa'},703:{n:'Slovakia',c:'sk'},
+  705:{n:'Slovenia',c:'si'},710:{n:'South Africa',c:'za'},702:{n:'Singapore',c:'sg'},
+  724:{n:'Spain',c:'es'},729:{n:'Sudan',c:'sd'},752:{n:'Sweden',c:'se'},
+  756:{n:'Switzerland',c:'ch'},760:{n:'Syria',c:'sy'},764:{n:'Thailand',c:'th'},
+  784:{n:'UAE',c:'ae'},792:{n:'Turkey',c:'tr'},800:{n:'Uganda',c:'ug'},
+  804:{n:'Ukraine',c:'ua'},818:{n:'Egypt',c:'eg'},826:{n:'United Kingdom',c:'gb'},
+  834:{n:'Tanzania',c:'tz'},840:{n:'United States',c:'us'},858:{n:'Uruguay',c:'uy'},
+  860:{n:'Uzbekistan',c:'uz'},704:{n:'Vietnam',c:'vn'},716:{n:'Zimbabwe',c:'zw'},
+  112:{n:'Belarus',c:'by'},694:{n:'Sierra Leone',c:'sl'},862:{n:'Venezuela',c:'ve'},
+  887:{n:'Yemen',c:'ye'},706:{n:'Somalia',c:'so'},
+};
+const CTY_ALIAS={'United States':'USA','United Kingdom':'UK'};
+const SRC_TOTAL=SOURCES.reduce((s,x)=>s+x.w,0);
+const DST_TOTAL=TARGETS.reduce((s,x)=>s+x.w,0);
+
+function unproj(px,py){
+  const sx=(px-W/2)/R,sy=-(py-H/2)/R,d=sx*sx+sy*sy;
+  if(d>1)return null;
+  const sz=Math.sqrt(1-d),lt=lat0*D2R;
+  const yr=sy*Math.cos(lt)+sz*Math.sin(lt);
+  const zr=-sy*Math.sin(lt)+sz*Math.cos(lt);
+  return{lat:Math.asin(Math.max(-1,Math.min(1,yr)))/D2R,
+    lng:(lon0+Math.atan2(sx,zr)/D2R+540)%360-180};
+}
+function pointInRing(lat,lng,ring){
+  let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const yi=ring[i][1],yj=ring[j][1],xi=ring[i][0],xj=ring[j][0];
+    if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi))inside=!inside;
+  }
+  return inside;
+}
+function findCountry(lat,lng){
+  if(!geoFeatures)return null;
+  for(const f of geoFeatures){
+    if(!f.geometry)continue;
+    const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:
+      f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];
+    for(const poly of polys){if(pointInRing(lat,lng,poly[0]))return f;}
+  }
+  return null;
+}
+function computeStats(cname){
+  const n=CTY_ALIAS[cname]||cname;
+  const srcW=SOURCES.filter(s=>s.country===n).reduce((s,x)=>s+x.w,0);
+  const dstW=TARGETS.filter(t=>t.country===n).reduce((s,x)=>s+x.w,0);
+  return{sent:srcW?Math.round(srcW/SRC_TOTAL*totalToday):0,
+    recv:dstW?Math.round(dstW/DST_TOTAL*totalToday):0,srcW,dstW};
+}
+function threatLabel(srcW){
+  const p=srcW/SRC_TOTAL;
+  if(p>.25)return{l:'CRITICAL',col:'#ef4444'};
+  if(p>.12)return{l:'HIGH',col:'#f97316'};
+  if(p>.04)return{l:'MODERATE',col:'#eab308'};
+  if(p>0)return{l:'LOW',col:'#22c55e'};
+  return{l:'MINIMAL',col:'#60a5fa'};
+}
+function showInfo(feature){
+  const cd=CDATA[+feature.id];
+  const name=cd?cd.n:`Territory ${feature.id}`;
+  const iso=cd?cd.c:'';
+  const stats=computeStats(name);
+  const thr=threatLabel(stats.srcW);
+  const barPct=Math.min(100,Math.round(stats.srcW/SRC_TOTAL*320));
+  document.getElementById('infoName').textContent=name;
+  document.getElementById('infoSub').textContent=iso?iso.toUpperCase()+' · THREAT INTELLIGENCE':'NO ISO CODE';
+  const flagEl=document.getElementById('infoFlag');
+  if(iso){flagEl.src=`https://flagcdn.com/w80/${iso}.png`;flagEl.style.display='block';}
+  else flagEl.style.display='none';
+  document.getElementById('infoSent').textContent=stats.sent?stats.sent.toLocaleString():'—';
+  document.getElementById('infoRecv').textContent=stats.recv?stats.recv.toLocaleString():'—';
+  const thrEl=document.getElementById('infoThr');
+  thrEl.textContent=thr.l;thrEl.style.color=thr.col;
+  const fill=document.getElementById('infoBarFill');
+  fill.style.width=barPct+'%';
+  fill.style.background=`linear-gradient(to right,#3b82f6,${thr.col})`;
+  document.getElementById('info').classList.remove('hide');
+}
+function hideInfo(){document.getElementById('info').classList.add('hide');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hideInfo();});
+function onGlobeClick(x,y){
+  const ll=unproj(x,y);
+  if(!ll){hideInfo();return;}
+  const f=findCountry(ll.lat,ll.lng);
+  if(!f){hideInfo();return;}
+  showInfo(f);
+}
+
 // ── Drag / rotate (horizontal = lon0, vertical = lat0) ────────────────────
-let rotVel=0.04,rotVelY=0,dragging=false,lastDX=0,lastDY=0;
-function onDragStart(x,y){dragging=true;lastDX=x;lastDY=y;rotVel=0;rotVelY=0;}
+let rotVel=0.04,rotVelY=0,dragging=false,lastDX=0,lastDY=0,startDX=0,startDY=0;
+function onDragStart(x,y){dragging=true;lastDX=x;lastDY=y;startDX=x;startDY=y;rotVel=0;rotVelY=0;}
 function onDragMove(x,y){
   if(!dragging)return;
   lon0+=(x-lastDX)*0.28;
   lat0=Math.max(-75,Math.min(75,lat0-(y-lastDY)*0.28));
   lastDX=x;lastDY=y;
 }
-function onDragEnd(){dragging=false;}
+function onDragEnd(x,y){
+  if(dragging&&Math.hypot(x-startDX,y-startDY)<6)onGlobeClick(x,y);
+  dragging=false;
+}
 cv.addEventListener('mousedown',e=>onDragStart(e.clientX,e.clientY));
 cv.addEventListener('mousemove',e=>{if(dragging)onDragMove(e.clientX,e.clientY);});
-cv.addEventListener('mouseup',onDragEnd);
-cv.addEventListener('mouseleave',onDragEnd);
+cv.addEventListener('mouseup',e=>onDragEnd(e.clientX,e.clientY));
+cv.addEventListener('mouseleave',()=>{dragging=false;});
 let lastTX=0,lastTY=0,lastTT=0;
 cv.addEventListener('touchstart',e=>{
   const t=e.touches[0];onDragStart(t.clientX,t.clientY);
@@ -645,7 +795,11 @@ cv.addEventListener('touchmove',e=>{
   onDragMove(t.clientX,t.clientY);
   lastTX=t.clientX;lastTY=t.clientY;lastTT=now;e.preventDefault();
 },{passive:false});
-cv.addEventListener('touchend',onDragEnd);
+cv.addEventListener('touchend',e=>{
+  const t=e.changedTouches[0];
+  if(t)onDragEnd(t.clientX,t.clientY);else{dragging=false;}
+  e.preventDefault();
+},{passive:false});
 
 // ── Render loop ────────────────────────────────────────────────────────────
 function render(now){
@@ -693,7 +847,6 @@ function render(now){
   cx2.save();cx2.beginPath();cx2.arc(W/2,H/2,R,0,TAU);cx2.clip();
   drawCountries();
   drawGrid();
-  drawScan(now);
   drawArcs();
   drawCities(now);
   drawRings();
