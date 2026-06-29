@@ -345,6 +345,32 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 }
 .hit-btn:hover{color:rgba(74,222,128,.9);}
 
+/* Background scan banner */
+.bg-banner{
+  display:none;margin-bottom:20px;
+  padding:12px 16px;border-radius:12px;
+  background:rgba(74,222,128,.03);border:1px solid rgba(74,222,128,.18);
+  align-items:center;gap:12px;
+}
+.bg-banner.active{display:flex;}
+.bg-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.7);
+  animation:sdPulse 1.2s ease-in-out infinite;
+}
+.bg-info{flex:1;min-width:0;}
+.bg-label{display:block;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(74,222,128,.6);margin-bottom:3px;}
+.bg-stats-text{font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.3);}
+.bg-stop-btn{
+  font-size:6.5px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,80,60,.65);background:none;
+  border:1px solid rgba(255,80,60,.2);border-radius:100px;
+  padding:4px 12px;font-family:'Terminus TTF',monospace;
+  cursor:pointer;transition:color .15s,border-color .15s;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.bg-stop-btn:hover{color:rgba(255,80,60,1);border-color:rgba(255,80,60,.5);}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.15ms!important;}
   #starLayer,#bgShine,#grain,.orb{display:none!important;}
@@ -475,6 +501,16 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">ready</span>
       <span id="counterText"></span>
+    </div>
+
+    <!-- Background scan banner -->
+    <div class="bg-banner" id="bgBanner">
+      <div class="bg-dot"></div>
+      <div class="bg-info">
+        <span class="bg-label">background scan running</span>
+        <span class="bg-stats-text" id="bgStatsText">—</span>
+      </div>
+      <button class="bg-stop-btn" id="bgStopBtn">stop</button>
     </div>
 
     <!-- Scanning indicator -->
@@ -1234,6 +1270,7 @@ snipeBtn.addEventListener('click', async () => {
     snipeBtn.classList.remove('running');
     setStatus('', 'stopped');
     setScanning(null);
+    if (selCount === 0) stopBgScan();
     return;
   }
 
@@ -1244,6 +1281,8 @@ snipeBtn.addEventListener('click', async () => {
   running = true;
   snipeBtn.innerHTML = '■ &nbsp; STOP';
   snipeBtn.classList.add('running');
+
+  if (selCount === 0 && platform !== 'dc') startBgScan();
 
   if (selCs === 'words' && !wordCache) {
     setStatus('loading', 'loading word list…');
@@ -1454,6 +1493,94 @@ document.querySelectorAll('[data-count]').forEach(btn => {
 });
 
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ── Background scan ─────────────────────────────────────────────────────── */
+let bgPollTimer = null;
+
+async function startBgScan() {
+  try {
+    const config = {
+      platform,
+      length:       selLen,
+      charset:      selCs,
+      ig_session:   document.getElementById('igSession').value.trim(),
+      tg_bot_token: document.getElementById('tgBotToken').value.trim(),
+      webhook_ig:   document.getElementById('webhookIg').value.trim(),
+      webhook_tg:   document.getElementById('webhookTg').value.trim(),
+    };
+    const r = await fetch(`${WORKER_URL}/bg/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.ok) {
+      showBgBanner({ platform, length: selLen, charset: selCs, checked: 0, hits: 0 });
+      startBgPoll();
+    }
+  } catch {}
+}
+
+async function stopBgScan() {
+  fetch(`${WORKER_URL}/bg/stop`, { method: 'POST' }).catch(() => {});
+  hideBgBanner();
+  stopBgPoll();
+}
+
+function showBgBanner(data) {
+  document.getElementById('bgBanner').classList.add('active');
+  updateBgStats(data);
+}
+
+function hideBgBanner() {
+  document.getElementById('bgBanner').classList.remove('active');
+}
+
+function updateBgStats(data) {
+  const plat  = data.platform || '?';
+  const len   = data.length   || '?';
+  const cs    = data.charset  || '?';
+  const chk   = (data.checked || 0).toLocaleString();
+  const hits  = data.hits     || 0;
+  document.getElementById('bgStatsText').textContent =
+    `${plat} · len ${len} · ${cs} · ${chk} checked · ${hits} hits · runs every minute`;
+}
+
+function startBgPoll() {
+  stopBgPoll();
+  bgPollTimer = setInterval(async () => {
+    try {
+      const r = await fetch(`${WORKER_URL}/bg/status`, { signal: AbortSignal.timeout(5000) });
+      const d = await r.json();
+      if (d.running) updateBgStats(d);
+      else { hideBgBanner(); stopBgPoll(); }
+    } catch {}
+  }, 15000);
+}
+
+function stopBgPoll() {
+  if (bgPollTimer) { clearInterval(bgPollTimer); bgPollTimer = null; }
+}
+
+document.getElementById('bgStopBtn').addEventListener('click', async () => {
+  await stopBgScan();
+  if (running) {
+    running = false;
+    snipeBtn.innerHTML = snipeBtnLabel();
+    snipeBtn.classList.remove('running');
+    setStatus('', 'stopped');
+    setScanning(null);
+  }
+});
+
+/* Check if a background scan is already running when the page loads */
+(async () => {
+  try {
+    const r = await fetch(`${WORKER_URL}/bg/status`, { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    if (d.supported && d.running) { showBgBanner(d); startBgPoll(); }
+  } catch {}
+})();
 </script>
 </body>
 </html>

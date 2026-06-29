@@ -33,7 +33,7 @@ async function checkInstagram(username, session) {
     html.includes('"pageNotFound"') ||
     html.includes('Sorry, this page') ||
     html.includes("isn't available") ||
-    html.includes("’t available")
+    html.includes("'t available")
   ) return 'available';
   return 'taken';
 }
@@ -62,12 +62,10 @@ async function checkTelegram(username) {
 
   if (fragRes && fragRes.ok) {
     const fragHtml = await fragRes.text().catch(() => '');
-    // Fragment listing pages include @username in their <title>
     const titleMatch = fragHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
     if (titleMatch && titleMatch[1].toLowerCase().includes('@' + username.toLowerCase())) {
       return 'forsale';
     }
-    // Fallback: TON + auction/bid/sold keywords alongside the username
     const lc = fragHtml.toLowerCase();
     const uLc = username.toLowerCase();
     if (lc.includes(uLc) && (lc.includes('ton') || lc.includes('auction') || lc.includes('js-bid'))) {
@@ -81,7 +79,6 @@ async function checkTelegram(username) {
 async function checkTelegramBot(username, token) {
   if (username.length < 5) return 'too_short';
 
-  // Telegram Bot API getChat — authoritative: returns 200 if the entity exists, 400 if not
   const [botRes, fragRes] = await Promise.all([
     fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=%40${username}`, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -103,7 +100,6 @@ async function checkTelegramBot(username, token) {
     if (data.ok) return 'taken';
   }
 
-  // getChat returned 400 (not an active public entity) — check Fragment
   if (fragRes && fragRes.ok) {
     const fragHtml = await fragRes.text().catch(() => '');
     const titleMatch = fragHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -211,17 +207,132 @@ async function claimDiscord(username, token) {
   return 'error';
 }
 
+// ── Background scanner helpers ──────────────────────────────────────────────
+
+let bgWordCache = null;
+
+function bgRandomCombos(charset, length, count) {
+  const sets = {
+    letters: 'abcdefghijklmnopqrstuvwxyz',
+    nums:    '0123456789',
+    mix:     'abcdefghijklmnopqrstuvwxyz0123456789',
+  };
+  const chars = sets[charset] || sets.letters;
+  const result = [], seen = new Set();
+  let guard = count * 20;
+  while (result.length < count && guard-- > 0) {
+    let s = '';
+    for (let i = 0; i < length; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    if (!seen.has(s)) { seen.add(s); result.push(s); }
+  }
+  return result;
+}
+
+async function bgWordCombos(length, count) {
+  if (!bgWordCache) {
+    try {
+      const r = await fetch('https://kataly.cc/usernamefinder/words.txt', {
+        headers: { 'User-Agent': 'KatalyBgScanner/1.0' },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (r.ok) {
+        const text = await r.text();
+        bgWordCache = text.split('\n').map(w => w.trim()).filter(w => /^[a-zA-Z0-9]+$/.test(w) && w.length > 0);
+      }
+    } catch {}
+    if (!bgWordCache) bgWordCache = [];
+  }
+  const pool = bgWordCache.filter(w => w.length === length);
+  if (pool.length === 0) return bgRandomCombos('letters', length, count);
+  const take = Math.min(count, pool.length);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, take);
+}
+
+async function bgCombos(charset, length, count) {
+  if (charset === 'words') return bgWordCombos(length, count);
+  return bgRandomCombos(charset, length, count);
+}
+
+async function bgPostHit(username, platform, webhookUrl) {
+  if (!webhookUrl || !webhookUrl.startsWith('https://discord.com/api/webhooks/')) return;
+  const COLORS = { ig: 0xE1306C, tg: 0x2AABEE };
+  const NAMES  = { ig: 'Instagram', tg: 'Telegram' };
+  const PROF   = { ig: u => `https://www.instagram.com/${u}/`, tg: u => `https://t.me/${u}` };
+  const profUrl = PROF[platform]?.(username);
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      embeds: [{
+        color: COLORS[platform] || 0xffffff,
+        title: `✅ @${username} is available on ${NAMES[platform] || platform}!`,
+        description: profUrl ? `**[Open profile](${profUrl})**` : `**${username}**`,
+        footer: { text: 'background scan · kataly.cc/usernamefinder' },
+        timestamp: new Date().toISOString(),
+      }],
+    }),
+  }).catch(() => {});
+}
+
+// ── Export ───────────────────────────────────────────────────────────────────
+
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const origin = request.headers.get('Origin') ?? '';
     const headers = cors(origin);
 
     if (request.method === 'OPTIONS') return new Response(null, { headers });
 
     const url = new URL(request.url);
+    const path = url.pathname;
     const p = url.searchParams.get('p');
 
-    // Batch endpoint (POST /check?p=ig|tg)
+    // ── Background scan control endpoints ──────────────────────────────────
+    if (path === '/bg/start' && request.method === 'POST') {
+      if (!env.SCAN_STATE) return Response.json({ error: 'unavailable' }, { status: 503, headers });
+      try {
+        const body = await request.json();
+        if (!body.platform || !['ig', 'tg'].includes(body.platform))
+          return Response.json({ error: 'invalid platform' }, { status: 400, headers });
+        await env.SCAN_STATE.put('config', JSON.stringify({
+          ...body, running: true, started_at: new Date().toISOString(),
+        }));
+        await env.SCAN_STATE.put('stats', JSON.stringify({ checked: 0, hits: 0 }));
+        return Response.json({ ok: true }, { headers });
+      } catch { return Response.json({ error: 'error' }, { status: 500, headers }); }
+    }
+
+    if (path === '/bg/stop' && request.method === 'POST') {
+      if (!env.SCAN_STATE) return Response.json({ ok: true }, { headers });
+      const config = await env.SCAN_STATE.get('config', 'json').catch(() => ({})) || {};
+      config.running = false;
+      await env.SCAN_STATE.put('config', JSON.stringify(config));
+      return Response.json({ ok: true }, { headers });
+    }
+
+    if (path === '/bg/status') {
+      if (!env.SCAN_STATE) return Response.json({ supported: false, running: false }, { headers });
+      const [config, stats] = await Promise.all([
+        env.SCAN_STATE.get('config', 'json').catch(() => null),
+        env.SCAN_STATE.get('stats',  'json').catch(() => null),
+      ]);
+      return Response.json({
+        supported:   true,
+        running:     config?.running    || false,
+        platform:    config?.platform,
+        length:      config?.length,
+        charset:     config?.charset,
+        checked:     stats?.checked     || 0,
+        hits:        stats?.hits        || 0,
+        started_at:  config?.started_at,
+      }, { headers });
+    }
+
+    // ── Batch endpoint (POST ?p=ig|tg) ────────────────────────────────────
     if (request.method === 'POST' && (p === 'ig' || p === 'tg')) {
       try {
         const body = await request.json();
@@ -229,7 +340,7 @@ export default {
             !body.every(u => /^[a-zA-Z0-9_]{1,32}$/.test(u))) {
           return Response.json({ error: 'invalid' }, { status: 400, headers });
         }
-        const igSession = request.headers.get('X-IG-Session') || '';
+        const igSession  = request.headers.get('X-IG-Session')  || '';
         const tgBotToken = request.headers.get('X-TG-Bot-Token') || '';
         const checkFn = p === 'ig'
           ? (u => checkInstagram(u, igSession))
@@ -243,7 +354,7 @@ export default {
       }
     }
 
-    // Single-username endpoint (GET)
+    // ── Single-username endpoint (GET) ────────────────────────────────────
     const u = url.searchParams.get('u');
     if (!u || !/^[a-zA-Z0-9_]{1,32}$/.test(u)) {
       return Response.json({ error: 'invalid' }, { status: 400, headers });
@@ -255,13 +366,11 @@ export default {
         const status = await checkInstagram(u, igSession);
         return Response.json({ status }, { headers });
       }
-
       if (p === 'tg') {
         const tgBotToken = request.headers.get('X-TG-Bot-Token') || '';
         const status = tgBotToken ? await checkTelegramBot(u, tgBotToken) : await checkTelegram(u);
         return Response.json({ status }, { headers });
       }
-
       if (p === 'dc') {
         const token = request.headers.get('X-Discord-Token');
         if (!token) {
@@ -277,10 +386,53 @@ export default {
         const status = await claimDiscord(u, token);
         return Response.json({ status }, { headers });
       }
-
       return Response.json({ error: 'unsupported platform' }, { status: 400, headers });
     } catch {
       return Response.json({ status: 'error' }, { headers });
     }
+  },
+
+  // ── Cron: fires every minute, checks a batch and posts hits to Discord ──
+  async scheduled(event, env, ctx) {
+    if (!env.SCAN_STATE) return;
+
+    const config = await env.SCAN_STATE.get('config', 'json').catch(() => null);
+    if (!config?.running) return;
+
+    const { platform, charset, ig_session, tg_bot_token } = config;
+    const length  = parseInt(config.length) || 3;
+    const webhook = config[`webhook_${platform}`] || '';
+
+    if (!['ig', 'tg'].includes(platform)) return;
+
+    const usernames = await bgCombos(charset || 'letters', length, 10);
+    if (usernames.length === 0) return;
+
+    const results = await Promise.all(
+      usernames.map(async u => {
+        try {
+          const status = platform === 'ig'
+            ? await checkInstagram(u, ig_session || '')
+            : tg_bot_token
+              ? await checkTelegramBot(u, tg_bot_token)
+              : await checkTelegram(u);
+          return { u, status };
+        } catch { return { u, status: 'error' }; }
+      })
+    );
+
+    let localHits = 0;
+    for (const { u, status } of results) {
+      if (status === 'available') {
+        localHits++;
+        await bgPostHit(u, platform, webhook);
+      }
+    }
+
+    const stats = await env.SCAN_STATE.get('stats', 'json').catch(() => null) || { checked: 0, hits: 0 };
+    await env.SCAN_STATE.put('stats', JSON.stringify({
+      checked: stats.checked + usernames.length,
+      hits:    stats.hits    + localHits,
+    }));
   },
 };

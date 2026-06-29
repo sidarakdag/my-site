@@ -13,7 +13,54 @@ jobs:
     name: Deploy
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: worker
+
+      - name: Deploy worker with KV namespace
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        working-directory: worker
+        run: |
+          # Create KV namespace (no-op if it already exists)
+          npx wrangler@3 kv namespace create SCAN_STATE 2>&1 || true
+
+          # Get the namespace ID
+          KV_ID=$(npx wrangler@3 kv namespace list 2>/dev/null | python3 -c "
+          import json, sys
+          text = sys.stdin.read()
+          start = text.find('[')
+          if start < 0:
+            exit()
+          try:
+            ns = json.loads(text[start:])
+            match = next(
+              (n for n in ns
+               if 'SCAN_STATE' in n.get('title', '')
+               and 'preview' not in n.get('title', '').lower()),
+              None
+            )
+            if match:
+              print(match['id'])
+          except:
+            pass
+          " 2>/dev/null)
+
+          if [ -n "$KV_ID" ]; then
+            sed -i "s/PLACEHOLDER_KV_ID/$KV_ID/" wrangler.toml
+            echo "KV namespace ready: $KV_ID"
+          else
+            # Remove the KV block so the deploy still succeeds (background scan disabled)
+            python3 -c "
+          import re
+          with open('wrangler.toml') as f:
+            content = f.read()
+          content = re.sub(
+            r'\[\[kv_namespaces\]\]\nbinding = \"SCAN_STATE\"\nid = \"PLACEHOLDER_KV_ID\"\n?',
+            '',
+            content
+          )
+          with open('wrangler.toml', 'w') as f:
+            f.write(content)
+            "
+            echo "Warning: could not resolve KV namespace ID, background scan disabled"
+          fi
+
+          npx wrangler@3 deploy
