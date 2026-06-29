@@ -157,15 +157,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Te
   <div class="ct-legend-row"><div class="ct-legend-dot" style="background:#22c55e"></div><span class="ct-legend-lbl">Phishing</span></div>
 </div>
 
-<!-- Fallback dismisses loading before globe.gl even finishes loading on slow connections -->
+<!-- Safety fallback fires before globe.gl even finishes downloading on slow connections -->
 <script>
 window._globeFallbackTimer = setTimeout(function() {
+  if (window._simStarted) return;
+  window._simStarted = true;
   var ld = document.getElementById('loading');
-  if (ld && ld.style.display !== 'none') {
-    ld.style.opacity = '0';
-    ld.style.transition = 'opacity 0.8s ease';
-    setTimeout(function(){ ld.style.display = 'none'; }, 800);
-  }
+  if (ld) { ld.style.opacity='0'; ld.style.transition='opacity 0.8s ease'; setTimeout(function(){ld.style.display='none';},800); }
+  // start attack simulation even without globe
+  if (window._startSimFn) window._startSimFn(true);
 }, 9000);
 </script>
 <script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
@@ -272,80 +272,119 @@ let arcId     = 0;
 let totalToday = 150000 + Math.floor(Math.random() * 120000);
 let recentTs  = [];
 
-// ── Globe ──────────────────────────────────────────────────────────────────
-let simStarted = false;
+// ── Globe texture (generated locally — no CDN dependency) ──────────────────
+function makeGlobeTexture() {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  // Base dark ocean
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#04111e');
+  grad.addColorStop(1, '#020b16');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  // Latitude lines
+  ctx.strokeStyle = 'rgba(30,100,200,0.12)';
+  ctx.lineWidth = 1;
+  for (let lat = -90; lat <= 90; lat += 30) {
+    const y = ((lat + 90) / 180) * size;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
+  }
+  // Longitude lines
+  for (let lng = 0; lng <= 360; lng += 30) {
+    const x = (lng / 360) * size;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, size); ctx.stroke();
+  }
+  // Very subtle "continent" highlight regions
+  ctx.fillStyle = 'rgba(20,60,120,0.06)';
+  [[0.55,0.35,0.18,0.22],[0.1,0.3,0.14,0.25],[0.62,0.15,0.12,0.18],
+   [0.72,0.38,0.15,0.22],[0.28,0.38,0.1,0.16],[0.48,0.55,0.12,0.1]]
+    .forEach(([x,y,w,h]) => ctx.fillRect(x*size, y*size, w*size, h*size));
+  return c.toDataURL();
+}
 
-function startSim() {
-  if (simStarted) return;
-  simStarted = true;
+// ── Globe ──────────────────────────────────────────────────────────────────
+let world = null;
+
+function startSim(fromFallback) {
+  if (window._simStarted && !fromFallback) return;
+  window._simStarted = true;
   clearTimeout(window._globeFallbackTimer);
   const ld = document.getElementById('loading');
-  ld.classList.add('fade');
-  setTimeout(() => { ld.style.display = 'none'; }, 800);
+  if (ld) { ld.classList.add('fade'); setTimeout(() => { ld.style.display = 'none'; }, 800); }
   for (let i = 0; i < Math.min(5, MAX_ARCS); i++) setTimeout(spawnAttack, i * 280);
   setTimeout(loop, 1500);
 }
+window._startSimFn = startSim;
 
-// Hard fallback: reveal after 6 s regardless of texture state
-setTimeout(startSim, 6000);
+// Hard fallback at 6s: if globe CDN was fast but onGlobeReady never fired
+setTimeout(() => { if (!window._simStarted) startSim(); }, 6000);
 
-// Globe is configured BEFORE mounting so onGlobeReady is registered in time
-const world = Globe({ animateIn: false })
-  .width(window.innerWidth)
-  .height(window.innerHeight)
-  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-  .atmosphereColor('rgba(30,60,220,0.8)')
-  .atmosphereAltitude(0.15)
-  // Arcs
-  .arcsData([])
-  .arcStartLat(d => d.srcLat)
-  .arcStartLng(d => d.srcLng)
-  .arcEndLat(d => d.dstLat)
-  .arcEndLng(d => d.dstLng)
-  .arcColor(d => d.color)
-  .arcAltitude(d => d.alt)
-  .arcStroke(d => d.stroke)
-  .arcDashLength(0.38)
-  .arcDashGap(0.12)
-  .arcDashAnimateTime(ARC_ANIM)
-  .arcDashInitialGapOffset(d => d.offset)
-  // Rings at destinations
-  .ringsData([])
-  .ringLat(d => d.lat)
-  .ringLng(d => d.lng)
-  .ringColor(d => {
-    const [r,g,b] = hexToRgb(d.color);
-    return t => `rgba(${r},${g},${b},${(1 - t) * 0.7})`;
-  })
-  .ringMaxRadius(3.5)
-  .ringPropagationSpeed(3)
-  .ringRepeatPeriod(ARC_ANIM / 3)
-  // Points: city dots
-  .pointsData([
-    ...SOURCES.map(s => ({ ...s, ptType:'src' })),
-    ...TARGETS.map(t => ({ ...t, ptType:'dst' })),
-  ])
-  .pointLat(d => d.lat)
-  .pointLng(d => d.lng)
-  .pointAltitude(0.005)
-  .pointRadius(d => 0.15 + d.w * 0.015)
-  .pointColor(d => d.ptType === 'src' ? 'rgba(239,68,68,0.22)' : 'rgba(59,130,246,0.22)')
-  .onGlobeReady(startSim)
-  (document.getElementById('globe-wrap'));  // mount last
+// Check WebGL support
+function hasWebGL() {
+  try { return !!(document.createElement('canvas').getContext('webgl') || document.createElement('canvas').getContext('experimental-webgl')); }
+  catch(e) { return false; }
+}
 
-// Camera + controls
-world.controls().autoRotate = true;
-world.controls().autoRotateSpeed = 0.28;
-world.controls().enableZoom = true;
-world.controls().minDistance = 150;
-world.controls().maxDistance = 600;
-world.pointOfView({ lat: 28, lng: 18, altitude: 2.6 }, 0);
+if (typeof Globe !== 'undefined' && hasWebGL()) {
+  const globeTex = makeGlobeTexture();
 
-window.addEventListener('resize', () => {
-  world.width(window.innerWidth).height(window.innerHeight);
-});
+  world = Globe({ animateIn: false })
+    .width(window.innerWidth)
+    .height(window.innerHeight)
+    .globeImageUrl(globeTex)
+    .atmosphereColor('rgba(40,100,255,0.9)')
+    .atmosphereAltitude(0.18)
+    // Arcs
+    .arcsData([])
+    .arcStartLat(d => d.srcLat)
+    .arcStartLng(d => d.srcLng)
+    .arcEndLat(d => d.dstLat)
+    .arcEndLng(d => d.dstLng)
+    .arcColor(d => d.color)
+    .arcAltitude(d => d.alt)
+    .arcStroke(d => d.stroke)
+    .arcDashLength(0.38)
+    .arcDashGap(0.12)
+    .arcDashAnimateTime(ARC_ANIM)
+    .arcDashInitialGapOffset(d => d.offset)
+    // Rings at destinations
+    .ringsData([])
+    .ringLat(d => d.lat)
+    .ringLng(d => d.lng)
+    .ringColor(d => {
+      const [r,g,b] = hexToRgb(d.color);
+      return t => `rgba(${r},${g},${b},${(1 - t) * 0.7})`;
+    })
+    .ringMaxRadius(3.5)
+    .ringPropagationSpeed(3)
+    .ringRepeatPeriod(ARC_ANIM / 3)
+    // Points: city dots
+    .pointsData([
+      ...SOURCES.map(s => ({ ...s, ptType:'src' })),
+      ...TARGETS.map(t => ({ ...t, ptType:'dst' })),
+    ])
+    .pointLat(d => d.lat)
+    .pointLng(d => d.lng)
+    .pointAltitude(0.005)
+    .pointRadius(d => 0.15 + d.w * 0.015)
+    .pointColor(d => d.ptType === 'src' ? 'rgba(239,68,68,0.4)' : 'rgba(59,130,246,0.4)')
+    .onGlobeReady(startSim)
+    (document.getElementById('globe-wrap'));  // mount last
+
+  // Camera + controls
+  world.controls().autoRotate = true;
+  world.controls().autoRotateSpeed = 0.28;
+  world.controls().enableZoom = true;
+  world.controls().minDistance = 150;
+  world.controls().maxDistance = 600;
+  world.pointOfView({ lat: 28, lng: 18, altitude: 2.6 }, 0);
+
+  window.addEventListener('resize', () => {
+    world.width(window.innerWidth).height(window.innerHeight);
+  });
+}
 
 // ── Spawn ──────────────────────────────────────────────────────────────────
 function spawnAttack() {
@@ -371,24 +410,24 @@ function spawnAttack() {
   };
 
   arcsData = [...arcsData.slice(-(MAX_ARCS - 1)), arc];
-  world.arcsData(arcsData);
+  if (world) world.arcsData(arcsData);
 
   // Ring appears as arc "arrives"
   const ringDelay = ARC_ANIM * 0.62;
   setTimeout(() => {
     const ring = { lat: arc.dstLat, lng: arc.dstLng, color: type.color, id };
     ringsData = [...ringsData, ring];
-    world.ringsData(ringsData);
+    if (world) world.ringsData(ringsData);
     setTimeout(() => {
       ringsData = ringsData.filter(r => r.id !== id);
-      world.ringsData(ringsData);
+      if (world) world.ringsData(ringsData);
     }, 2000);
   }, ringDelay);
 
   // Clean up arc after it completes
   setTimeout(() => {
     arcsData = arcsData.filter(a => a.id !== id);
-    world.arcsData(arcsData);
+    if (world) world.arcsData(arcsData);
     updateStats();
   }, ARC_ANIM + 500);
 
