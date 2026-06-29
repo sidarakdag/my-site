@@ -964,7 +964,8 @@ function generateCombos(length, charset, count) {
 
 /* ── Batch + concurrency helpers ── */
 function getBatchCfg() {
-  return { size: 1, parallel: 1 };
+  if (platform === 'dc') return { size: 1, parallel: 1 };
+  return { size: 1, parallel: 3 };
 }
 
 async function checkBatch(usernames, plat) {
