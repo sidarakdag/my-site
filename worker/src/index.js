@@ -35,8 +35,12 @@ async function checkInstagram(username, session) {
       // No session: fall through to HTML scrape below
     } else if (apiRes.status === 200) {
       const data = await apiRes.json().catch(() => null);
-      if (data?.data?.user === null) return 'available';
-      if (data?.data?.user) return 'taken';
+      if (!data) { /* fall through */ }
+      else if (data.status === 'fail' || data.message === 'login_required') {
+        if (session) return 'invalid_session';
+        // No session: fall through to HTML scrape
+      } else if (data?.data?.user === null) return 'available';
+      else if (data?.data?.user) return 'taken';
     }
   } catch {}
 
@@ -214,7 +218,8 @@ async function checkDiscordScan(username, token, original) {
     if (pomelo.status === 401) return 'invalid_token';
   } catch {}
 
-  // Fallback: PATCH-and-revert
+  // Fallback: PATCH approach — Discord validates username availability before password,
+  // so we can tell taken vs available from the 400 error fields without needing a password.
   const patch = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
@@ -223,20 +228,28 @@ async function checkDiscordScan(username, token, original) {
 
   if (patch.status === 400) {
     const data = await patch.json().catch(() => ({}));
-    const errs = data?.errors?.username?._errors ?? [];
+    const usernameErrs = data?.errors?.username?._errors ?? [];
+    const passwordErrs = data?.errors?.password?._errors ?? [];
     const raw = JSON.stringify(data).toLowerCase();
+
+    // Username is taken — Discord returns username errors before asking for password
     if (
-      errs.some(e => e.code === 'USERNAME_ALREADY_TAKEN') ||
-      errs.some(e => e.code === 'POMELO_USERNAME_ALREADY_TAKEN') ||
-      errs.some(e => (e.message || '').toLowerCase().includes('already taken')) ||
-      raw.includes('already taken') || raw.includes('username_already_taken')
+      usernameErrs.some(e => e.code === 'USERNAME_ALREADY_TAKEN') ||
+      usernameErrs.some(e => e.code === 'POMELO_USERNAME_ALREADY_TAKEN') ||
+      usernameErrs.some(e => (e.message || '').toLowerCase().includes('already taken')) ||
+      raw.includes('username_already_taken')
     ) return 'taken';
+
+    // Password required but no username errors → username is valid & available
+    if (passwordErrs.length > 0 && usernameErrs.length === 0) return 'available';
+
     return 'error';
   }
   if (patch.status === 401) return 'invalid_token';
   if (patch.status === 429) return 'ratelimit';
   if (patch.status !== 200) return 'error';
 
+  // Reached only if username actually changed (no password required on this account)
   const revert = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
