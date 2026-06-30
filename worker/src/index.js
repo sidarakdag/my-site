@@ -151,43 +151,61 @@ async function checkTelegramBot(username, token) {
   return 'available';
 }
 
-async function checkDiscordAvailable(username) {
-  const superProps = btoa(JSON.stringify({
-    os: 'Windows', browser: 'Chrome', device: '',
-    system_locale: 'en-US',
-    browser_user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    browser_version: '131.0.0.0', os_version: '10',
-    release_channel: 'stable', client_build_number: 347098,
-    client_event_source: null,
-  }));
+// Cached fingerprint — Discord requires this for unauthenticated registration-flow requests.
+// Module-level so it's reused across concurrent checks in the same worker isolate.
+let _dcFp = { v: '', exp: 0 };
 
-  const endpoints = [
-    'https://discord.com/api/v10/unique-username/username-attempt-unauthed',
-    'https://discord.com/api/v10/users/pomelo-attempt',
-  ];
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'X-Super-Properties': superProps,
-          'X-Discord-Locale': 'en-US',
-          'Accept': '*/*',
-          'Origin': 'https://discord.com',
-          'Referer': 'https://discord.com/register',
-        },
-        body: JSON.stringify({ username }),
-      });
-      if (res.status === 200) {
-        const data = await res.json().catch(() => ({}));
-        if (typeof data.taken === 'boolean') return data.taken ? 'taken' : 'available';
+async function getDcFingerprint() {
+  if (_dcFp.v && Date.now() < _dcFp.exp) return _dcFp.v;
+  try {
+    const r = await fetch('https://discord.com/api/v10/auth/fingerprint', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Origin': 'https://discord.com',
+        'Referer': 'https://discord.com/register',
+      },
+    });
+    if (r.ok) {
+      const d = await r.json().catch(() => ({}));
+      if (d.fingerprint) {
+        _dcFp = { v: d.fingerprint, exp: Date.now() + 60000 };
+        return d.fingerprint;
       }
-      if (res.status === 429) return 'ratelimit';
-    } catch {}
+    }
+  } catch {}
+  return '';
+}
+
+async function checkDiscordAvailable(username, debug = false) {
+  const fingerprint = await getDcFingerprint();
+
+  const hdrs = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'X-Discord-Locale': 'en-US',
+    'Accept': '*/*',
+    'Origin': 'https://discord.com',
+    'Referer': 'https://discord.com/register',
+  };
+  if (fingerprint) hdrs['X-Fingerprint'] = fingerprint;
+
+  try {
+    const res = await fetch('https://discord.com/api/v10/unique-username/username-attempt-unauthed', {
+      method: 'POST',
+      headers: hdrs,
+      body: JSON.stringify({ username }),
+    });
+    const body = await res.text();
+    if (debug) return { status: res.status, body, fingerprint: fingerprint ? 'got' : 'none' };
+    if (res.status === 200) {
+      const data = JSON.parse(body);
+      if (typeof data.taken === 'boolean') return data.taken ? 'taken' : 'available';
+    }
+    if (res.status === 429) return 'ratelimit';
+  } catch (e) {
+    if (debug) return { status: 0, body: String(e), fingerprint: fingerprint ? 'got' : 'none' };
   }
-  // Unauthenticated endpoints deprecated; token required for accurate check
   return 'unverified';
 }
 
@@ -413,6 +431,12 @@ export default {
       }
       if (p === 'dc') {
         const token = request.headers.get('X-Discord-Token');
+        const isDebug = url.searchParams.get('debug') === '1';
+        if (isDebug) {
+          // Returns raw Discord API response for diagnostics — not used in normal flow
+          const d = await checkDiscordAvailable(u, true);
+          return Response.json(d, { headers });
+        }
         if (!token) {
           const status = await checkDiscordAvailable(u);
           return Response.json({ status }, { headers });
