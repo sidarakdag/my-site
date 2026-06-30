@@ -12,30 +12,64 @@ function cors(origin) {
 }
 
 async function checkInstagram(username, session) {
-  const hdrs = {
+  // Primary: JSON API endpoint (accurate, session optional)
+  const apiHdrs = {
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    'X-IG-App-ID': '936619743392459',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': 'https://www.instagram.com/',
+    'X-Requested-With': 'XMLHttpRequest',
+  };
+  if (session) apiHdrs['Cookie'] = `sessionid=${session}`;
+
+  try {
+    const apiRes = await fetch(
+      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+      { headers: apiHdrs, redirect: 'follow' }
+    );
+    if (apiRes.status === 404) return 'available';
+    if (apiRes.status === 429) return 'ratelimit';
+    if (apiRes.status === 401 || apiRes.status === 403) {
+      if (session) return 'invalid_session';
+      // No session: fall through to HTML scrape below
+    } else if (apiRes.status === 200) {
+      const data = await apiRes.json().catch(() => null);
+      if (data?.data?.user === null) return 'available';
+      if (data?.data?.user) return 'taken';
+    }
+  } catch {}
+
+  // Fallback: HTML scrape (catches session-less checks and API failures)
+  const htmlHdrs = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
   };
-  if (session) hdrs['Cookie'] = `sessionid=${session}`;
-  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
-    headers: hdrs,
-    redirect: 'follow',
-  });
-  if (res.status === 404) return 'available';
-  if (res.status === 429) return 'ratelimit';
-  if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : 'unverified';
-  if (res.status === 403) return 'unverified';
-  if (res.status !== 200) return 'error';
-  const html = await res.text();
-  if (
-    html.includes('Page Not Found') ||
-    html.includes('"pageNotFound"') ||
-    html.includes('Sorry, this page') ||
-    html.includes("isn't available") ||
-    html.includes("'t available")
-  ) return 'available';
-  return 'taken';
+  if (session) htmlHdrs['Cookie'] = `sessionid=${session}`;
+  try {
+    const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+      headers: htmlHdrs, redirect: 'follow',
+    });
+    if (res.status === 404) return 'available';
+    if (res.status === 429) return 'ratelimit';
+    if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : 'unverified';
+    if (res.status === 403) return 'unverified';
+    if (res.status !== 200) return session ? 'error' : 'unverified';
+    const html = await res.text();
+    // Instagram SPA: look for not-found signals in embedded JSON/text
+    if (
+      html.includes('Page Not Found') || html.includes('"pageNotFound"') ||
+      html.includes('Sorry, this page') || html.includes("isn't available") ||
+      html.includes('"not_found"') || html.includes('page_not_found') ||
+      html.includes('"PageNotFound"') || html.includes('"errorPage"')
+    ) return 'available';
+    // Login wall without a real profile → can't tell
+    if (html.includes('Log in') && !html.includes('"id"')) return 'unverified';
+    return 'taken';
+  } catch {
+    return 'error';
+  }
 }
 
 async function checkTelegram(username) {
@@ -115,9 +149,9 @@ async function checkDiscordAvailable(username) {
   const superProps = btoa(JSON.stringify({
     os: 'Windows', browser: 'Chrome', device: '',
     system_locale: 'en-US',
-    browser_user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    browser_version: '120.0.0.0', os_version: '10',
-    release_channel: 'stable', client_build_number: 270580,
+    browser_user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    browser_version: '131.0.0.0', os_version: '10',
+    release_channel: 'stable', client_build_number: 347098,
     client_event_source: null,
   }));
 
@@ -126,30 +160,34 @@ async function checkDiscordAvailable(username) {
     'https://discord.com/api/v10/users/pomelo-attempt',
   ];
   for (const url of endpoints) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'X-Super-Properties': superProps,
-        'X-Discord-Locale': 'en-US',
-        'Accept': '*/*',
-        'Origin': 'https://discord.com',
-        'Referer': 'https://discord.com/register',
-      },
-      body: JSON.stringify({ username }),
-    });
-    if (res.status === 200) {
-      const data = await res.json().catch(() => ({}));
-      if ('taken' in data) return data.taken ? 'taken' : 'available';
-    }
-    if (res.status === 429) return 'ratelimit';
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'X-Super-Properties': superProps,
+          'X-Discord-Locale': 'en-US',
+          'Accept': '*/*',
+          'Origin': 'https://discord.com',
+          'Referer': 'https://discord.com/register',
+        },
+        body: JSON.stringify({ username }),
+      });
+      if (res.status === 200) {
+        const data = await res.json().catch(() => ({}));
+        if (typeof data.taken === 'boolean') return data.taken ? 'taken' : 'available';
+      }
+      if (res.status === 429) return 'ratelimit';
+    } catch {}
   }
-  return 'no_unauthed';
+  // Unauthenticated endpoints deprecated; token required for accurate check
+  return 'unverified';
 }
 
 async function checkDiscordScan(username, token, original) {
-  if (!original || original === username) {
+  // Verify token and get current username
+  if (!original) {
     const me = await fetch('https://discord.com/api/v10/users/@me', {
       headers: { 'Authorization': token },
     });
@@ -161,6 +199,22 @@ async function checkDiscordScan(username, token, original) {
     if (original === username) return 'taken';
   }
 
+  // Non-destructive check: pomelo-attempt (authenticated)
+  try {
+    const pomelo = await fetch('https://discord.com/api/v10/users/@me/pomelo-attempt', {
+      method: 'POST',
+      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    if (pomelo.status === 200) {
+      const d = await pomelo.json().catch(() => ({}));
+      if (typeof d.taken === 'boolean') return d.taken ? 'taken' : 'available';
+    }
+    if (pomelo.status === 429) return 'ratelimit';
+    if (pomelo.status === 401) return 'invalid_token';
+  } catch {}
+
+  // Fallback: PATCH-and-revert
   const patch = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
@@ -170,7 +224,13 @@ async function checkDiscordScan(username, token, original) {
   if (patch.status === 400) {
     const data = await patch.json().catch(() => ({}));
     const errs = data?.errors?.username?._errors ?? [];
-    if (errs.some(e => e.code === 'USERNAME_ALREADY_TAKEN')) return 'taken';
+    const raw = JSON.stringify(data).toLowerCase();
+    if (
+      errs.some(e => e.code === 'USERNAME_ALREADY_TAKEN') ||
+      errs.some(e => e.code === 'POMELO_USERNAME_ALREADY_TAKEN') ||
+      errs.some(e => (e.message || '').toLowerCase().includes('already taken')) ||
+      raw.includes('already taken') || raw.includes('username_already_taken')
+    ) return 'taken';
     return 'error';
   }
   if (patch.status === 401) return 'invalid_token';
