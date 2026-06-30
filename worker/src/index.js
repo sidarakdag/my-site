@@ -203,11 +203,19 @@ async function checkDiscordScan(username, token, original) {
     if (original === username) return 'taken';
   }
 
-  // Non-destructive check: pomelo-attempt (authenticated)
+  // Non-destructive check: pomelo-attempt with full Discord client headers
   try {
     const pomelo = await fetch('https://discord.com/api/v10/users/@me/pomelo-attempt', {
       method: 'POST',
-      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': token,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'X-Discord-Locale': 'en-US',
+        'X-Discord-Timezone': 'America/New_York',
+        'Origin': 'https://discord.com',
+        'Referer': 'https://discord.com/channels/@me',
+      },
       body: JSON.stringify({ username }),
     });
     if (pomelo.status === 200) {
@@ -218,8 +226,9 @@ async function checkDiscordScan(username, token, original) {
     if (pomelo.status === 401) return 'invalid_token';
   } catch {}
 
-  // Fallback: PATCH approach — Discord validates username availability before password,
-  // so we can tell taken vs available from the 400 error fields without needing a password.
+  // PATCH probe — works only for accounts without a password (rare).
+  // Discord now requires password for username changes so 400 is expected for both
+  // taken AND available usernames; we can only distinguish via username-specific errors.
   const patch = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
@@ -229,27 +238,21 @@ async function checkDiscordScan(username, token, original) {
   if (patch.status === 400) {
     const data = await patch.json().catch(() => ({}));
     const usernameErrs = data?.errors?.username?._errors ?? [];
-    const passwordErrs = data?.errors?.password?._errors ?? [];
     const raw = JSON.stringify(data).toLowerCase();
-
-    // Username is taken — Discord returns username errors before asking for password
     if (
       usernameErrs.some(e => e.code === 'USERNAME_ALREADY_TAKEN') ||
       usernameErrs.some(e => e.code === 'POMELO_USERNAME_ALREADY_TAKEN') ||
       usernameErrs.some(e => (e.message || '').toLowerCase().includes('already taken')) ||
       raw.includes('username_already_taken')
     ) return 'taken';
-
-    // Password required but no username errors → username is valid & available
-    if (passwordErrs.length > 0 && usernameErrs.length === 0) return 'available';
-
-    return 'error';
+    // Password required but no username error — can't distinguish available vs taken
+    return 'unverified';
   }
   if (patch.status === 401) return 'invalid_token';
   if (patch.status === 429) return 'ratelimit';
   if (patch.status !== 200) return 'error';
 
-  // Reached only if username actually changed (no password required on this account)
+  // Reached only if username change succeeded (no password on this account)
   const revert = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
     headers: { 'Authorization': token, 'Content-Type': 'application/json' },
