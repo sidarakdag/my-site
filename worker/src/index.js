@@ -5,14 +5,13 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-Discord-Original, X-IG-Session, X-TG-Bot-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Discord-Token, X-IG-Session, X-TG-Bot-Token',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json',
   };
 }
 
-async function checkInstagram(username, session) {
-  // Primary: JSON API endpoint (accurate, session optional)
+async function igApiCheck(username, session) {
   const apiHdrs = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     'X-IG-App-ID': '936619743392459',
@@ -23,57 +22,60 @@ async function checkInstagram(username, session) {
   };
   if (session) apiHdrs['Cookie'] = `sessionid=${session}`;
 
-  try {
-    const apiRes = await fetch(
-      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-      { headers: apiHdrs, redirect: 'follow' }
-    );
-    if (apiRes.status === 404) return 'available';
-    if (apiRes.status === 429) return 'ratelimit';
-    if (apiRes.status === 401 || apiRes.status === 403) {
-      if (session) return 'invalid_session';
-      // No session: fall through to HTML scrape below
-    } else if (apiRes.status === 200) {
-      const data = await apiRes.json().catch(() => null);
-      if (!data) { /* fall through */ }
-      else if (data.status === 'fail' || data.message === 'login_required') {
-        if (session) return 'invalid_session';
-        // No session: fall through to HTML scrape
-      } else if (data?.data?.user === null) return 'available';
-      else if (data?.data?.user) return 'taken';
-    }
-  } catch {}
+  const res = await fetch(
+    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+    { headers: apiHdrs, redirect: 'follow' }
+  );
+  if (res.status === 404) return 'available';
+  if (res.status === 429) return 'ratelimit';
+  if (res.status === 401 || res.status === 403) return session ? 'invalid_session' : null;
+  if (res.status === 200) {
+    const data = await res.json().catch(() => null);
+    if (!data) return null;
+    if (data.status === 'fail' || data.message === 'login_required') return session ? 'invalid_session' : null;
+    if (data?.data?.user === null) return 'available';
+    if (data?.data?.user) return 'taken';
+  }
+  return null;
+}
 
-  // Fallback: HTML scrape (catches session-less checks and API failures)
+async function igHtmlCheck(username, session) {
   const htmlHdrs = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
   };
   if (session) htmlHdrs['Cookie'] = `sessionid=${session}`;
-  try {
-    const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
-      headers: htmlHdrs, redirect: 'follow',
-    });
-    if (res.status === 404) return 'available';
-    if (res.status === 429) return 'ratelimit';
-    if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : 'unverified';
-    if (res.status === 403) return 'unverified';
-    if (res.status !== 200) return session ? 'error' : 'unverified';
-    const html = await res.text();
-    // Instagram SPA: look for not-found signals in embedded JSON/text
-    if (
-      html.includes('Page Not Found') || html.includes('"pageNotFound"') ||
-      html.includes('Sorry, this page') || html.includes("isn't available") ||
-      html.includes('"not_found"') || html.includes('page_not_found') ||
-      html.includes('"PageNotFound"') || html.includes('"errorPage"')
-    ) return 'available';
-    // Login wall without a real profile → can't tell
-    if (html.includes('Log in') && !html.includes('"id"')) return 'unverified';
-    return 'taken';
-  } catch {
-    return 'error';
-  }
+  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+    headers: htmlHdrs, redirect: 'follow',
+  });
+  if (res.status === 404) return 'available';
+  if (res.status === 429) return 'ratelimit';
+  if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : null;
+  if (res.status === 403) return null;
+  if (res.status !== 200) return null;
+  const html = await res.text();
+  // Instagram SPA: look for not-found signals in embedded JSON/text
+  if (
+    html.includes('Page Not Found') || html.includes('"pageNotFound"') ||
+    html.includes('Sorry, this page') || html.includes("isn't available") ||
+    html.includes('"not_found"') || html.includes('page_not_found') ||
+    html.includes('"PageNotFound"') || html.includes('"errorPage"')
+  ) return 'available';
+  // Login wall without a real profile → can't tell
+  if (html.includes('Log in') && !html.includes('"id"')) return null;
+  return 'taken';
+}
+
+async function checkInstagram(username, session) {
+  // Run the JSON API and the HTML scrape in parallel instead of sequentially —
+  // whichever gives a decisive answer first wins, so a slow/blocked one doesn't
+  // delay the result.
+  const [apiResult, htmlResult] = await Promise.all([
+    igApiCheck(username, session).catch(() => null),
+    igHtmlCheck(username, session).catch(() => null),
+  ]);
+  return apiResult ?? htmlResult ?? (session ? 'error' : 'unverified');
 }
 
 async function checkTelegram(username) {
@@ -189,21 +191,16 @@ async function checkDiscordAvailable(username) {
   return 'unverified';
 }
 
-async function checkDiscordScan(username, token, original) {
-  // Verify token and get current username
-  if (!original) {
-    const me = await fetch('https://discord.com/api/v10/users/@me', {
-      headers: { 'Authorization': token },
-    });
-    if (me.status === 401) return 'invalid_token';
-    if (me.status === 429) return 'ratelimit';
-    if (me.status !== 200) return 'error';
-    const data = await me.json();
-    original = data.username;
-    if (original === username) return 'taken';
-  }
+async function checkDiscordScan(username, token) {
+  // Fast path: the same unauthenticated validation Discord's own signup
+  // form calls. No account changes, no password needed, works for everyone.
+  const quick = await checkDiscordAvailable(username);
+  if (quick === 'taken' || quick === 'available' || quick === 'ratelimit') return quick;
 
-  // Non-destructive check: pomelo-attempt with full Discord client headers
+  if (!token) return 'unverified';
+
+  // Fallback: authenticated pomelo-attempt for a second opinion when the
+  // public endpoint was inconclusive. Read-only — never modifies the account.
   try {
     const pomelo = await fetch('https://discord.com/api/v10/users/@me/pomelo-attempt', {
       method: 'POST',
@@ -226,40 +223,7 @@ async function checkDiscordScan(username, token, original) {
     if (pomelo.status === 401) return 'invalid_token';
   } catch {}
 
-  // PATCH probe — works only for accounts without a password (rare).
-  // Discord now requires password for username changes so 400 is expected for both
-  // taken AND available usernames; we can only distinguish via username-specific errors.
-  const patch = await fetch('https://discord.com/api/v10/users/@me', {
-    method: 'PATCH',
-    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
-  });
-
-  if (patch.status === 400) {
-    const data = await patch.json().catch(() => ({}));
-    const usernameErrs = data?.errors?.username?._errors ?? [];
-    const raw = JSON.stringify(data).toLowerCase();
-    if (
-      usernameErrs.some(e => e.code === 'USERNAME_ALREADY_TAKEN') ||
-      usernameErrs.some(e => e.code === 'POMELO_USERNAME_ALREADY_TAKEN') ||
-      usernameErrs.some(e => (e.message || '').toLowerCase().includes('already taken')) ||
-      raw.includes('username_already_taken')
-    ) return 'taken';
-    // Password required but no username error — can't distinguish available vs taken
-    return 'unverified';
-  }
-  if (patch.status === 401) return 'invalid_token';
-  if (patch.status === 429) return 'ratelimit';
-  if (patch.status !== 200) return 'error';
-
-  // Reached only if username change succeeded (no password on this account)
-  const revert = await fetch('https://discord.com/api/v10/users/@me', {
-    method: 'PATCH',
-    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: original }),
-  });
-  if (revert.status === 429) return 'changed';
-  return 'available';
+  return 'unverified';
 }
 
 async function claimDiscord(username, token) {
@@ -455,8 +419,7 @@ export default {
         }
         const mode = url.searchParams.get('mode');
         if (mode === 'scan') {
-          const original = request.headers.get('X-Discord-Original') || '';
-          const status = await checkDiscordScan(u, token, original);
+          const status = await checkDiscordScan(u, token);
           return Response.json({ status }, { headers });
         }
         const status = await claimDiscord(u, token);

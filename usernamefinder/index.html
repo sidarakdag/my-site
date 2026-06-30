@@ -436,8 +436,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 
     <!-- Discord token input -->
     <div class="dc-token-row" id="dcTokenRow">
-      <div class="dc-token-warn">⚠ &nbsp; self-botting violates discord tos · use at your own risk · successful claim = your username changes immediately</div>
-      <input class="dc-token-input" type="password" id="dcToken" placeholder="paste your discord user token" autocomplete="off" spellcheck="false">
+      <div class="dc-token-warn">optional · scanning never changes your account · paste a token only as a fallback signal for names the public check can't resolve</div>
+      <input class="dc-token-input" type="password" id="dcToken" placeholder="optional: paste your discord user token" autocomplete="off" spellcheck="false">
       <div class="dc-token-hint">get token: open discord in browser → f12 → network tab → click any request → headers → copy the <code>authorization</code> value</div>
     </div>
 
@@ -1521,16 +1521,13 @@ document.getElementById('hitsCopyAll').addEventListener('click', () => {
 });
 
 /* ── Discord claim via Worker ── */
-async function checkDC(u, token, mode = 'claim', original = '') {
+async function checkDC(u, token, mode = 'claim') {
   try {
     const qs = mode === 'scan' ? `&mode=scan` : '';
     const r = await fetch(
       `${WORKER_URL}?p=dc&u=${encodeURIComponent(u)}${qs}`,
       {
-        headers: {
-          'X-Discord-Token': token,
-          ...(original ? { 'X-Discord-Original': original } : {}),
-        },
+        headers: token ? { 'X-Discord-Token': token } : {},
         signal: AbortSignal.timeout(15000),
       }
     );
@@ -1781,44 +1778,37 @@ snipeBtn.addEventListener('click', async () => {
     const token = document.getElementById('dcToken').value.trim();
     if(!WORKER_URL) {
       addNotice('worker not deployed yet'); running = false;
-    } else if(!token) {
-      /* no-token: generate names, can't check availability without a token */
-      addNotice('no token · paste your discord token above to check availability · discord requires auth to verify usernames');
-      setStatus('running', 'generating', `0 / ${combos.length}`);
-      for(let i=0; i<combos.length && running; i++) {
-        const u = combos[i];
-        checked++;
-        addEntry(u, 'unverified', 'dc');
-        if(i % 50 === 0) setStatus('running', 'generating', `${checked} / ${combos.length}`);
-        if(i % 100 === 0) await new Promise(r => setTimeout(r, 0));
-      }
     } else {
-      /* with token: scan mode — check without permanently claiming, show CLAIM button per available name */
-      addNotice('checking availability · username reverts instantly after each check · copy any available name and change it manually in discord settings');
-      let dcOriginal = '';
-      for(let i=0; i<combos.length && running; i++) {
-        const u = combos[i];
-        setScanning(u);
-        const result = await checkDC(u, token, 'scan', dcOriginal);
-        if(result === 'invalid_token') {
-          addNotice('invalid discord token · check and try again'); running = false; break;
+      /* Read-only check via Discord's own signup-form validation endpoint —
+         no token required, no account changes. A token (if provided) is only
+         used as a fallback when that check is inconclusive. */
+      if(!token) addNotice('no token · checks still work, but add your discord token above for a fallback signal on inconclusive names');
+      let tokenNoticed = false;
+      const dcParallel = 4;
+      setStatus('running', `scanning ×${dcParallel}`, `0 / ${combos.length}`);
+      let next = 0;
+      await Promise.all(Array.from({ length: dcParallel }, async () => {
+        while(running && next < combos.length) {
+          const idx = next++;
+          if(idx >= combos.length) break;
+          const u = combos[idx];
+          setScanning(u);
+          let result = await checkDC(u, token, 'scan');
+          if(result === 'ratelimit') {
+            await sleep(3000);
+            result = await checkDC(u, token, 'scan');
+          }
+          if(result === 'invalid_token' && !tokenNoticed) {
+            tokenNoticed = true;
+            addNotice('discord token invalid · ignoring it · checks continue without the fallback signal');
+          }
+          checked++;
+          if(result === 'available') { hits++; addEntry(u, 'clear', 'dc'); }
+          else if(result === 'taken') addEntry(u, 'taken', 'dc');
+          else addEntry(u, 'unverified', 'dc');
+          setStatus('running', `scanning ×${dcParallel}`, `${checked} / ${combos.length} · ${hits} available`);
         }
-        if(result === 'changed') {
-          addNotice(`⚠ username changed to @${u} · revert failed · change it back manually`);
-          addEntry(u, 'claimed', 'dc'); hits++; checked++;
-          running = false; break;
-        }
-        if(result === 'ratelimit') {
-          i--;
-          setStatus('running', 'rate limited · waiting 10s', `${checked} / ${combos.length}`);
-          await sleep(10000); continue;
-        }
-        checked++;
-        if(result === 'available') { hits++; addEntry(u, 'clear', 'dc'); }
-        else if(result === 'taken') addEntry(u, 'taken', 'dc');
-        else addEntry(u, 'unverified', 'dc');
-        setStatus('running', 'scanning', `${checked} / ${combos.length} · ${hits} available`);
-      }
+      }));
     }
     if(!running) {
       snipeBtn.innerHTML = snipeBtnLabel();
