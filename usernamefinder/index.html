@@ -1688,7 +1688,7 @@ snipeBtn.addEventListener('click', async () => {
     return;
   }
   const cfg     = PLATFORMS[platform];
-  let checked   = 0, hits = 0, delay = 1100;
+  let checked   = 0, hits = 0, delay = 1100, dcTaken = 0, dcUnverified = 0;
 
   document.getElementById('terminalStatus').textContent = '';
   setStatus('running', 'scanning', `0 / ${combos.length} · 0 hits`);
@@ -1779,11 +1779,9 @@ snipeBtn.addEventListener('click', async () => {
     if(!WORKER_URL) {
       addNotice('worker not deployed yet'); running = false;
     } else {
-      /* Read-only check via Discord's own signup-form validation endpoint —
-         no token required, no account changes. A token (if provided) is only
-         used as a fallback when that check is inconclusive. */
-      if(!token) addNotice('no token · checks still work, but add your discord token above for a fallback signal on inconclusive names');
+      if(!token) addNotice('no token entered · paste your discord token above for best results');
       let tokenNoticed = false;
+      let dcTaken = 0, dcUnverified = 0;
       const dcParallel = 4;
       setStatus('running', `scanning ×${dcParallel}`, `0 / ${combos.length}`);
       let next = 0;
@@ -1794,35 +1792,35 @@ snipeBtn.addEventListener('click', async () => {
           const u = combos[idx];
           setScanning(u);
           let result = await checkDC(u, token, 'scan');
-          if(result === 'ratelimit') {
-            await sleep(3000);
-            result = await checkDC(u, token, 'scan');
-          }
+          if(result === 'ratelimit') { await sleep(3000); result = await checkDC(u, token, 'scan'); }
           if(result === 'invalid_token' && !tokenNoticed) {
             tokenNoticed = true;
-            addNotice('discord token invalid · ignoring it · checks continue without the fallback signal');
+            addNotice('discord token invalid · paste a fresh token and try again');
           }
           checked++;
           if(result === 'available') { hits++; addEntry(u, 'clear', 'dc'); }
-          else if(result === 'taken') addEntry(u, 'taken', 'dc');
-          else addEntry(u, 'unverified', 'dc');
-          setStatus('running', `scanning ×${dcParallel}`, `${checked} / ${combos.length} · ${hits} available`);
+          else if(result === 'taken') { dcTaken++; addEntry(u, 'taken', 'dc'); }
+          else { dcUnverified++; addEntry(u, 'unverified', 'dc'); }
+          const mid = `${checked} / ${combos.length} · ${hits} clear · ${dcTaken} taken · ${dcUnverified} unknown`;
+          setStatus('running', `scanning ×${dcParallel}`, mid);
         }
       }));
+      if(dcUnverified > 0 && dcTaken === 0 && hits === 0) {
+        addNotice(`discord checks inconclusive (${dcUnverified} unknown) — discord blocks server-side requests. paste your discord token above and re-scan for accurate results`);
+      }
     }
-    if(!running) {
-      snipeBtn.innerHTML = snipeBtnLabel();
-      snipeBtn.classList.remove('running');
-    }
+    if(!running) { snipeBtn.innerHTML = snipeBtnLabel(); snipeBtn.classList.remove('running'); }
   }
 
   running = false;
   setScanning(null);
   snipeBtn.innerHTML = snipeBtnLabel();
   snipeBtn.classList.remove('running');
-  const summary = WORKER_URL
-    ? `${hits} clear · ${checked - hits} taken · ${checked} checked`
-    : `${checked} generated`;
+  const summary = !WORKER_URL
+    ? `${checked} generated`
+    : platform === 'dc'
+      ? `${hits} clear · ${dcTaken} taken · ${dcUnverified} unknown · ${checked} checked`
+      : `${hits} clear · ${checked - hits} taken · ${checked} checked`;
   document.getElementById('terminalStatus').textContent = summary;
   setStatus('done', 'done', summary);
 });

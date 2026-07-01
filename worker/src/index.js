@@ -517,11 +517,20 @@ export default {
         const token = request.headers.get('X-Discord-Token');
         const isDebug = url.searchParams.get('debug') === '1';
         if (isDebug) {
+          // Show fingerprint fetch status, unauthed endpoint, and pomelo endpoint
+          const fpDebug = await (async () => {
+            try {
+              const r = await fetch('https://discord.com/api/v10/auth/fingerprint', {
+                headers: { 'User-Agent': DC_UA, 'X-Super-Properties': DC_SUPER_PROPS, 'Accept': '*/*', 'Origin': 'https://discord.com', 'Referer': 'https://discord.com/register' },
+              });
+              return { status: r.status, body: await r.text() };
+            } catch (e) { return { status: 0, error: String(e) }; }
+          })();
           const [unauthed, pomelo] = await Promise.all([
             checkDiscordAvailable(u, true),
             token ? checkDiscordPomelo(u, token, true) : Promise.resolve(null),
           ]);
-          return Response.json({ unauthed, pomelo }, { headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
+          return Response.json({ fingerprint: fpDebug, unauthed, pomelo }, { headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
         }
         if (!token) {
           const status = await checkDiscordAvailable(u);
