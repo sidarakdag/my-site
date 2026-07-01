@@ -433,9 +433,8 @@ export default {
         const token = request.headers.get('X-Discord-Token');
         const isDebug = url.searchParams.get('debug') === '1';
         if (isDebug) {
-          // Returns raw Discord API response for diagnostics — not used in normal flow
           const d = await checkDiscordAvailable(u, true);
-          return Response.json(d, { headers });
+          return Response.json(d, { headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
         }
         if (!token) {
           const status = await checkDiscordAvailable(u);
