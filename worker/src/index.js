@@ -1,5 +1,13 @@
 const ALLOWED = ['https://kataly.cc', 'http://localhost', 'http://127.0.0.1'];
 
+const DC_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+const DC_SUPER_PROPS = btoa(JSON.stringify({
+  os: 'Windows', browser: 'Chrome', device: '', system_locale: 'en-US',
+  browser_user_agent: DC_UA, browser_version: '131.0.0.0', os_version: '10',
+  referrer: '', referring_domain: '', referrer_current: '', referring_domain_current: '',
+  release_channel: 'stable', client_build_number: 369467, client_event_source: null,
+}));
+
 function cors(origin) {
   const allowed = ALLOWED.find(o => origin && origin.startsWith(o)) ?? 'https://kataly.cc';
   return {
@@ -40,42 +48,101 @@ async function igApiCheck(username, session) {
 }
 
 async function igHtmlCheck(username, session) {
-  const htmlHdrs = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9',
-  };
-  if (session) htmlHdrs['Cookie'] = `sessionid=${session}`;
-  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
-    headers: htmlHdrs, redirect: 'follow',
-  });
+  const url = `https://www.instagram.com/${encodeURIComponent(username)}/`;
+
+  function parseIgHtml(html, finalUrl) {
+    if (finalUrl && finalUrl.includes('/accounts/login/')) return 'login_wall';
+    if (
+      html.includes('Page Not Found') || html.includes('"pageNotFound"') ||
+      html.includes('Sorry, this page') || html.includes("isn't available") ||
+      html.includes('"not_found"') || html.includes('page_not_found') ||
+      html.includes('"PageNotFound"') || html.includes('"errorPage"')
+    ) return 'available';
+    // JSON-LD schema present → real profile page
+    if (
+      html.includes('"@type":"ProfilePage"') || html.includes('"ProfilePage"') ||
+      html.includes('"sameAs"') || html.includes('"mainEntityofPage"')
+    ) return 'taken';
+    if (html.includes('Log in') && !html.includes('"id"')) return 'login_wall';
+    if (html.includes('"id"')) return 'taken';
+    return null;
+  }
+
+  // 1. Try with session if provided
+  if (session) {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cookie': `sessionid=${session}`,
+      },
+      redirect: 'follow',
+    }).catch(() => null);
+    if (res) {
+      if (res.status === 404) return 'available';
+      if (res.status === 429) return 'ratelimit';
+      if (res.status === 200) {
+        const html = await res.text().catch(() => '');
+        const r = parseIgHtml(html, res.url);
+        if (r === 'login_wall') return 'invalid_session';
+        if (r) return r;
+      }
+    }
+  }
+
+  // 2. Try with Googlebot UA — Instagram serves real content to crawlers without login wall
+  const botRes = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  }).catch(() => null);
+
+  if (botRes) {
+    if (botRes.status === 404) return 'available';
+    if (botRes.status === 429) return 'ratelimit';
+    if (botRes.status === 200) {
+      const html = await botRes.text().catch(() => '');
+      const r = parseIgHtml(html, botRes.url);
+      if (r && r !== 'login_wall') return r;
+      // login_wall with bot → fall through to browser check
+    }
+  }
+
+  // 3. Regular browser UA (no session)
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    redirect: 'follow',
+  }).catch(() => null);
+
+  if (!res) return null;
   if (res.status === 404) return 'available';
   if (res.status === 429) return 'ratelimit';
-  if (res.url && res.url.includes('/accounts/login/')) return session ? 'invalid_session' : null;
   if (res.status === 403) return null;
   if (res.status !== 200) return null;
-  const html = await res.text();
-  // Instagram SPA: look for not-found signals in embedded JSON/text
-  if (
-    html.includes('Page Not Found') || html.includes('"pageNotFound"') ||
-    html.includes('Sorry, this page') || html.includes("isn't available") ||
-    html.includes('"not_found"') || html.includes('page_not_found') ||
-    html.includes('"PageNotFound"') || html.includes('"errorPage"')
-  ) return 'available';
-  // Login wall without a real profile → can't tell
-  if (html.includes('Log in') && !html.includes('"id"')) return null;
-  return 'taken';
+  const html = await res.text().catch(() => '');
+  const r = parseIgHtml(html, res.url);
+  if (r === 'login_wall') return null;
+  return r;
 }
 
 async function checkInstagram(username, session) {
-  // Run the JSON API and the HTML scrape in parallel instead of sequentially —
-  // whichever gives a decisive answer first wins, so a slow/blocked one doesn't
-  // delay the result.
   const [apiResult, htmlResult] = await Promise.all([
     igApiCheck(username, session).catch(() => null),
     igHtmlCheck(username, session).catch(() => null),
   ]);
-  return apiResult ?? htmlResult ?? (session ? 'error' : 'unverified');
+  // Prefer a conclusive result; 'taken'/'available' beat null/'unverified'
+  if (apiResult === 'taken' || apiResult === 'available') return apiResult;
+  if (htmlResult === 'taken' || htmlResult === 'available') return htmlResult;
+  if (apiResult === 'ratelimit' || htmlResult === 'ratelimit') return 'ratelimit';
+  if (apiResult === 'invalid_session' || htmlResult === 'invalid_session') return 'invalid_session';
+  return session ? 'error' : 'unverified';
 }
 
 async function checkTelegram(username) {
@@ -151,8 +218,6 @@ async function checkTelegramBot(username, token) {
   return 'available';
 }
 
-// Cached fingerprint — Discord requires this for unauthenticated registration-flow requests.
-// Module-level so it's reused across concurrent checks in the same worker isolate.
 let _dcFp = { v: '', exp: 0 };
 
 async function getDcFingerprint() {
@@ -160,7 +225,8 @@ async function getDcFingerprint() {
   try {
     const r = await fetch('https://discord.com/api/v10/auth/fingerprint', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'User-Agent': DC_UA,
+        'X-Super-Properties': DC_SUPER_PROPS,
         'Accept': '*/*',
         'Origin': 'https://discord.com',
         'Referer': 'https://discord.com/register',
@@ -177,12 +243,20 @@ async function getDcFingerprint() {
   return '';
 }
 
+function parseDcResult(data) {
+  if (typeof data.taken === 'boolean') return data.taken ? 'taken' : 'available';
+  // Alternative formats Discord has used
+  if (data.unique_username_type === 0) return 'available';
+  if (data.unique_username_type === 1) return 'taken';
+  return null;
+}
+
 async function checkDiscordAvailable(username, debug = false) {
   const fingerprint = await getDcFingerprint();
-
   const hdrs = {
     'Content-Type': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'User-Agent': DC_UA,
+    'X-Super-Properties': DC_SUPER_PROPS,
     'X-Discord-Locale': 'en-US',
     'Accept': '*/*',
     'Origin': 'https://discord.com',
@@ -192,40 +266,31 @@ async function checkDiscordAvailable(username, debug = false) {
 
   try {
     const res = await fetch('https://discord.com/api/v10/unique-username/username-attempt-unauthed', {
-      method: 'POST',
-      headers: hdrs,
-      body: JSON.stringify({ username }),
+      method: 'POST', headers: hdrs, body: JSON.stringify({ username }),
     });
     const body = await res.text();
-    if (debug) return { status: res.status, body, fingerprint: fingerprint ? 'got' : 'none' };
+    if (debug) return { endpoint: 'unauthed', status: res.status, body, fp: fingerprint ? fingerprint.slice(0, 20) + '…' : 'none' };
     if (res.status === 200) {
-      const data = JSON.parse(body);
-      if (typeof data.taken === 'boolean') return data.taken ? 'taken' : 'available';
+      const data = (() => { try { return JSON.parse(body); } catch { return {}; } })();
+      const r = parseDcResult(data);
+      if (r) return r;
     }
     if (res.status === 429) return 'ratelimit';
   } catch (e) {
-    if (debug) return { status: 0, body: String(e), fingerprint: fingerprint ? 'got' : 'none' };
+    if (debug) return { endpoint: 'unauthed', status: 0, body: String(e), fp: 'none' };
   }
   return 'unverified';
 }
 
-async function checkDiscordScan(username, token) {
-  // Fast path: the same unauthenticated validation Discord's own signup
-  // form calls. No account changes, no password needed, works for everyone.
-  const quick = await checkDiscordAvailable(username);
-  if (quick === 'taken' || quick === 'available' || quick === 'ratelimit') return quick;
-
-  if (!token) return 'unverified';
-
-  // Fallback: authenticated pomelo-attempt for a second opinion when the
-  // public endpoint was inconclusive. Read-only — never modifies the account.
+async function checkDiscordPomelo(username, token, debug = false) {
   try {
-    const pomelo = await fetch('https://discord.com/api/v10/users/@me/pomelo-attempt', {
+    const res = await fetch('https://discord.com/api/v10/users/@me/pomelo-attempt', {
       method: 'POST',
       headers: {
         'Authorization': token,
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'User-Agent': DC_UA,
+        'X-Super-Properties': DC_SUPER_PROPS,
         'X-Discord-Locale': 'en-US',
         'X-Discord-Timezone': 'America/New_York',
         'Origin': 'https://discord.com',
@@ -233,21 +298,40 @@ async function checkDiscordScan(username, token) {
       },
       body: JSON.stringify({ username }),
     });
-    if (pomelo.status === 200) {
-      const d = await pomelo.json().catch(() => ({}));
-      if (typeof d.taken === 'boolean') return d.taken ? 'taken' : 'available';
+    const body = await res.text();
+    if (debug) return { endpoint: 'pomelo', status: res.status, body };
+    if (res.status === 200) {
+      const data = (() => { try { return JSON.parse(body); } catch { return {}; } })();
+      const r = parseDcResult(data);
+      if (r) return r;
     }
-    if (pomelo.status === 429) return 'ratelimit';
-    if (pomelo.status === 401) return 'invalid_token';
+    if (res.status === 429) return 'ratelimit';
+    if (res.status === 401) return 'invalid_token';
   } catch {}
-
   return 'unverified';
+}
+
+async function checkDiscordScan(username, token) {
+  // When a token is available, use the authenticated endpoint first — it's more
+  // reliable from datacenter IPs because Discord doesn't IP-block authed calls.
+  if (token) {
+    const pomelo = await checkDiscordPomelo(username, token);
+    if (pomelo !== 'unverified') return pomelo;
+  }
+  // Unauthenticated endpoint (works when Discord doesn't block the datacenter IP).
+  return await checkDiscordAvailable(username);
 }
 
 async function claimDiscord(username, token) {
   const res = await fetch('https://discord.com/api/v10/users/@me', {
     method: 'PATCH',
-    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': token,
+      'Content-Type': 'application/json',
+      'User-Agent': DC_UA,
+      'X-Super-Properties': DC_SUPER_PROPS,
+      'Origin': 'https://discord.com',
+    },
     body: JSON.stringify({ username }),
   });
 
@@ -433,8 +517,11 @@ export default {
         const token = request.headers.get('X-Discord-Token');
         const isDebug = url.searchParams.get('debug') === '1';
         if (isDebug) {
-          const d = await checkDiscordAvailable(u, true);
-          return Response.json(d, { headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
+          const [unauthed, pomelo] = await Promise.all([
+            checkDiscordAvailable(u, true),
+            token ? checkDiscordPomelo(u, token, true) : Promise.resolve(null),
+          ]);
+          return Response.json({ unauthed, pomelo }, { headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
         }
         if (!token) {
           const status = await checkDiscordAvailable(u);
