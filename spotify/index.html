@@ -424,7 +424,7 @@ async function exchangeCode(code){
   });
   const r=await fetch(TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
   const d=await r.json();
-  if(d.access_token){ storeTokens(d); localStorage.removeItem('sp_verifier'); return true; }
+  if(d.access_token){ storeTokens(d); if(d.scope) localStorage.setItem('sp_scope_granted',d.scope); localStorage.removeItem('sp_verifier'); return true; }
   throw new Error(d.error_description||d.error||'token exchange failed');
 }
 
@@ -695,21 +695,32 @@ async function createPlaylist(){
   if(!staging.length){ toast('add some songs first',true); return; }
   const btn=$('createBtn'); btn.disabled=true; const orig=btn.textContent; btn.innerHTML='<span class="spin"></span>';
   try{
-    const isPublic=$('pubTog').classList.contains('on');
-    const pl=await api(`/users/${ME.id}/playlists`,{method:'POST',body:JSON.stringify({
-      name, public:isPublic, description:$('newDesc').value.trim()||'made with kataly',
-    })});
-    const uris=staging.map(s=>s.uri);
-    for(let i=0;i<uris.length;i+=100){
-      await api(`/playlists/${pl.id}/tracks`,{method:'POST',body:JSON.stringify({uris:uris.slice(i,i+100)})});
+    if(!ME||!ME.id){ toast('not signed in properly — disconnect and reconnect',true); return; }
+    const granted=localStorage.getItem('sp_scope_granted')||'';
+    if(granted && !/playlist-modify-(public|private)/.test(granted)){
+      toast('spotify didn’t grant playlist-edit access — disconnect, reconnect, approve everything',true); return;
     }
+    const isPublic=$('pubTog').classList.contains('on');
+    let pl;
+    try{
+      pl=await api(`/users/${encodeURIComponent(ME.id)}/playlists`,{method:'POST',body:JSON.stringify({
+        name, public:isPublic, description:$('newDesc').value.trim()||'made with kataly',
+      })});
+    }catch(e){ e.step='create'; throw e; }
+    const uris=staging.map(s=>s.uri);
+    try{
+      for(let i=0;i<uris.length;i+=100){
+        await api(`/playlists/${pl.id}/tracks`,{method:'POST',body:JSON.stringify({uris:uris.slice(i,i+100)})});
+      }
+    }catch(e){ e.step='add songs'; throw e; }
     toast(`created "${name}" with ${uris.length} songs`);
     staging=[]; renderStaging();
     $('newName').value=''; $('newDesc').value=''; $('searchResults').innerHTML='';
     await loadPlaylists();
   }catch(e){
-    if(e.status===403) toast('spotify denied it (403) — tap disconnect, connect again, and approve all permissions',true);
-    else toast(e.status?`${e.status}: ${e.message}`:e.message,true);
+    // Show the exact step + Spotify's own reason so 403s are diagnosable
+    const where=e.step?`${e.step} `:'';
+    toast(`${where}${e.status||''}: ${e.message||'failed'}`.trim(),true);
   }
   finally{ btn.disabled=staging.length===0; btn.textContent=orig; }
 }
