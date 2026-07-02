@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000">
+<meta name="description" content="spotify manager — create, fill, delete and unfollow playlists from one place.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/assets/images/falling-figure.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/images/falling-figure.png">
+<title>spotify manager · kataly</title>
+<style>
+@font-face{font-family:'Terminus TTF';src:url('../assets/fonts/Terminus.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--sp:#1db954;--sp-dim:rgba(29,185,84,.5);}
+html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF',monospace;font-weight:500;color:#fff;}
+
+/* ═══ KEYBOARD FOCUS (a11y) ═══ */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(29,185,84,.85);outline-offset:2px;border-radius:6px;
+}
+
+/* ── Background ── */
+#cosmicAtmo{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% -2%,rgba(6,42,22,.5) 0%,rgba(3,20,11,.16) 58%,transparent 100%),
+    radial-gradient(ellipse 45% 28% at 50% 102%,rgba(6,42,22,.18) 0%,transparent 65%),#000;}
+#starLayer{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.st{position:absolute;border-radius:50%;background:#fff;animation:stTwinkle ease-in-out infinite;}
+@keyframes stTwinkle{0%,100%{opacity:0}50%{opacity:var(--op)}}
+.orb{position:fixed;border-radius:50%;filter:blur(170px);pointer-events:none;z-index:0;}
+.orb-a{width:65vw;height:65vw;max-width:580px;max-height:580px;top:-22%;right:-22%;background:rgba(29,185,84,.035);animation:orbDrift 38s ease-in-out infinite;}
+.orb-b{width:55vw;height:55vw;max-width:480px;max-height:480px;bottom:-20%;left:-20%;background:rgba(16,120,60,.03);animation:orbDrift 46s ease-in-out infinite reverse;}
+@keyframes orbDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(26px,-22px)}}
+#grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:9;pointer-events:none;opacity:.02;mix-blend-mode:overlay;animation:grainShift .6s steps(2) infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");}
+@keyframes grainShift{0%{transform:translate(0,0)}50%{transform:translate(-2%,1%)}100%{transform:translate(1%,-2%)}}
+#vignette{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 18%,rgba(0,0,0,.84) 100%);z-index:8;pointer-events:none;}
+
+/* ── Shell ── */
+#wrap{position:relative;z-index:10;width:100%;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding-bottom:60px;}
+
+/* ── Nav ── */
+.sp-nav{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+  background:rgba(0,0,0,.55);border-bottom:1px solid rgba(255,255,255,.04);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);}
+.sp-back{display:flex;align-items:center;gap:8px;text-decoration:none;color:rgba(255,255,255,.34);font-size:7px;letter-spacing:3px;text-transform:uppercase;transition:color .2s;-webkit-tap-highlight-color:transparent;}
+.sp-back:hover{color:rgba(255,255,255,.78);}
+.sp-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.sp-nav-title{font-size:7px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.14);}
+
+.sp-main{width:100%;max-width:640px;padding:calc(54px + 44px) 20px 0;}
+
+/* ── Header ── */
+.sp-eyebrow{display:flex;align-items:center;gap:9px;font-size:7px;letter-spacing:5px;color:var(--sp-dim);text-transform:uppercase;margin-bottom:14px;}
+.sp-eyebrow svg{width:14px;height:14px;fill:var(--sp);}
+.sp-title{font-size:clamp(40px,10vw,72px);line-height:.9;text-transform:uppercase;letter-spacing:-.025em;color:#fff;text-shadow:0 0 80px rgba(29,185,84,.14);margin-bottom:14px;}
+.sp-lede{font-size:11px;line-height:1.9;color:rgba(255,255,255,.4);letter-spacing:.02em;max-width:440px;margin-bottom:34px;}
+
+/* ── Cards / panels ── */
+.panel{background:rgba(4,10,7,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:22px;margin-bottom:16px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;}
+.panel-hd h2{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:700;}
+.panel-hd .sub{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.24);}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:12px 22px;border-radius:100px;
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);
+  color:rgba(255,255,255,.82);font-family:'Terminus TTF',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;
+  cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.2);color:#fff;}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.green{border-color:var(--sp-dim);background:rgba(29,185,84,.1);color:#eafff1;}
+.btn.green:hover{background:rgba(29,185,84,.18);border-color:var(--sp);}
+.btn.green svg{fill:#eafff1;}
+.btn.full{width:100%;}
+.btn.sm{min-height:34px;padding:8px 14px;font-size:7px;letter-spacing:2px;}
+.btn.danger{border-color:rgba(255,70,60,.3);color:rgba(255,140,130,.85);}
+.btn.danger:hover{background:rgba(255,60,50,.1);border-color:rgba(255,70,60,.55);color:#ffd9d4;}
+
+/* ── Inputs ── */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.34);margin-bottom:8px;}
+.inp{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  color:rgba(255,255,255,.9);font-family:'Terminus TTF',monospace;font-size:12px;letter-spacing:.3px;outline:none;transition:border-color .2s;}
+.inp::placeholder{color:rgba(255,255,255,.26);}
+.inp:focus{border-color:var(--sp-dim);}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+/* ── Segmented ── */
+.seg{display:inline-flex;gap:5px;flex-wrap:wrap;}
+.seg button{padding:8px 14px;border-radius:100px;border:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(255,255,255,.34);
+  font-family:'Terminus TTF',monospace;font-size:7.5px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent;}
+.seg button:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.03);}
+.seg button.active{border-color:var(--sp-dim);background:rgba(29,185,84,.1);color:#eafff1;}
+
+/* ── Toggle ── */
+.tog{display:inline-flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+.tog-track{width:38px;height:22px;border-radius:100px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);position:relative;transition:.2s;flex-shrink:0;}
+.tog-track::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.7);transition:.2s;}
+.tog.on .tog-track{background:rgba(29,185,84,.4);border-color:var(--sp-dim);}
+.tog.on .tog-track::after{transform:translateX(16px);background:#eafff1;}
+.tog-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);}
+
+/* ── Playlist rows ── */
+.pl-list{display:flex;flex-direction:column;gap:8px;}
+.pl{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.012);transition:background .15s,border-color .15s;}
+.pl:hover{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.09);}
+.pl-cover{width:46px;height:46px;border-radius:8px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.05);}
+.pl-meta{flex:1;min-width:0;}
+.pl-name{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-sub{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:3px;display:flex;align-items:center;gap:7px;}
+.pl-badge{padding:2px 6px;border-radius:5px;font-size:6px;letter-spacing:1.5px;}
+.pl-badge.mine{background:rgba(29,185,84,.14);color:var(--sp);}
+.pl-badge.followed{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);}
+
+/* ── Track results / staging ── */
+.tk{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.012);}
+.tk+.tk{margin-top:6px;}
+.tk-cover{width:38px;height:38px;border-radius:6px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.05);}
+.tk-meta{flex:1;min-width:0;}
+.tk-name{font-size:11px;font-weight:700;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tk-artist{font-size:8px;color:rgba(255,255,255,.4);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tk-btn{flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);color:rgba(255,255,255,.6);
+  font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;-webkit-tap-highlight-color:transparent;}
+.tk-btn:hover{background:rgba(29,185,84,.14);border-color:var(--sp-dim);color:#eafff1;}
+.tk-btn.rm:hover{background:rgba(255,60,50,.12);border-color:rgba(255,70,60,.5);color:#ffd9d4;}
+
+.scrollbox{max-height:300px;overflow-y:auto;margin-top:12px;}
+.scrollbox::-webkit-scrollbar{width:3px;}
+.scrollbox::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+
+/* ── User chip ── */
+.user-chip{display:flex;align-items:center;gap:10px;}
+.user-chip img{width:30px;height:30px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.08);}
+.user-chip .un{font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.75);}
+
+/* ── Notice / toast ── */
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:400;
+  background:rgba(4,12,8,.95);border:1px solid var(--sp-dim);border-radius:100px;padding:12px 22px;
+  font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#eafff1;box-shadow:0 12px 40px rgba(0,0,0,.6);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:calc(100vw - 40px);text-align:center;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.err{border-color:rgba(255,70,60,.6);color:#ffd9d4;}
+
+.hint{font-size:8px;line-height:1.9;letter-spacing:.02em;color:rgba(255,255,255,.34);}
+.hint b{color:rgba(255,255,255,.62);font-weight:700;}
+.hint code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;color:var(--sp);font-size:8px;}
+.hint a{color:var(--sp);}
+.hint ol{margin:12px 0 0 16px;display:flex;flex-direction:column;gap:9px;}
+.empty{text-align:center;padding:26px 10px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.24);}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--sp);border-radius:50%;animation:sp 0.7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+
+<div id="cosmicAtmo"></div>
+<div id="starLayer"></div>
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
+<div id="vignette"></div>
+<div id="grain"></div>
+
+<nav class="sp-nav">
+  <a class="sp-back" href="/"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>kataly</a>
+  <span class="sp-nav-title">spotify manager</span>
+</nav>
+
+<div id="wrap">
+  <div class="sp-main">
+
+    <div class="sp-eyebrow">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.586 14.424a.622.622 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 1 1-.277-1.215c3.809-.871 7.077-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166A.78.78 0 1 1 6.34 11.3c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 0 1 .235 1.074zm.105-2.835c-3.223-1.914-8.54-2.09-11.618-1.156a.935.935 0 1 1-.542-1.79c3.532-1.072 9.404-.865 13.115 1.338a.936.936 0 0 1-.955 1.608z"/></svg>
+      <span>manager</span>
+    </div>
+    <h1 class="sp-title">Spotify</h1>
+
+    <!-- SETUP GATE (shown when no client id configured) -->
+    <div id="viewSetup" class="panel hidden">
+      <div class="panel-hd"><h2>one-time setup</h2></div>
+      <div class="hint">
+        This manager runs entirely in your browser and talks to Spotify directly — it needs a free
+        <b>Client ID</b> from your own Spotify app. Takes about 2 minutes:
+        <ol>
+          <li>Open <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> and log in.</li>
+          <li>Click <b>Create app</b>. Name it anything (e.g. "kataly manager").</li>
+          <li>Set <b>Redirect URI</b> to exactly:<br><code id="setupRedirect">https://kataly.cc/spotify/</code></li>
+          <li>Under APIs, check <b>Web API</b>, save.</li>
+          <li>Open the app → <b>Settings</b> → copy the <b>Client ID</b>.</li>
+          <li>Paste it in <code>spotify/index.html</code> at <code>SPOTIFY_CLIENT_ID</code>, or tell kataly to add it.</li>
+        </ol>
+        <div style="margin-top:14px">Your app starts in <b>Development mode</b>, which is perfect for personal use — just add your own Spotify account under Settings → User Management.</div>
+      </div>
+      <div class="field" style="margin-top:18px">
+        <label>quick test — paste client id to try it now (saved only in this browser)</label>
+        <div class="row">
+          <input class="inp" id="setupClientInput" placeholder="paste client id" style="flex:1;min-width:180px">
+          <button class="btn green" id="setupSaveBtn">save &amp; connect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="viewLogin" class="panel hidden">
+      <p class="sp-lede" style="margin-bottom:20px">connect your spotify account to create playlists, fill them with songs (by hand or automatically), delete the ones you made, and unfollow the ones you don't.</p>
+      <button class="btn green full" id="connectBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.586 14.424a.622.622 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 1 1-.277-1.215c3.809-.871 7.077-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166A.78.78 0 1 1 6.34 11.3c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 0 1 .235 1.074zm.105-2.835c-3.223-1.914-8.54-2.09-11.618-1.156a.935.935 0 1 1-.542-1.79c3.532-1.072 9.404-.865 13.115 1.338a.936.936 0 0 1-.955 1.608z"/></svg>
+        connect spotify
+      </button>
+      <div id="loginErr" class="hint hidden" style="margin-top:16px;color:rgba(255,140,130,.8)"></div>
+    </div>
+
+    <!-- APP -->
+    <div id="viewApp" class="hidden">
+
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="user-chip" id="userChip"></div>
+          <button class="btn sm" id="logoutBtn">disconnect</button>
+        </div>
+      </div>
+
+      <!-- CREATE -->
+      <div class="panel">
+        <div class="panel-hd"><h2>create a playlist</h2></div>
+        <div class="field">
+          <label>name</label>
+          <input class="inp" id="newName" placeholder="my new playlist">
+        </div>
+        <div class="field">
+          <label>description <span style="opacity:.5">(optional)</span></label>
+          <input class="inp" id="newDesc" placeholder="made with kataly">
+        </div>
+        <div class="row" style="margin-bottom:18px">
+          <div class="tog on" id="pubTog" role="switch" tabindex="0" aria-checked="true" aria-label="Public playlist">
+            <div class="tog-track"></div><span class="tog-lbl" id="pubLbl">public</span>
+          </div>
+        </div>
+
+        <div class="panel-hd" style="margin-bottom:12px">
+          <span class="sub">add songs</span>
+          <div class="seg" id="addModeSeg">
+            <button class="active" data-mode="search">pick songs</button>
+            <button data-mode="auto">let it choose</button>
+          </div>
+        </div>
+
+        <!-- MODE: search -->
+        <div id="modeSearch">
+          <div class="row">
+            <input class="inp" id="searchInp" placeholder="search a song or artist…" style="flex:1;min-width:160px">
+            <button class="btn" id="searchBtn">search</button>
+          </div>
+          <div class="scrollbox" id="searchResults"></div>
+        </div>
+
+        <!-- MODE: auto -->
+        <div id="modeAuto" class="hidden">
+          <div class="seg" id="autoSrcSeg" style="margin-bottom:14px">
+            <button class="active" data-src="top">my top tracks</button>
+            <button data-src="keyword">by vibe / genre</button>
+            <button data-src="artist">from an artist</button>
+          </div>
+
+          <div id="autoTop">
+            <div class="field">
+              <label>time range</label>
+              <div class="seg" id="rangeSeg">
+                <button data-range="short_term">last 4 weeks</button>
+                <button class="active" data-range="medium_term">last 6 months</button>
+                <button data-range="long_term">all time</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="autoKeyword" class="hidden">
+            <div class="field">
+              <label>vibe, genre or mood</label>
+              <input class="inp" id="autoKwInp" placeholder="e.g. phonk, lofi, sad, 2000s rap">
+            </div>
+          </div>
+
+          <div id="autoArtist" class="hidden">
+            <div class="field">
+              <label>artist name</label>
+              <input class="inp" id="autoArtInp" placeholder="e.g. Drake">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>how many songs</label>
+            <div class="seg" id="countSeg">
+              <button data-count="15">15</button>
+              <button class="active" data-count="25">25</button>
+              <button data-count="50">50</button>
+            </div>
+          </div>
+          <button class="btn full" id="genBtn">generate songs</button>
+        </div>
+
+        <!-- STAGING -->
+        <div id="stagingWrap" class="hidden" style="margin-top:18px">
+          <div class="panel-hd" style="margin-bottom:10px">
+            <span class="sub">chosen songs · <span id="stageCount">0</span></span>
+            <button class="btn sm" id="clearStage">clear</button>
+          </div>
+          <div class="scrollbox" id="staging"></div>
+        </div>
+
+        <button class="btn green full" id="createBtn" style="margin-top:18px" disabled>create playlist</button>
+      </div>
+
+      <!-- YOUR PLAYLISTS -->
+      <div class="panel">
+        <div class="panel-hd">
+          <h2>your playlists</h2>
+          <button class="btn sm" id="refreshBtn">refresh</button>
+        </div>
+        <div class="pl-list" id="playlists"><div class="empty"><span class="spin"></span></div></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG — paste your Spotify app Client ID below.
+   Get it free at https://developer.spotify.com/dashboard
+   Redirect URI to register: <your site>/spotify/
+   ═══════════════════════════════════════════════════════════ */
+let SPOTIFY_CLIENT_ID = '';   // ← paste Client ID here (or use the setup box on the page)
+
+const REDIRECT_URI = location.origin + '/spotify/';
+const SCOPES = 'playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-top-read user-read-private';
+const AUTH_URL = 'https://accounts.spotify.com/authorize';
+const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+const API = 'https://api.spotify.com/v1';
+
+/* ── Background stars ── */
+(function(){
+  const layer=document.getElementById('starLayer');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');s.className='st';
+    const sz=0.7+Math.random()*1.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-duration:${2.5+Math.random()*5}s;animation-delay:-${(Math.random()*8).toFixed(1)}s;`;
+    s.style.setProperty('--op',(0.12+Math.random()*0.5).toFixed(2));
+    layer.appendChild(s);
+  }
+})();
+
+/* ── DOM ── */
+const $=id=>document.getElementById(id);
+const viewSetup=$('viewSetup'), viewLogin=$('viewLogin'), viewApp=$('viewApp');
+
+/* ── Toast ── */
+let toastT;
+function toast(msg,isErr){
+  const t=$('toast'); t.textContent=msg; t.classList.toggle('err',!!isErr); t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ── Client ID persistence (lets user test without editing the file) ── */
+if(!SPOTIFY_CLIENT_ID){
+  const saved=localStorage.getItem('sp_client_id');
+  if(saved) SPOTIFY_CLIENT_ID=saved;
+}
+$('setupRedirect').textContent=REDIRECT_URI;
+
+/* ═══ PKCE helpers ═══ */
+function genVerifier(){
+  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const a=new Uint8Array(96); crypto.getRandomValues(a);
+  return Array.from(a,b=>chars[b%chars.length]).join('');
+}
+async function challenge(verifier){
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+/* ═══ Auth ═══ */
+async function login(){
+  if(!SPOTIFY_CLIENT_ID){ toast('add a client id first',true); return; }
+  const verifier=genVerifier();
+  localStorage.setItem('sp_verifier',verifier);
+  const code_challenge=await challenge(verifier);
+  const p=new URLSearchParams({
+    client_id:SPOTIFY_CLIENT_ID, response_type:'code', redirect_uri:REDIRECT_URI,
+    code_challenge_method:'S256', code_challenge, scope:SCOPES,
+  });
+  location.href=`${AUTH_URL}?${p}`;
+}
+
+async function exchangeCode(code){
+  const verifier=localStorage.getItem('sp_verifier');
+  const body=new URLSearchParams({
+    client_id:SPOTIFY_CLIENT_ID, grant_type:'authorization_code', code,
+    redirect_uri:REDIRECT_URI, code_verifier:verifier,
+  });
+  const r=await fetch(TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  const d=await r.json();
+  if(d.access_token){ storeTokens(d); localStorage.removeItem('sp_verifier'); return true; }
+  throw new Error(d.error_description||d.error||'token exchange failed');
+}
+
+function storeTokens(d){
+  localStorage.setItem('sp_access',d.access_token);
+  if(d.refresh_token) localStorage.setItem('sp_refresh',d.refresh_token);
+  localStorage.setItem('sp_expires',(Date.now()+(d.expires_in-60)*1000).toString());
+}
+function clearTokens(){ ['sp_access','sp_refresh','sp_expires'].forEach(k=>localStorage.removeItem(k)); }
+
+async function refreshToken(){
+  const rt=localStorage.getItem('sp_refresh');
+  if(!rt) return false;
+  const body=new URLSearchParams({client_id:SPOTIFY_CLIENT_ID,grant_type:'refresh_token',refresh_token:rt});
+  const r=await fetch(TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  const d=await r.json();
+  if(d.access_token){ storeTokens(d); return true; }
+  return false;
+}
+
+async function validToken(){
+  const tok=localStorage.getItem('sp_access');
+  const exp=parseInt(localStorage.getItem('sp_expires')||'0',10);
+  if(tok && Date.now()<exp) return tok;
+  if(await refreshToken()) return localStorage.getItem('sp_access');
+  return null;
+}
+
+/* ═══ API wrapper ═══ */
+async function api(path,opts={}){
+  let tok=await validToken();
+  if(!tok) throw new Error('not authenticated');
+  const doFetch=t=>fetch(path.startsWith('http')?path:API+path,{
+    ...opts, headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json',...(opts.headers||{})},
+  });
+  let r=await doFetch(tok);
+  if(r.status===401 && await refreshToken()){ r=await doFetch(localStorage.getItem('sp_access')); }
+  if(r.status===429){ toast('spotify rate limit — wait a moment',true); throw new Error('rate limited'); }
+  if(!r.ok){
+    let msg='request failed'; try{ const e=await r.json(); msg=e.error?.message||msg; }catch(_){}
+    throw new Error(msg);
+  }
+  if(r.status===204) return null;
+  return r.json();
+}
+
+/* ═══ State ═══ */
+let ME=null;
+let staging=[];  // {uri,name,artist,cover}
+
+/* ═══ Views ═══ */
+function show(view){
+  [viewSetup,viewLogin,viewApp].forEach(v=>v.classList.add('hidden'));
+  view.classList.remove('hidden');
+}
+
+async function boot(){
+  const url=new URL(location.href);
+  const code=url.searchParams.get('code');
+  const err=url.searchParams.get('error');
+  if(err){ history.replaceState({},'',REDIRECT_URI); showLoginError(err); }
+  if(code){
+    try{ await exchangeCode(code); }catch(e){ showLoginError(e.message); }
+    history.replaceState({},'',REDIRECT_URI);
+  }
+  if(!SPOTIFY_CLIENT_ID){ show(viewSetup); return; }
+  const tok=await validToken();
+  if(tok){ await enterApp(); } else { show(viewLogin); }
+}
+function showLoginError(msg){
+  if(!SPOTIFY_CLIENT_ID){ show(viewSetup); return; }
+  show(viewLogin);
+  const el=$('loginErr'); el.textContent='couldn’t connect: '+msg; el.classList.remove('hidden');
+}
+
+async function enterApp(){
+  show(viewApp);
+  try{
+    ME=await api('/me');
+    $('userChip').innerHTML=`<img src="${ME.images?.[0]?.url||''}" alt="" onerror="this.style.visibility='hidden'"><span class="un">${escapeHtml(ME.display_name||'you')}</span>`;
+    await loadPlaylists();
+  }catch(e){ toast(e.message,true); if(String(e.message).includes('authenticated')){ clearTokens(); show(viewLogin); } }
+}
+
+/* ═══ Playlists ═══ */
+async function loadPlaylists(){
+  const box=$('playlists');
+  box.innerHTML='<div class="empty"><span class="spin"></span></div>';
+  try{
+    let items=[], next='/me/playlists?limit=50';
+    while(next){ const d=await api(next); items=items.concat(d.items); next=d.next; }
+    if(!items.length){ box.innerHTML='<div class="empty">no playlists yet</div>'; return; }
+    box.innerHTML='';
+    items.forEach(pl=>{
+      if(!pl) return;
+      const mine=pl.owner?.id===ME.id;
+      const row=document.createElement('div'); row.className='pl';
+      row.innerHTML=`
+        <img class="pl-cover" src="${pl.images?.[0]?.url||''}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="pl-meta">
+          <div class="pl-name">${escapeHtml(pl.name)}</div>
+          <div class="pl-sub">
+            <span>${pl.tracks?.total||0} tracks</span>
+            <span class="pl-badge ${mine?'mine':'followed'}">${mine?'yours':'followed'}</span>
+          </div>
+        </div>
+        <button class="btn sm ${mine?'danger':''}" data-id="${pl.id}" data-mine="${mine?1:0}" data-name="${escapeHtml(pl.name)}">${mine?'delete':'unfollow'}</button>`;
+      row.querySelector('button').addEventListener('click',()=>removePlaylist(pl.id,mine,pl.name,row));
+      box.appendChild(row);
+    });
+  }catch(e){ box.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`; }
+}
+
+async function removePlaylist(id,mine,name,row){
+  const verb=mine?'Delete':'Unfollow';
+  if(!confirm(`${verb} "${name}"?${mine?'\n\nThis removes the playlist you made from your account.':'\n\nThis removes it from your library.'}`)) return;
+  try{
+    await api(`/playlists/${id}/followers`,{method:'DELETE'});
+    row.style.transition='opacity .2s'; row.style.opacity='0';
+    setTimeout(()=>row.remove(),200);
+    toast(mine?'playlist deleted':'unfollowed');
+  }catch(e){ toast(e.message,true); }
+}
+
+/* ═══ Search (manual add) ═══ */
+async function runSearch(){
+  const q=$('searchInp').value.trim();
+  const box=$('searchResults');
+  if(!q){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="empty"><span class="spin"></span></div>';
+  try{
+    const d=await api(`/search?type=track&limit=12&q=${encodeURIComponent(q)}`);
+    const tracks=d.tracks?.items||[];
+    if(!tracks.length){ box.innerHTML='<div class="empty">no results</div>'; return; }
+    box.innerHTML='';
+    tracks.forEach(t=>box.appendChild(trackRow(t,'add')));
+  }catch(e){ box.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`; }
+}
+
+function trackRow(t,mode){
+  const el=document.createElement('div'); el.className='tk';
+  const artist=(t.artists||[]).map(a=>a.name).join(', ');
+  const cover=t.album?.images?.[t.album.images.length-1]?.url||'';
+  el.innerHTML=`
+    <img class="tk-cover" src="${cover}" alt="" onerror="this.style.visibility='hidden'">
+    <div class="tk-meta"><div class="tk-name">${escapeHtml(t.name)}</div><div class="tk-artist">${escapeHtml(artist)}</div></div>
+    <button class="tk-btn ${mode==='rm'?'rm':''}">${mode==='rm'?'×':'+'}</button>`;
+  el.querySelector('button').addEventListener('click',()=>{
+    if(mode==='rm'){ staging=staging.filter(s=>s.uri!==t.uri); renderStaging(); }
+    else addToStaging({uri:t.uri,name:t.name,artist,cover});
+  });
+  return el;
+}
+
+function addToStaging(tk){
+  if(staging.some(s=>s.uri===tk.uri)){ toast('already added'); return; }
+  staging.push(tk); renderStaging(); toast('added');
+}
+function renderStaging(){
+  const wrap=$('stagingWrap'), box=$('staging');
+  $('stageCount').textContent=staging.length;
+  $('createBtn').disabled=staging.length===0 || !$('newName').value.trim();
+  if(!staging.length){ wrap.classList.add('hidden'); box.innerHTML=''; return; }
+  wrap.classList.remove('hidden');
+  box.innerHTML='';
+  staging.forEach(s=>{
+    const el=document.createElement('div'); el.className='tk';
+    el.innerHTML=`
+      <img class="tk-cover" src="${s.cover}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="tk-meta"><div class="tk-name">${escapeHtml(s.name)}</div><div class="tk-artist">${escapeHtml(s.artist)}</div></div>
+      <button class="tk-btn rm">×</button>`;
+    el.querySelector('button').addEventListener('click',()=>{ staging=staging.filter(x=>x.uri!==s.uri); renderStaging(); });
+    box.appendChild(el);
+  });
+}
+
+/* ═══ Auto-generate ═══ */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+async function generate(){
+  const src=document.querySelector('#autoSrcSeg .active').dataset.src;
+  const count=parseInt(document.querySelector('#countSeg .active').dataset.count,10);
+  const btn=$('genBtn'); btn.disabled=true; const orig=btn.textContent; btn.innerHTML='<span class="spin"></span>';
+  try{
+    let tracks=[];
+    if(src==='top'){
+      const range=document.querySelector('#rangeSeg .active').dataset.range;
+      const d=await api(`/me/top/tracks?time_range=${range}&limit=50`);
+      tracks=d.items||[];
+    } else if(src==='keyword'){
+      const kw=$('autoKwInp').value.trim();
+      if(!kw){ toast('type a vibe first',true); return; }
+      const d=await api(`/search?type=track&limit=50&q=${encodeURIComponent(kw)}`);
+      tracks=shuffle(d.tracks?.items||[]);
+    } else if(src==='artist'){
+      const name=$('autoArtInp').value.trim();
+      if(!name){ toast('type an artist first',true); return; }
+      const sr=await api(`/search?type=artist&limit=1&q=${encodeURIComponent(name)}`);
+      const artist=sr.artists?.items?.[0];
+      if(!artist){ toast('artist not found',true); return; }
+      const top=await api(`/artists/${artist.id}/top-tracks?market=from_token`);
+      const more=await api(`/search?type=track&limit=50&q=${encodeURIComponent('artist:"'+artist.name+'"')}`);
+      const map=new Map();
+      (top.tracks||[]).concat(more.tracks?.items||[]).forEach(t=>{ if(t&&!map.has(t.uri)) map.set(t.uri,t); });
+      tracks=shuffle([...map.values()]);
+    }
+    if(!tracks.length){ toast('nothing found for that',true); return; }
+    let added=0;
+    for(const t of tracks){
+      if(added>=count) break;
+      if(staging.some(s=>s.uri===t.uri)) continue;
+      staging.push({uri:t.uri,name:t.name,artist:(t.artists||[]).map(a=>a.name).join(', '),cover:t.album?.images?.[t.album.images.length-1]?.url||''});
+      added++;
+    }
+    renderStaging();
+    toast(added?`added ${added} songs`:'those songs are already in the list');
+  }catch(e){
+    let m=e.message;
+    if(/top/.test(String(m))||/403/.test(String(m))) m='couldn’t read your top tracks — try a different source';
+    toast(m,true);
+  }finally{ btn.disabled=false; btn.textContent=orig; }
+}
+
+/* ═══ Create playlist ═══ */
+async function createPlaylist(){
+  const name=$('newName').value.trim();
+  if(!name){ toast('name it first',true); return; }
+  if(!staging.length){ toast('add some songs first',true); return; }
+  const btn=$('createBtn'); btn.disabled=true; const orig=btn.textContent; btn.innerHTML='<span class="spin"></span>';
+  try{
+    const isPublic=$('pubTog').classList.contains('on');
+    const pl=await api(`/users/${ME.id}/playlists`,{method:'POST',body:JSON.stringify({
+      name, public:isPublic, description:$('newDesc').value.trim()||'made with kataly',
+    })});
+    const uris=staging.map(s=>s.uri);
+    for(let i=0;i<uris.length;i+=100){
+      await api(`/playlists/${pl.id}/tracks`,{method:'POST',body:JSON.stringify({uris:uris.slice(i,i+100)})});
+    }
+    toast(`created "${name}" with ${uris.length} songs`);
+    staging=[]; renderStaging();
+    $('newName').value=''; $('newDesc').value=''; $('searchResults').innerHTML='';
+    await loadPlaylists();
+  }catch(e){ toast(e.message,true); }
+  finally{ btn.disabled=staging.length===0; btn.textContent=orig; }
+}
+
+/* ═══ Utils ═══ */
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ═══ Wire up ═══ */
+$('connectBtn').addEventListener('click',login);
+$('logoutBtn').addEventListener('click',()=>{ clearTokens(); staging=[]; show(viewLogin); });
+$('refreshBtn').addEventListener('click',loadPlaylists);
+$('createBtn').addEventListener('click',createPlaylist);
+$('genBtn').addEventListener('click',generate);
+$('searchBtn').addEventListener('click',runSearch);
+$('searchInp').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); runSearch(); } });
+$('clearStage').addEventListener('click',()=>{ staging=[]; renderStaging(); });
+$('newName').addEventListener('input',renderStaging);
+
+$('setupSaveBtn').addEventListener('click',()=>{
+  const id=$('setupClientInput').value.trim();
+  if(!id){ toast('paste a client id',true); return; }
+  localStorage.setItem('sp_client_id',id); SPOTIFY_CLIENT_ID=id; login();
+});
+
+/* public/private toggle */
+const pubTog=$('pubTog');
+function flipPub(){ const on=pubTog.classList.toggle('on'); pubTog.setAttribute('aria-checked',on); $('pubLbl').textContent=on?'public':'private'; }
+pubTog.addEventListener('click',flipPub);
+pubTog.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flipPub(); } });
+
+/* add-mode segmented (pick vs auto) */
+document.querySelectorAll('#addModeSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#addModeSeg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const auto=b.dataset.mode==='auto';
+  $('modeAuto').classList.toggle('hidden',!auto);
+  $('modeSearch').classList.toggle('hidden',auto);
+}));
+
+/* generic segmented groups (single-select) */
+['autoSrcSeg','rangeSeg','countSeg'].forEach(gid=>{
+  document.querySelectorAll(`#${gid} button`).forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll(`#${gid} button`).forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    if(gid==='autoSrcSeg'){
+      const src=b.dataset.src;
+      $('autoTop').classList.toggle('hidden',src!=='top');
+      $('autoKeyword').classList.toggle('hidden',src!=='keyword');
+      $('autoArtist').classList.toggle('hidden',src!=='artist');
+    }
+  }));
+});
+
+boot();
+</script>
+</body>
+</html>
