@@ -514,8 +514,10 @@ export default {
         return Response.json({ status }, { headers });
       }
       if (p === 'dc') {
-        const token = request.headers.get('X-Discord-Token');
         const isDebug = url.searchParams.get('debug') === '1';
+        // Debug mode may pass the token via ?t= so it can be tested by opening
+        // a plain URL in the browser; normal flow uses the X-Discord-Token header.
+        const token = request.headers.get('X-Discord-Token') || (isDebug ? url.searchParams.get('t') : null);
         if (isDebug) {
           // Show fingerprint fetch status, unauthed endpoint, and pomelo endpoint
           const fpDebug = await (async () => {
