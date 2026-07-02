@@ -4,14 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#000">
+<meta name="description" content="kataly — developer. tools, contact, and the void between.">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/assets/images/falling-figure.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/images/falling-figure.png">
 <title>kataly</title>
 <style>
 @font-face{font-family:'Terminus TTF';src:url('assets/fonts/Terminus.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{--neon-r:26;--neon-g:62;--neon-b:200;}
 html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF',monospace;font-weight:500;color:#fff;}
+
+/* ═══ KEYBOARD FOCUS (a11y) ═══ */
+a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(150,185,255,.85);outline-offset:3px;border-radius:6px;
+}
 
 /* ═══ BACKGROUND ═══ */
 #cosmicAtmo{
@@ -132,7 +141,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .p-hero-role .rb{color:rgba(80,110,240,.6);}
 .p-hero-role .rt{color:rgba(255,255,255,.62);margin:0 5px;}
 
-.p-hero-bio{margin-top:24px;font-size:12px;line-height:2.05;color:rgba(255,255,255,.26);max-width:320px;letter-spacing:.025em;text-align:center;}
+.p-hero-bio{margin-top:24px;font-size:12px;line-height:2.05;color:rgba(255,255,255,.42);max-width:320px;letter-spacing:.025em;text-align:center;}
 
 .p-hero-cta{
   display:inline-flex;align-items:center;gap:14px;
@@ -198,8 +207,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .p-card-icon svg{width:16px;height:16px;fill:rgba(255,255,255,.52);}
 .p-card-icon .ig-path{fill:none;stroke:rgba(255,255,255,.52);stroke-width:1.6;}
 .p-card-name{font-size:14px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2.5px;margin-bottom:5px;}
-.p-card-handle{font-size:8px;color:rgba(255,255,255,.2);letter-spacing:1px;}
-.p-card-action{display:flex;align-items:center;gap:6px;margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.04);font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.18);}
+.p-card-handle{font-size:8px;color:rgba(255,255,255,.36);letter-spacing:1px;}
+.p-card-action{display:flex;align-items:center;gap:6px;margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.04);font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.32);}
 .p-card-action::after{content:'→';margin-left:2px;}
 
 /* ═══ FAB ═══ */
@@ -212,7 +221,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .p-fab:hover .p-fab-tip{opacity:1;}
 
 /* ═══ MUSIC ═══ */
-.p-music{position:fixed;bottom:28px;left:22px;z-index:450;display:flex;align-items:center;gap:9px;padding:9px 16px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.055);border-radius:100px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 8px 28px rgba(0,0,0,.5);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:border-color .2s,background .2s;user-select:none;}
+.p-music{position:fixed;bottom:28px;left:22px;z-index:450;display:flex;align-items:center;gap:9px;min-height:44px;padding:11px 18px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.055);border-radius:100px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 8px 28px rgba(0,0,0,.5);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:border-color .2s,background .2s;user-select:none;}
 .p-music:hover{border-color:rgba(255,255,255,.12);background:rgba(4,6,16,.8);}
 .p-music-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.18);flex-shrink:0;transition:background .3s,box-shadow .3s;}
 .p-music.playing .p-music-dot{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.5);animation:musicPulse 1.5s ease-in-out infinite;}
@@ -277,7 +286,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 <audio id="bgMusic" src="assets/audio/music.mp3" loop preload="none"></audio>
 
 <!-- Entrance -->
-<div id="entrance">
+<div id="entrance" role="button" tabindex="0" aria-label="Enter site">
   <div id="entranceBg"></div>
   <div class="e-logo-zone">
     <div class="e-ring"></div>
@@ -386,7 +395,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 </a>
 
 <!-- Music -->
-<div class="p-music" id="musicPlayer" role="button" aria-label="Toggle music">
+<div class="p-music" id="musicPlayer" role="button" tabindex="0" aria-label="Toggle music" aria-pressed="false">
   <div class="p-music-dot"></div>
   <svg class="p-music-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
   <span class="p-music-lbl">music</span>
@@ -1165,23 +1174,41 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
   window.addEventListener('touchmove', e=>handleParallax(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
 
   /* ── Music ── */
-  musicPlayer.addEventListener('click', ()=>{
+  function toggleMusic(){
     if(musicPlaying){
-      bgMusic.pause(); musicPlaying=false; musicPlayer.classList.remove('playing');
+      bgMusic.pause(); musicPlaying=false;
+      musicPlayer.classList.remove('playing');
+      musicPlayer.setAttribute('aria-pressed','false');
     } else {
-      bgMusic.play().then(()=>{musicPlaying=true;musicPlayer.classList.add('playing');}).catch(()=>{});
+      bgMusic.play().then(()=>{
+        musicPlaying=true;
+        musicPlayer.classList.add('playing');
+        musicPlayer.setAttribute('aria-pressed','true');
+      }).catch(()=>{});
     }
+  }
+  musicPlayer.addEventListener('click', toggleMusic);
+  musicPlayer.addEventListener('keydown', e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleMusic(); }
   });
 
-  /* ── Entrance click ── */
-  entrance.addEventListener('click', ()=>{
+  /* ── Entrance ── */
+  function enterSite(){
     if(fallingTriggered) return;
     fallingTriggered = true;
     logoImg.classList.add('falling');
     enterDivider.classList.add('ui-fade-out');
     enterHint.classList.add('ui-fade-out');
-    bgMusic.play().then(()=>{musicPlaying=true;musicPlayer.classList.add('playing');}).catch(()=>{});
+    bgMusic.play().then(()=>{
+      musicPlaying=true;
+      musicPlayer.classList.add('playing');
+      musicPlayer.setAttribute('aria-pressed','true');
+    }).catch(()=>{});
     setTimeout(()=>{ entrance.classList.add('hidden'); mainContent.classList.add('revealed'); }, 380);
+  }
+  entrance.addEventListener('click', enterSite);
+  entrance.addEventListener('keydown', e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); enterSite(); }
   });
 
   /* ── Init ── */

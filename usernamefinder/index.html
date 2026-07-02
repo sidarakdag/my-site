@@ -4,11 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#000">
+<meta name="description" content="username sniper — check username availability across Instagram, Telegram and Discord.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/assets/images/falling-figure.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/images/falling-figure.png">
 <title>username sniper · kataly</title>
 <style>
 @font-face{font-family:'Terminus TTF';src:url('../assets/fonts/Terminus.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF',monospace;font-weight:500;color:#fff;}
+
+/* ═══ KEYBOARD FOCUS (a11y) ═══ */
+a:focus-visible,button:focus-visible,input:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(150,185,255,.85);outline-offset:2px;border-radius:6px;
+}
 
 /* ── Background ── */
 #cosmicAtmo{position:fixed;inset:0;z-index:0;pointer-events:none;
@@ -113,8 +124,8 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .status-dot.running{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.7);animation:sdPulse 1.2s ease-in-out infinite;}
 .status-dot.done{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.5);}
 @keyframes sdPulse{0%,100%{opacity:1}50%{opacity:.35}}
-#statusText{font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.3);flex:1;}
-#counterText{font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.18);flex-shrink:0;}
+#statusText{font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.42);flex:1;}
+#counterText{font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.34);flex-shrink:0;}
 
 /* ── Currently scanning ── */
 #scanningRow{
@@ -182,7 +193,7 @@ html,body{width:100%;overflow-x:hidden;background:#000;font-family:'Terminus TTF
 .t-status.clear{color:rgba(74,222,128,.9);}
 .t-status.taken{color:rgba(255,80,60,.9);}
 .t-status.forsale{color:rgba(255,80,60,.9);}
-.t-status.unverified{color:rgba(255,255,255,.18);}
+.t-status.unverified{color:rgba(255,255,255,.34);}
 
 .t-spacer{flex:1;}
 

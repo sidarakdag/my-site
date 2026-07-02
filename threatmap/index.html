@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#000">
+<meta name="description" content="live cyber threat map — simulated global attack traffic visualization.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/assets/images/falling-figure.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/images/falling-figure.png">
 <title>cyber threat map · kataly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +17,11 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;background:#000308;font-family:'Space Mono',monospace;color:#fff;}
+
+/* ═══ KEYBOARD FOCUS (a11y) ═══ */
+a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(90,160,255,.9);outline-offset:2px;border-radius:6px;
+}
 
 #cv{position:fixed;inset:0;z-index:1;cursor:grab;touch-action:none;}
 #cv:active{cursor:grabbing;}
@@ -78,10 +89,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000308;font-family:
   box-shadow:0 20px 60px rgba(0,0,0,.85),0 0 40px rgba(0,60,200,.15),inset 0 1px 0 rgba(255,255,255,.06);
   transition:opacity .22s ease,transform .22s ease;}
 .info.hide{opacity:0;pointer-events:none;transform:translate(-50%,-47%);}
-.info-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.25);
-  font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;font-family:inherit;
-  transition:color .15s;-webkit-tap-highlight-color:transparent;}
-.info-close:hover{color:rgba(255,255,255,.8);}
+.info-close{position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(255,255,255,.4);
+  font-size:20px;cursor:pointer;line-height:1;font-family:inherit;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  transition:color .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.info-close:hover{color:rgba(255,255,255,.85);}
 .info-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
 .info-flag{width:58px;height:auto;border-radius:5px;box-shadow:0 2px 14px rgba(0,0,0,.55);flex-shrink:0;}
 .info-hdr-text{min-width:0;}
@@ -144,7 +156,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000308;font-family:
 </div>
 
 <div id="info" class="info hide">
-  <button class="info-close" onclick="hideInfo()">×</button>
+  <button class="info-close" onclick="hideInfo()" aria-label="Close">×</button>
   <div class="info-header">
     <img class="info-flag" id="infoFlag" src="" alt="flag" onerror="this.style.display='none'">
     <div class="info-hdr-text">
