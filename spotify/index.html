@@ -514,7 +514,7 @@ async function loadPlaylists(){
   const box=$('playlists');
   box.innerHTML='<div class="empty"><span class="spin"></span></div>';
   try{
-    let items=[], next='/me/playlists?limit=50';
+    let items=[], next='/me/playlists?limit=20';
     while(next){ const d=await api(next); items=items.concat(d.items); next=d.next; }
     PLAYLISTS=items.filter(Boolean);
     const followedCount=PLAYLISTS.filter(pl=>pl.owner?.id!==ME.id).length;
@@ -624,6 +624,23 @@ function renderStaging(){
 /* ═══ Auto-generate ═══ */
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
+/* Page through an endpoint in safe 20-item chunks (Spotify rejects limit>50;
+   paging in 20s avoids any "invalid limit" edge cases while still gathering
+   as many tracks as we need). Handles both /me/top (d.items) and /search (d.tracks.items). */
+async function collect(path, need){
+  const per=20; let out=[], offset=0;
+  while(out.length<need){
+    const sep=path.includes('?')?'&':'?';
+    const d=await api(`${path}${sep}limit=${per}&offset=${offset}`);
+    const batch=d.items||d.tracks?.items||[];
+    out=out.concat(batch);
+    if(batch.length<per) break;   // no more pages
+    offset+=per;
+    if(offset>=200) break;        // hard safety cap
+  }
+  return out;
+}
+
 async function generate(){
   const src=document.querySelector('#autoSrcSeg .active').dataset.src;
   const count=parseInt(document.querySelector('#countSeg .active').dataset.count,10);
@@ -632,23 +649,21 @@ async function generate(){
     let tracks=[];
     if(src==='top'){
       const range=document.querySelector('#rangeSeg .active').dataset.range;
-      const d=await api(`/me/top/tracks?time_range=${range}&limit=50`);
-      tracks=d.items||[];
+      tracks=await collect(`/me/top/tracks?time_range=${range}`, count);
     } else if(src==='keyword'){
       const kw=$('autoKwInp').value.trim();
       if(!kw){ toast('type a vibe first',true); return; }
-      const d=await api(`/search?type=track&limit=50&q=${encodeURIComponent(kw)}`);
-      tracks=shuffle(d.tracks?.items||[]);
+      tracks=shuffle(await collect(`/search?type=track&q=${encodeURIComponent(kw)}`, Math.max(count,40)));
     } else if(src==='artist'){
       const name=$('autoArtInp').value.trim();
       if(!name){ toast('type an artist first',true); return; }
       const sr=await api(`/search?type=artist&limit=1&q=${encodeURIComponent(name)}`);
       const artist=sr.artists?.items?.[0];
       if(!artist){ toast('artist not found',true); return; }
-      const top=await api(`/artists/${artist.id}/top-tracks?market=from_token`);
-      const more=await api(`/search?type=track&limit=50&q=${encodeURIComponent('artist:"'+artist.name+'"')}`);
+      const top=await api(`/artists/${artist.id}/top-tracks`).catch(()=>({tracks:[]}));
+      const more=await collect(`/search?type=track&q=${encodeURIComponent('artist:"'+artist.name+'"')}`, Math.max(count,40));
       const map=new Map();
-      (top.tracks||[]).concat(more.tracks?.items||[]).forEach(t=>{ if(t&&!map.has(t.uri)) map.set(t.uri,t); });
+      (top.tracks||[]).concat(more).forEach(t=>{ if(t&&!map.has(t.uri)) map.set(t.uri,t); });
       tracks=shuffle([...map.values()]);
     }
     if(!tracks.length){ toast('nothing found for that',true); return; }
