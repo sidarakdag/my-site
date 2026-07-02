@@ -357,6 +357,7 @@ let SPOTIFY_CLIENT_ID = '8272afc05a834492af44778ab85a1d4f';   // kataly manager 
 
 const REDIRECT_URI = location.origin + '/spotify/';
 const SCOPES = 'playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-top-read user-read-private';
+const SCOPE_VERSION = '2';  // bump to force everyone to re-consent with current scopes
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const API = 'https://api.spotify.com/v1';
@@ -410,7 +411,7 @@ async function login(){
   const code_challenge=await challenge(verifier);
   const p=new URLSearchParams({
     client_id:SPOTIFY_CLIENT_ID, response_type:'code', redirect_uri:REDIRECT_URI,
-    code_challenge_method:'S256', code_challenge, scope:SCOPES,
+    code_challenge_method:'S256', code_challenge, scope:SCOPES, show_dialog:'true',
   });
   location.href=`${AUTH_URL}?${p}`;
 }
@@ -431,6 +432,7 @@ function storeTokens(d){
   localStorage.setItem('sp_access',d.access_token);
   if(d.refresh_token) localStorage.setItem('sp_refresh',d.refresh_token);
   localStorage.setItem('sp_expires',(Date.now()+(d.expires_in-60)*1000).toString());
+  localStorage.setItem('sp_scope_v',SCOPE_VERSION);
 }
 function clearTokens(){ ['sp_access','sp_refresh','sp_expires'].forEach(k=>localStorage.removeItem(k)); }
 
@@ -461,10 +463,10 @@ async function api(path,opts={}){
   });
   let r=await doFetch(tok);
   if(r.status===401 && await refreshToken()){ r=await doFetch(localStorage.getItem('sp_access')); }
-  if(r.status===429){ toast('spotify rate limit — wait a moment',true); throw new Error('rate limited'); }
+  if(r.status===429){ const e=new Error('spotify is busy — wait a few seconds and retry'); e.status=429; throw e; }
   if(!r.ok){
-    let msg='request failed'; try{ const e=await r.json(); msg=e.error?.message||msg; }catch(_){}
-    throw new Error(msg);
+    let msg='request failed'; try{ const j=await r.json(); msg=j.error?.message||msg; }catch(_){}
+    const e=new Error(msg); e.status=r.status; throw e;
   }
   if(r.status===204) return null;
   return r.json();
@@ -482,6 +484,9 @@ function show(view){
 }
 
 async function boot(){
+  // If the saved login predates the current scope set, drop it so the user
+  // re-consents and gets playlist-modify permissions (fixes 403 on create).
+  if(localStorage.getItem('sp_scope_v')!==SCOPE_VERSION) clearTokens();
   const url=new URL(location.href);
   const code=url.searchParams.get('code');
   const err=url.searchParams.get('error');
@@ -677,9 +682,9 @@ async function generate(){
     renderStaging();
     toast(added?`added ${added} songs`:'those songs are already in the list');
   }catch(e){
-    let m=e.message;
-    if(/top/.test(String(m))||/403/.test(String(m))) m='couldn’t read your top tracks — try a different source';
-    toast(m,true);
+    if(e.status===403) toast('spotify denied it (403) — disconnect, connect again, approve all permissions',true);
+    else if(src==='top' && e.status) toast('couldn’t read your top tracks — try “by vibe” or “from artist”',true);
+    else toast(e.status?`${e.status}: ${e.message}`:e.message,true);
   }finally{ btn.disabled=false; btn.textContent=orig; }
 }
 
@@ -702,7 +707,10 @@ async function createPlaylist(){
     staging=[]; renderStaging();
     $('newName').value=''; $('newDesc').value=''; $('searchResults').innerHTML='';
     await loadPlaylists();
-  }catch(e){ toast(e.message,true); }
+  }catch(e){
+    if(e.status===403) toast('spotify denied it (403) — tap disconnect, connect again, and approve all permissions',true);
+    else toast(e.status?`${e.status}: ${e.message}`:e.message,true);
+  }
   finally{ btn.disabled=staging.length===0; btn.textContent=orig; }
 }
 
