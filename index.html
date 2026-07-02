@@ -94,6 +94,19 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:fo
   animation:crtFlicker 5s steps(2) infinite;}
 @keyframes crtFlicker{0%,100%{opacity:.5}47%{opacity:.5}48%{opacity:.28}49%{opacity:.55}50%{opacity:.3}51%{opacity:.5}}
 
+/* ═══ PORTRAIT BACKGROUND ═══
+   Drop an image at assets/images/bg.jpg (a red-haired, red-eyed figure works
+   best). It gets a blood duotone, slow drift, and a legibility veil. If the
+   file is missing, this layer hides itself and the void + ashfall show through. */
+#portrait{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 1.4s ease;}
+#portrait.on{opacity:1;}
+#portraitImg{width:100%;height:100%;object-fit:cover;object-position:50% 26%;
+  filter:saturate(.72) contrast(1.06) brightness(.68);
+  animation:kenburns 30s ease-in-out infinite alternate;will-change:transform;}
+@keyframes kenburns{0%{transform:scale(1.03) translate(0,0)}100%{transform:scale(1.13) translate(-1.5%,-2.5%)}}
+.p-duo{position:absolute;inset:0;background:radial-gradient(ellipse 72% 62% at 50% 38%,rgba(184,16,24,.26),transparent 68%);mix-blend-mode:screen;}
+.p-veil{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(3,0,1,.58) 0%,rgba(3,0,1,.14) 30%,rgba(3,0,1,.5) 68%,rgba(3,0,1,.95) 100%);}
+
 /* ═══ ENTRANCE ═══ */
 #entrance{
   position:fixed;inset:0;background:#000;z-index:999;
@@ -299,6 +312,13 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:fo
 
 <!-- Background -->
 <div id="cosmicAtmo"></div>
+<div id="portrait">
+  <img id="portraitImg" src="/assets/images/bg.jpg" alt=""
+       onload="this.closest('#portrait').classList.add('on')"
+       onerror="this.closest('#portrait').style.display='none'">
+  <div class="p-duo"></div>
+  <div class="p-veil"></div>
+</div>
 <div id="starLayer"></div>
 <div id="shipLayer"></div>
 <div id="novaLayer"></div>
@@ -478,702 +498,133 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:fo
   }
 
   /* ══════════════════════════════════
-     SPACE BATTLE SYSTEM
+     BLOOD ASHFALL — ambient horror background
+     Rising embers, drifting fog-wisps, and the occasional falling blood
+     streak in a dark red void. Tap/click spatters a burst. Canvas-based,
+     honours prefers-reduced-motion.
   ══════════════════════════════════ */
+  const _reduceMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  // ── Ship SVG builders (all face right by default) ──
-  function svgFighter(h,w,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 12" width="28" height="12" style="display:block;overflow:visible">
-      <path d="M2,6 L22,1 L28,6 L22,11 Z" fill="${h}"/>
-      <path d="M10,6 L18,1 L20,3.5 L11,6" fill="${w}"/>
-      <path d="M10,6 L18,11 L20,8.5 L11,6" fill="${w}"/>
-      <ellipse cx="21" cy="6" rx="3.5" ry="2" fill="${c}" opacity="0.8"/>
-      <circle cx="3.5" cy="6" r="2.5" fill="${e}"/>
-      <circle cx="3.5" cy="6" r="1" fill="rgba(255,255,255,.95)"/>
-    </svg>`;
-  }
-  function svgUFO(h,d,g,l){
-    const pts=Array.from({length:6},(_,i)=>{
-      const a=(i/6)*Math.PI*2;
-      return `<circle cx="${(18+Math.cos(a)*11).toFixed(1)}" cy="${(10+Math.sin(a)*3.8).toFixed(1)}" r="1.5" fill="${l}"/>`;
-    }).join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 16" width="36" height="16" style="display:block;overflow:visible">
-      <ellipse cx="18" cy="11" rx="17" ry="4.5" fill="${h}"/>
-      <ellipse cx="18" cy="7.5" rx="10" ry="6" fill="${d}"/>
-      <ellipse cx="18" cy="6" rx="6" ry="3.5" fill="rgba(0,0,0,.25)"/>
-      <ellipse cx="18" cy="13.5" rx="13" ry="2" fill="${g}" opacity="0.4"/>
-      ${pts}
-    </svg>`;
-  }
-  function svgFreighter(h,b,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 18" width="52" height="18" style="display:block;overflow:visible">
-      <rect x="4" y="5" width="38" height="8" rx="2" fill="${h}"/>
-      <rect x="36" y="2" width="16" height="14" rx="2" fill="${b}"/>
-      <rect x="5" y="3" width="12" height="3" rx="1" fill="${c}"/>
-      <rect x="5" y="12" width="12" height="3" rx="1" fill="${c}"/>
-      <rect x="20" y="3" width="9" height="3" rx="1" fill="${c}" opacity="0.7"/>
-      <rect x="20" y="12" width="9" height="3" rx="1" fill="${c}" opacity="0.7"/>
-      <rect x="0" y="6" width="5" height="6" rx="1" fill="${e}"/>
-      <ellipse cx="2" cy="9" rx="1.8" ry="2.5" fill="rgba(255,150,40,.9)"/>
-      <circle cx="2" cy="9" r=".9" fill="rgba(255,240,200,1)"/>
-    </svg>`;
-  }
-  function svgCapital(h,p,b,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 24" width="80" height="24" style="display:block;overflow:visible">
-      <path d="M0,12 L62,0 L80,12 L62,24 Z" fill="${h}"/>
-      <path d="M8,12 L54,3.5 L66,12 L54,20.5 Z" fill="${p}" opacity="0.28"/>
-      <line x1="12" y1="12" x2="54" y2="5" stroke="${p}" stroke-width="0.7" opacity="0.22"/>
-      <line x1="12" y1="12" x2="54" y2="19" stroke="${p}" stroke-width="0.7" opacity="0.22"/>
-      <rect x="56" y="8" width="14" height="8" rx="1" fill="${b}"/>
-      <rect x="59" y="5" width="8" height="4" rx="1" fill="${b}" opacity="0.85"/>
-      <rect x="63" y="3" width="4" height="3" rx="1" fill="${b}" opacity="0.65"/>
-      <rect x="0" y="9" width="8" height="6" rx="1" fill="${e}"/>
-      <ellipse cx="3.5" cy="12" rx="2" ry="2.8" fill="rgba(100,160,255,.9)"/>
-      <circle cx="3.5" cy="12" r=".95" fill="rgba(220,235,255,1)"/>
-    </svg>`;
-  }
-  function svgShuttle(h,w,c,e){
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" width="24" height="16" style="display:block;overflow:visible">
-      <path d="M2,8 L16,2 L24,8 L16,14 Z" fill="${h}"/>
-      <path d="M7,8 L16,0 L18,3 L9,8" fill="${w}" opacity="0.85"/>
-      <path d="M7,8 L16,16 L18,13 L9,8" fill="${w}" opacity="0.85"/>
-      <rect x="16" y="5" width="7" height="6" rx="2" fill="${c}" opacity="0.78"/>
-      <circle cx="3" cy="8" r="2.2" fill="${e}" opacity="0.92"/>
-      <circle cx="3" cy="8" r=".9" fill="rgba(255,220,120,1)"/>
-    </svg>`;
-  }
-
-  // ── Factions: [hull, panel/wing, bridge/dome, engine-bg, laserRgba] ──
-  const FX = {
-    empire: ['#28304a','#1a2038','#38446a','#12182e','rgba(80,120,255,'],
-    rebel:  ['#3a2c18','#281e0e','#4a3820','#180e04','rgba(80,200,80,'],
-    alien:  ['#0c2016','rgba(0,200,85,.55)','rgba(0,255,100,.35)','#060e08','rgba(0,255,80,'],
-    pirate: ['#2c1818','#1c1010','#3c2020','#140808','rgba(255,70,30,'],
-    neutral:['#323028','#22201a','#423e34','#181610','rgba(220,200,80,'],
-  };
-
-  // ── Ship type configs ──
-  const STYPES = {
-    fighter:  {vW:28,vH:12, scale:[1,2.4],   dur:[10000,20000], fires:true, iv:[1600,3200]},
-    ufo:      {vW:36,vH:16, scale:[0.8,1.8],  dur:[14000,26000], fires:true, iv:[2200,5000]},
-    freighter:{vW:52,vH:18, scale:[0.7,1.4],  dur:[24000,42000], fires:false,iv:null},
-    capital:  {vW:80,vH:24, scale:[0.55,1.1], dur:[38000,60000], fires:true, iv:[900,1900]},
-    shuttle:  {vW:24,vH:16, scale:[0.9,1.8],  dur:[13000,22000], fires:true, iv:[3000,6000]},
-  };
-
-  // ── Weighted spawn table [type, faction, weight] ──
-  const SPAWN_TABLE=[
-    ['fighter','rebel',22],['fighter','empire',22],['fighter','pirate',12],
-    ['shuttle','neutral',14],['shuttle','rebel',8],
-    ['ufo','alien',12],
-    ['freighter','neutral',6],
-    ['capital','empire',4],
-  ];
-  const TOTAL_W = SPAWN_TABLE.reduce((s,[,,w])=>s+w,0);
-  function pickSpawn(){
-    let r=Math.random()*TOTAL_W;
-    for(const row of SPAWN_TABLE){r-=row[2];if(r<=0)return row;}
-    return SPAWN_TABLE[0];
-  }
-
-  // ── Explosion ──
-  // Each theme: [hot, warm, cool, ember] as [r,g,b] arrays
-  const EX_THEMES=[
-    [[255,248,180],[255,162,42],[222,62,10],[255,88,18]],   // fire: white-gold→orange→deep red
-    [[168,222,255],[62,142,255],[18,62,210],[88,148,255]],  // plasma: ice-blue→electric blue
-    [[255,255,255],[198,244,255],[72,172,255],[128,198,255]], // nova: white→cyan→blue
-    [[255,202,238],[224,72,172],[142,10,122],[202,88,182]], // supernova: white-pink→magenta→purple
-    [[218,255,192],[88,255,108],[16,158,52],[52,192,72]],   // alien: white-green→emerald
-  ];
-  // isNova=true → cosmic cool palette, more rings, slower (for ambient supernovas)
-  // isNova=false → fiery hot palette, compact, quick (for ship deaths)
-  function spawnExplosion(xPct,yPct,scale=1,isNova=false){
-    const vw=window.innerWidth,vh=window.innerHeight;
-    const ox=vw*xPct/100, oy=vh*yPct/100;
-    // Ship: fire(0) or plasma(1); Nova: nova(2) or supernova(3)
-    const themeIdx=isNova ? 2+Math.floor(Math.random()*2) : Math.floor(Math.random()*2);
-    const theme=EX_THEMES[themeIdx];
-    const [cH,cW,cC,cE]=theme;
-    const R=(30+Math.random()*44)*Math.max(0.38,scale);
-    const DUR=(900+Math.random()*600)*Math.max(0.62,scale)*(isNova?1.9:1);
-    function rgba(c,a){return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(2)})`;}
-    const cHs=`rgb(${cH[0]},${cH[1]},${cH[2]})`;
-    const cWs=`rgb(${cW[0]},${cW[1]},${cW[2]})`;
-    const cCs=`rgb(${cC[0]},${cC[1]},${cC[2]})`;
-    const cEs=`rgb(${cE[0]},${cE[1]},${cE[2]})`;
-
-    const nova=document.createElement('div');
-    nova.className='nova';
-    nova.style.left=xPct+'%'; nova.style.top=yPct+'%';
-    nova.style.opacity=(0.32+Math.random()*0.52).toFixed(2);
-
-    const smoke=document.createElement('div');
-    smoke.className='nova-smoke';
-    const sd=Math.round(R*(isNova?5.5:3.8));
-    smoke.style.cssText=`width:${sd}px;height:${sd}px;background:radial-gradient(circle,${rgba(cC,.13)} 0%,${rgba(cW,.05)} 52%,transparent 80%);animation-duration:${Math.round(DUR*2.4)}ms;animation-delay:${Math.round(DUR*.1)}ms;`;
-    nova.appendChild(smoke);
-
-    // Nova: 4 large slow-expanding rings; ship: 2-4 compact rings
-    const numRings=isNova ? 4 : 2+(scale>.5?1:0)+(scale>1.1?1:0);
-    const ringSpan=R*(isNova?4.8:2.6);
-    for(let i=0;i<numRings;i++){
-      const ring=document.createElement('div');
-      ring.className='nova-ring';
-      const d=Math.round(ringSpan*(i+1)/numRings);
-      const rc=[cH,cH,cW,cC][Math.min(i,3)];
-      const bw=i===0?'2.5px':'1.5px';
-      ring.style.cssText=`width:${d}px;height:${d}px;border:${bw} solid ${rgba(rc,.9)};box-shadow:0 0 ${Math.round(d*.24)}px ${rgba(rc,.58)},0 0 ${Math.round(d*.55)}px ${rgba(rc,.14)};animation-duration:${Math.round(DUR*(.65+i*.32))}ms;animation-delay:${Math.round(i*28)}ms;`;
-      nova.appendChild(ring);
-    }
-    novaLayer.appendChild(nova);
-
-    // Canvas: NO mix-blend-mode:screen (forces CSS compositor layer every frame)
-    // Use ctx.globalCompositeOperation='lighter' inside canvas for additive glow
-    const csz=Math.ceil(R*5.5);
+  function startAmbient(){
     const cv=document.createElement('canvas');
-    cv.width=csz; cv.height=csz;
-    cv.style.cssText=`position:fixed;left:${ox}px;top:${oy}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3;`;
+    cv.style.cssText='position:fixed;inset:0;z-index:2;pointer-events:none;';
     document.body.appendChild(cv);
     const ctx=cv.getContext('2d');
-    const ccx=csz/2,ccy=csz/2;
-
-    // Reduced particle counts
-    const parts=[];
-    const nE=Math.round((14+Math.random()*12)*Math.min(scale,1.5));
-    for(let i=0;i<nE;i++){
-      const ang=Math.random()*Math.PI*2;
-      const spd=(1.6+Math.random()*7)*Math.max(0.42,scale);
-      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:0.6+Math.random()*0.4,decay:.01+Math.random()*.018,
-        size:1.2+Math.random()*2, cs:Math.random()<.55?cHs:cWs});
+    let W,H,DPR;
+    function resize(){
+      DPR=Math.min(window.devicePixelRatio||1,2);
+      W=cv.width=window.innerWidth*DPR; H=cv.height=window.innerHeight*DPR;
+      cv.style.width=window.innerWidth+'px'; cv.style.height=window.innerHeight+'px';
     }
-    const nD=Math.round((4+Math.random()*5)*Math.min(scale,1.3));
-    for(let i=0;i<nD;i++){
-      const ang=Math.random()*Math.PI*2;
-      const spd=(0.5+Math.random()*2.2)*Math.max(0.42,scale);
-      parts.push({x:ccx,y:ccy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
-        life:1,decay:.005+Math.random()*.006,size:2.8+Math.random()*4,
-        cs:[cWs,cCs,cEs][Math.floor(Math.random()*3)]});
-    }
+    resize(); window.addEventListener('resize',resize);
 
-    let t0=null, lastT=0;
-    (function frame(t){
-      if(!t0) t0=t;
-      const el=t-t0;
-      if(el>DUR*2.8){cv.remove();return;}
-      // Cap to 30fps
-      if(t-lastT<30){requestAnimationFrame(frame);return;}
-      lastT=t;
-      ctx.clearRect(0,0,csz,csz);
+    const embers=[], wisps=[], streaks=[], bursts=[];
+    const EMBER_N=_reduceMotion?0:(window.innerWidth<600?36:64);
+    const WISP_N =_reduceMotion?0:5;
+
+    function mkEmber(startY){
+      return {
+        x:Math.random()*W,
+        y:startY!==undefined?startY:(H+Math.random()*H*0.25),
+        vx:(Math.random()-0.5)*0.12*DPR,
+        vy:-(0.14+Math.random()*0.5)*DPR,
+        r:(0.6+Math.random()*1.7)*DPR,
+        life:0, max:520+Math.random()*900,
+        sway:Math.random()*Math.PI*2, swaySpd:0.004+Math.random()*0.01,
+        hot:Math.random()<0.45,
+      };
+    }
+    for(let i=0;i<EMBER_N;i++) embers.push(mkEmber(Math.random()*H));
+
+    function mkWisp(){
+      return { x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.09*DPR, vy:(Math.random()-0.5)*0.07*DPR,
+        r:(70+Math.random()*100)*DPR, ph:Math.random()*Math.PI*2 };
+    }
+    for(let i=0;i<WISP_N;i++) wisps.push(mkWisp());
+
+    let lastStreak=0;
+
+    function frame(t){
+      ctx.clearRect(0,0,W,H);
       ctx.globalCompositeOperation='lighter';
 
-      const fp=Math.min(1,el/(DUR*.2));
-      if(fp<1){
-        const fr=R*(.2+fp*2.6), fa=1-fp;
-        const gr=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,fr);
-        gr.addColorStop(0,`rgba(255,255,255,${fa.toFixed(2)})`);
-        gr.addColorStop(.4,rgba(cH,fa*.7));
-        gr.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=gr;
-        ctx.beginPath(); ctx.arc(ccx,ccy,fr,0,Math.PI*2); ctx.fill();
+      // drifting blood-fog wisps
+      for(const w of wisps){
+        w.x+=w.vx; w.y+=w.vy; w.ph+=0.008;
+        if(w.x<-w.r) w.x=W+w.r; if(w.x>W+w.r) w.x=-w.r;
+        if(w.y<-w.r) w.y=H+w.r; if(w.y>H+w.r) w.y=-w.r;
+        const a=0.045+Math.sin(w.ph)*0.03;
+        const g=ctx.createRadialGradient(w.x,w.y,0,w.x,w.y,w.r);
+        g.addColorStop(0,`rgba(150,16,24,${Math.max(0,a).toFixed(3)})`);
+        g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(w.x,w.y,w.r,0,Math.PI*2); ctx.fill();
       }
 
-      if(el<DUR*.9){
-        const cp=el/(DUR*.9);
-        const cr=R*(1.1-cp*.86), ca=Math.max(0,(1-cp*1.12)*.85);
-        const fc=cp<.35?cH:cp<.65?cW:cC;
-        const gr2=ctx.createRadialGradient(ccx,ccy,0,ccx,ccy,Math.max(1,cr));
-        gr2.addColorStop(0,`rgba(255,255,255,${ca.toFixed(2)})`);
-        gr2.addColorStop(.35,rgba(fc,ca*.75));
-        gr2.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=gr2;
-        ctx.beginPath(); ctx.arc(ccx,ccy,Math.max(1,cr),0,Math.PI*2); ctx.fill();
+      // rising embers
+      for(const e of embers){
+        e.life++; e.sway+=e.swaySpd;
+        e.x+=e.vx+Math.sin(e.sway)*0.3*DPR; e.y+=e.vy;
+        if(e.y<-12||e.life>e.max) Object.assign(e,mkEmber(H+12));
+        const lt=e.life/e.max;
+        const a=Math.sin(Math.min(1,lt*6))*(1-lt)*0.95;
+        if(a<=0) continue;
+        const col=e.hot?'255,120,58':'216,42,46';
+        ctx.fillStyle=`rgba(${col},${(a*0.22).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(e.x,e.y,e.r*3.2,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=`rgba(${col},${(a*0.95).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill();
       }
 
-      ctx.lineCap='round';
-      for(const p of parts){
-        p.life-=p.decay;
-        if(p.life<=0) continue;
-        const prevX=p.x, prevY=p.y;
-        p.vx*=.965; p.vy=p.vy*.965+.055;
-        p.x+=p.vx; p.y+=p.vy;
-        ctx.globalAlpha=p.life*.75;
-        ctx.strokeStyle=p.cs;
-        ctx.lineWidth=p.size*.7;
-        ctx.beginPath(); ctx.moveTo(prevX,prevY); ctx.lineTo(p.x,p.y); ctx.stroke();
-        ctx.globalAlpha=p.life*.88;
-        ctx.fillStyle=p.cs;
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+      // occasional falling blood streak
+      if(!_reduceMotion && t-lastStreak>2600+Math.random()*3200){
+        lastStreak=t;
+        streaks.push({x:Math.random()*W,y:-40*DPR,len:(28+Math.random()*64)*DPR,v:(6+Math.random()*7)*DPR,a:0.45+Math.random()*0.2});
       }
-      ctx.globalAlpha=1;
+      for(let i=streaks.length-1;i>=0;i--){
+        const s=streaks[i]; s.y+=s.v;
+        const g=ctx.createLinearGradient(s.x,s.y,s.x,s.y+s.len);
+        g.addColorStop(0,'rgba(0,0,0,0)');
+        g.addColorStop(1,`rgba(232,40,48,${s.a})`);
+        ctx.strokeStyle=g; ctx.lineWidth=1.4*DPR;
+        ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x,s.y+s.len); ctx.stroke();
+        if(s.y>H+s.len) streaks.splice(i,1);
+      }
+
+      // tap bursts (blood spatter)
+      for(let i=bursts.length-1;i>=0;i--){
+        const p=bursts[i]; p.life-=0.02;
+        if(p.life<=0){ bursts.splice(i,1); continue; }
+        p.vx*=0.94; p.vy=p.vy*0.94+0.12*DPR; p.x+=p.vx; p.y+=p.vy;
+        ctx.fillStyle=`rgba(${p.col},${(p.life*0.9).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.3,p.r*p.life),0,Math.PI*2); ctx.fill();
+      }
+
       ctx.globalCompositeOperation='source-over';
       requestAnimationFrame(frame);
-    })(performance.now());
-    setTimeout(()=>nova.remove(),DUR*2.8+400);
-  }
-
-  // ── Laser beam ──
-  function fireLaser(wrapEl,goRight,laserC){
-    if(!wrapEl.isConnected) return;
-    const rect=wrapEl.getBoundingClientRect();
-    if(!rect.width) return;
-    const len=18+Math.random()*28;
-    const x0=goRight ? rect.right : rect.left-len;
-    const y0=rect.top+rect.height*(0.3+Math.random()*0.4);
-    const ang=(Math.random()*16-8)*Math.PI/180;
-    const beam=document.createElement('div');
-    beam.style.cssText=`position:fixed;pointer-events:none;z-index:6;
-      width:${len}px;height:2px;border-radius:1px;
-      background:linear-gradient(to ${goRight?'right':'left'},transparent,${laserC}0.95),${laserC}0.5),transparent);
-      box-shadow:0 0 5px 1px ${laserC}0.4);
-      left:${x0}px;top:${y0}px;
-      transform-origin:${goRight?'left':'right'} center;
-      transform:rotate(${ang}rad);`;
-    document.body.appendChild(beam);
-    const travelDist=window.innerWidth*1.3;
-    const dur=260+Math.random()*240;
-    const dir=goRight?travelDist:-travelDist;
-
-    // Detect ships in the laser path and hit the nearest one
-    let hitTarget=null, hitDelay=Infinity;
-    for(const w of shipRegistry){
-      if(w===wrapEl||!w.isConnected||w._exploded) continue;
-      const wr=w.getBoundingClientRect();
-      if(!wr.width) continue;
-      const wx=wr.left+wr.width/2, wy=wr.top+wr.height/2;
-      if(goRight ? wx<x0 : wx>x0+len) continue;       // wrong direction
-      if(Math.abs(wy-y0)>wr.height*.6+12) continue;    // off-axis miss
-      const xDist=goRight ? wx-x0 : x0+len-wx;
-      if(xDist>travelDist) continue;
-      const delay=xDist/travelDist*dur;
-      if(delay<hitDelay){hitDelay=delay;hitTarget=w;}
     }
-    if(hitTarget){
-      const t=hitTarget;
-      setTimeout(()=>{if(t.isConnected&&!t._exploded&&t._onHit) t._onHit();},hitDelay);
-    }
+    requestAnimationFrame(frame);
 
-    beam.animate([
-      {transform:`rotate(${ang}rad) translateX(0)`,opacity:1},
-      {transform:`rotate(${ang}rad) translateX(${dir*.82}px)`,opacity:1,offset:.8},
-      {transform:`rotate(${ang}rad) translateX(${dir}px)`,opacity:0},
-    ],{duration:dur,easing:'linear'}).onfinish=()=>{
-      beam.remove();
-      if(!hitTarget&&Math.random()>.42){
-        const frac=0.38+Math.random()*0.38;
-        const hx=(x0+Math.cos(ang)*dir*frac)/window.innerWidth*100;
-        const hy=(y0+Math.sin(ang)*dir*frac)/window.innerHeight*100;
-        if(hx>1&&hx<99&&hy>1&&hy<99) spawnExplosion(hx,hy,0.28+Math.random()*0.45);
+    window._spatter=function(cx,cy){
+      const n=14+Math.floor(Math.random()*12), hot=Math.random()<0.45;
+      // expanding ring
+      bursts.push({x:cx*DPR,y:cy*DPR,vx:0,vy:0,r:0,life:1,col:hot?'255,110,50':'224,38,44',ring:true});
+      for(let i=0;i<n;i++){
+        const a=Math.random()*Math.PI*2, sp=(1+Math.random()*5.5)*DPR;
+        bursts.push({x:cx*DPR,y:cy*DPR,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:(1+Math.random()*2.6)*DPR,life:1,col:hot?'255,110,50':'220,36,42'});
       }
     };
   }
 
-  // ── Escape pod (tiny fleeing ship) ──
-  function spawnEscapePod(fromX, fromY, angle) {
-    const sz  = 6 + Math.random() * 7;
-    const h   = Math.round(sz * 0.4);
-    const pod = document.createElement('div');
-    pod.style.cssText = `position:fixed;pointer-events:none;z-index:7;
-      width:${sz}px;height:${h}px;
-      background:linear-gradient(to right,transparent 0%,rgba(190,215,255,.55) 25%,rgba(225,238,255,.92) 100%);
-      clip-path:polygon(0% 50%, 26% 0%, 100% 50%, 26% 100%);
-      box-shadow:0 0 ${Math.round(sz*.55)}px rgba(160,200,255,.6);
-      left:${fromX - sz/2}px;top:${fromY - h/2}px;
-      transform-origin:center center;
-      transform:rotate(${angle}rad);`;
-    document.body.appendChild(pod);
-    const dist = 65 + Math.random() * 110;
-    const dur  = 900 + Math.random() * 700;
-    pod.animate([
-      {transform:`rotate(${angle}rad) translateX(0)`,       opacity:.95},
-      {transform:`rotate(${angle}rad) translateX(${dist*.2}px)`, opacity:1,  offset:.12},
-      {transform:`rotate(${angle}rad) translateX(${dist}px)`,   opacity:0},
-    ],{duration:dur, easing:'ease-out'}).onfinish=()=>pod.remove();
+  /* tap / click the void → blood spatter (ignores UI controls) */
+  function _voidSpatter(x,y,target){
+    if(target?.closest?.('a,button,input,textarea,.p-card,.p-music,.p-nav,.p-fab,.rm-btn,#radialOverlay')) return;
+    if(window._spatter) window._spatter(x,y);
   }
-
-  // ── Ship registry (for doc-level tap + black hole) ──
-  const shipRegistry = new Set();
-
-  // ── Black hole ──
-  let bhActive=false;
-  function spawnBlackHole(x,y){
-    if(bhActive) return;
-    bhActive=true;
-
-    const EHR=42;
-    const INCL=Math.sin(22*Math.PI/180); // ≈ 0.374
-    const EHR2=(EHR*.9)*(EHR*.9); // precomputed for occlusion
-
-    const coreEl=document.createElement('div');
-    coreEl.className='bh-core-el';
-    coreEl.style.cssText+=`left:${x}px;top:${y}px;transform:translate(-50%,-50%);width:${EHR*2}px;height:${EHR*2}px;opacity:0;transition:opacity .38s ease;box-shadow:0 0 0 1.5px rgba(200,140,255,.92),0 0 14px 4px rgba(150,60,255,.62),0 0 30px 8px rgba(80,0,180,.3);`;
-    document.body.appendChild(coreEl);
-
-    // NO mix-blend-mode:screen — use ctx.globalCompositeOperation='lighter' inside canvas
-    const csz=EHR*8; // 336px
-    const cv=document.createElement('canvas');
-    cv.width=csz; cv.height=csz;
-    cv.style.cssText=`position:fixed;left:${x}px;top:${y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:11;`;
-    document.body.appendChild(cv);
-    const ctx=cv.getContext('2d');
-    const cx=csz/2, cy=csz/2;
-
-    // 36 disk particles, pre-cached color strings
-    const diskDefs=[
-      [1.38, 14, .055, 'rgb(200,228,255)'],
-      [2.08, 13, .033, 'rgb(255,178,50)'],
-      [2.95,  9, .018, 'rgb(218,58,20)'],
-    ];
-    const disks=diskDefs.map(([rm,count,spd,cs])=>{
-      const pts=[];
-      for(let i=0;i<count;i++){
-        pts.push({angle:Math.random()*Math.PI*2,
-          r:EHR*rm+Math.random()*EHR*.36,
-          speed:spd*(0.72+Math.random()*.56),
-          size:1+Math.random()*2.2, cs});
-      }
-      return pts;
-    });
-
-    const hwPts=[];
-    let startT=null, alive=true, coreVisible=false, lastT=0;
-
-    (function frame(t){
-      if(!startT) startT=t;
-      if(!alive||!cv.isConnected) return;
-      // Cap to 30fps
-      if(t-lastT<30){requestAnimationFrame(frame);return;}
-      lastT=t;
-      const el=t-startT;
-      const openFrac=Math.min(1,Math.max(0,(el-60)/600));
-      if(!coreVisible && openFrac>.06){ coreEl.style.opacity='1'; coreVisible=true; }
-
-      ctx.clearRect(0,0,csz,csz);
-      ctx.globalCompositeOperation='lighter';
-
-      // Ambient glow
-      const gg=ctx.createRadialGradient(cx,cy,EHR*.8,cx,cy,EHR*3.8);
-      gg.addColorStop(0,`rgba(95,8,195,${(.24*openFrac).toFixed(2)})`);
-      gg.addColorStop(.5,`rgba(50,0,135,${(.08*openFrac).toFixed(2)})`);
-      gg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=gg;
-      ctx.beginPath(); ctx.arc(cx,cy,EHR*3.8,0,Math.PI*2); ctx.fill();
-
-      // Disk particles
-      for(const pts of disks){
-        for(const p of pts){
-          p.angle+=p.speed;
-          const px=cx+Math.cos(p.angle)*p.r;
-          const py=cy+Math.sin(p.angle)*p.r*INCL;
-          // Squared-distance occlusion (no Math.hypot)
-          const dx=px-cx, dy=(py-cy)/INCL;
-          if(Math.sin(p.angle)<0 && dx*dx+dy*dy<EHR2) continue;
-          const dop=0.35+Math.cos(p.angle)*0.65;
-          ctx.globalAlpha=openFrac*dop*.85;
-          ctx.fillStyle=p.cs;
-          ctx.beginPath(); ctx.arc(px,py,p.size*(0.6+dop*.65),0,Math.PI*2); ctx.fill();
-        }
-      }
-      ctx.globalAlpha=1;
-
-      // Photon ring
-      if(openFrac>.08){
-        ctx.save(); ctx.translate(cx,cy); ctx.scale(1,INCL);
-        ctx.strokeStyle=`rgba(255,255,255,${(openFrac*.55).toFixed(2)})`;
-        ctx.lineWidth=2.5;
-        ctx.beginPath(); ctx.arc(0,0,EHR*1.04,0,Math.PI*2); ctx.stroke();
-        ctx.restore();
-        ctx.strokeStyle=`rgba(200,155,255,${(openFrac*.28).toFixed(2)})`;
-        ctx.lineWidth=5;
-        ctx.beginPath(); ctx.arc(cx,cy,EHR*1.02,0,Math.PI*2); ctx.stroke();
-      }
-
-      // Jets
-      if(openFrac>.2){
-        const ja=Math.min(1,(openFrac-.2)/.8)*(0.38+Math.sin(t/820)*.18);
-        for(let si=0;si<2;si++){
-          const sign=si?1:-1;
-          const jg=ctx.createLinearGradient(cx,cy,cx,cy+sign*EHR*3.5);
-          jg.addColorStop(0,`rgba(195,135,255,${(ja*.72).toFixed(2)})`);
-          jg.addColorStop(.35,`rgba(155,70,255,${(ja*.38).toFixed(2)})`);
-          jg.addColorStop(.7,`rgba(85,20,185,${(ja*.12).toFixed(2)})`);
-          jg.addColorStop(1,'rgba(0,0,0,0)');
-          ctx.fillStyle=jg;
-          ctx.beginPath(); ctx.ellipse(cx,cy+sign*EHR*.45,EHR*.22,EHR*1.8,0,0,Math.PI*2); ctx.fill();
-        }
-      }
-
-      // Hawking radiation
-      if(el>500 && Math.random()<.12){
-        const ang=Math.random()*Math.PI*2, spd=.5+Math.random()*1.6;
-        hwPts.push({x:cx+Math.cos(ang)*EHR*.92, y:cy+Math.sin(ang)*EHR*.92*INCL,
-          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*INCL*spd-.2,
-          life:1, decay:.025+Math.random()*.025, size:.8+Math.random()*1.2});
-      }
-      if(hwPts.length){
-        ctx.fillStyle='rgb(220,180,255)';
-        for(let i=hwPts.length-1;i>=0;i--){
-          const p=hwPts[i]; p.life-=p.decay;
-          if(p.life<=0){hwPts.splice(i,1);continue;}
-          p.x+=p.vx; p.y+=p.vy;
-          ctx.globalAlpha=p.life*.7;
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.size*1.5,0,Math.PI*2); ctx.fill();
-        }
-        ctx.globalAlpha=1;
-      }
-      ctx.globalCompositeOperation='source-over';
-      requestAnimationFrame(frame);
-    })(performance.now());
-
-    setTimeout(()=>{
-      for(const w of shipRegistry){
-        if(w.isConnected&&w._pull) w._pull(x,y);
-      }
-    },420);
-
-    setTimeout(()=>{
-      alive=false;
-      coreEl.style.transition='opacity .45s ease-in';
-      coreEl.style.opacity='0';
-      setTimeout(()=>{cv.remove();coreEl.remove();bhActive=false;},500);
-    },3500);
-  }
-
-  // ── Spawn one ship ──
-  let activeShips=0;
-  const MAX_SHIPS=9;
-
-  function spawnBattleShip(){
-    if(activeShips>=MAX_SHIPS) return;
-    activeShips++;
-    const [type,faction]=pickSpawn();
-    const cfg=STYPES[type];
-    const [hC,wC,bC,eC,laserC]=FX[faction];
-    let svgStr;
-    switch(type){
-      case 'fighter':   svgStr=svgFighter(hC,wC,bC,eC);      break;
-      case 'ufo':       svgStr=svgUFO(hC,wC,bC,laserC+'1)'); break;
-      case 'freighter': svgStr=svgFreighter(hC,bC,wC,eC);    break;
-      case 'capital':   svgStr=svgCapital(hC,wC,bC,eC);      break;
-      case 'shuttle':   svgStr=svgShuttle(hC,wC,bC,eC);      break;
-    }
-    const scale=(cfg.scale[0]+Math.random()*(cfg.scale[1]-cfg.scale[0])).toFixed(2);
-    const op=(0.38+Math.random()*0.42).toFixed(2);
-    const goRight=Math.random()>0.38;
-    const startY=3+Math.random()*82;
-    const dur=cfg.dur[0]+Math.random()*(cfg.dur[1]-cfg.dur[0]);
-    const tilt=(Math.random()*18-9).toFixed(1);
-
-    const wrap=document.createElement('div');
-    wrap.className='ship-wrap';
-    wrap.style.cssText='position:absolute;pointer-events:auto;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
-    wrap.innerHTML=`<div class="s-inner" style="opacity:${op};transform:scale(${scale})${goRight?'':' scaleX(-1)'} rotate(${tilt}deg);transform-origin:left center;">${svgStr}</div>`;
-    const startX=goRight?-10:112, endX=goRight?114:-12;
-    wrap.style.left=startX+'%'; wrap.style.top=startY+'%';
-    shipLayer.appendChild(wrap);
-    shipRegistry.add(wrap);
-
-    wrap._goRight=goRight;
-    wrap._laserC=laserC;
-    wrap._fires=cfg.fires;
-    wrap._exploded=false;
-
-    let laserTimer, exploded=false;
-    if(cfg.fires){
-      const schedLaser=()=>{
-        const delay=cfg.iv[0]+Math.random()*(cfg.iv[1]-cfg.iv[0]);
-        laserTimer=setTimeout(()=>{
-          if(wrap.isConnected&&!exploded){fireLaser(wrap,goRight,laserC);schedLaser();}
-        },delay);
-      };
-      setTimeout(schedLaser,600+Math.random()*1200);
-    }
-
-    const anim=wrap.animate([
-      {left:startX+'%',opacity:'0'},
-      {left:(startX+(endX-startX)*.05)+'%',opacity:op,offset:.04},
-      {left:(startX+(endX-startX)*.93)+'%',opacity:op,offset:.94},
-      {left:endX+'%',opacity:'0'},
-    ],{duration:dur,easing:'linear'});
-    anim.onfinish=()=>{clearTimeout(laserTimer);if(!exploded){wrap.remove();shipRegistry.delete(wrap);activeShips--;}};
-
-    // ── Click / tap to destroy ──
-    function onHit(e){
-      if(exploded) return;
-      if(e && e.stopPropagation) e.stopPropagation();
-      exploded=true;
-      wrap._exploded=true;
-      clearTimeout(laserTimer);
-      shipRegistry.delete(wrap);
-
-      const rect=wrap.getBoundingClientRect();
-      const cx=rect.left+rect.width/2;
-      const cy=rect.top+rect.height/2;
-      try{anim.cancel();}catch(_){}
-
-      const isLarge = type==='capital'||type==='freighter';
-      const isMed   = type==='ufo';
-
-      const inner=wrap.querySelector('.s-inner');
-      if(inner) inner.style.filter='brightness(10) saturate(0)';
-
-      const podCount = isLarge ? 4+Math.floor(Math.random()*4) : isMed ? 3+Math.floor(Math.random()*2) : 0;
-      const spread   = isLarge ? Math.PI*.8 : Math.PI*.6;
-      const baseAngle= goRight ? 0 : Math.PI;
-      for(let i=0;i<podCount;i++){
-        setTimeout(()=>{
-          const a = baseAngle + (Math.random()*spread*2 - spread);
-          spawnEscapePod(cx, cy, a);
-        }, i*140 + Math.random()*60);
-      }
-
-      const explDelay = isLarge ? 750+Math.random()*400 : isMed ? 320+Math.random()*200 : 40;
-      const explScale = isLarge ? 1.6+Math.random()*.9  : isMed ? 1.0+Math.random()*.5  : 0.4+Math.random()*.35;
-
-      setTimeout(()=>{
-        wrap.style.opacity='0';
-        spawnExplosion(cx/window.innerWidth*100, cy/window.innerHeight*100, explScale);
-        setTimeout(()=>{wrap.remove();activeShips--;},300);
-      }, explDelay);
-    }
-
-    // ── Black hole pull ──
-    wrap._pull = function(bhX,bhY){
-      if(exploded) return;
-      exploded=true;
-      clearTimeout(laserTimer);
-      shipRegistry.delete(wrap);
-
-      const rect=wrap.getBoundingClientRect();
-      const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-      try{anim.cancel();}catch(_){}
-
-      // Re-anchor at current pixel position so translate works
-      wrap.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;pointer-events:none;z-index:6;cursor:default;`;
-      document.body.appendChild(wrap);
-
-      const dx=bhX-cx, dy=bhY-cy;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      const pullDur=280+dist*1.1;
-
-      wrap.animate([
-        {transform:'translate(0,0) scale(1)', opacity:1},
-        {transform:`translate(${dx*.6}px,${dy*.6}px) scale(.5)`, opacity:.6, offset:.55},
-        {transform:`translate(${dx}px,${dy}px) scale(0)`, opacity:0},
-      ],{duration:pullDur, easing:'ease-in'}).onfinish=()=>{
-        wrap.remove();
-        activeShips--;
-        spawnExplosion(bhX/window.innerWidth*100, bhY/window.innerHeight*100, 0.25+Math.random()*.2);
-      };
-    };
-
-    wrap._onHit = onHit;
-    wrap.addEventListener('click', onHit);
-    // touchend backup for edge cases
-    wrap.addEventListener('touchend', e=>{ e.preventDefault(); onHit(e); }, {passive:false});
-  }
-
-  // ── Ambient distant explosions ──
-  function startAmbientNovas(){
-    const boom=()=>spawnExplosion(4+Math.random()*92,4+Math.random()*88,0.15+Math.random()*.22,true);
-    setTimeout(boom,900); setTimeout(boom,2600); setTimeout(boom,4500);
-    (function loop(){ setTimeout(()=>{boom();loop();},2800+Math.random()*5000); })();
-  }
-
-  // ── Ship vs ship dogfight ──
-  function engageShip(atk,tgt){
-    if(!atk.isConnected||!tgt.isConnected||atk._exploded||tgt._exploded) return;
-    const ar=atk.getBoundingClientRect(), tr=tgt.getBoundingClientRect();
-    if(!ar.width||!tr.width) return;
-    // Veer attacker's Y toward target (animating 'top' — safe since main anim only moves 'left')
-    const curY=(ar.top+ar.height/2)/window.innerHeight*100;
-    const tgtY=(tr.top+tr.height/2)/window.innerHeight*100;
-    atk.animate([{top:curY+'%'},{top:tgtY+'%'}],
-      {duration:1400+Math.random()*1200,easing:'ease-in-out',fill:'forwards'});
-    // Fire a rapid burst at the target
-    const shots=3+Math.floor(Math.random()*3);
-    for(let i=0;i<shots;i++){
-      setTimeout(()=>{
-        if(atk.isConnected&&!atk._exploded&&atk._fires)
-          fireLaser(atk,atk._goRight,atk._laserC);
-      }, i*260+60+Math.random()*100);
-    }
-  }
-
-  function startDogfight(){
-    const avail=[...shipRegistry].filter(w=>w.isConnected&&!w._exploded&&!w._fighting);
-    if(avail.length<2) return;
-    avail.sort(()=>Math.random()-.5);
-    const n=Math.min(avail.length, 2+(Math.random()<.35&&avail.length>2?1:0));
-    const fighters=avail.slice(0,n);
-    fighters.forEach(w=>{w._fighting=true;});
-    // Each ship engages the next one (round-robin pairs both ways)
-    for(let i=0;i<fighters.length;i++){
-      const atk=fighters[i], tgt=fighters[(i+1)%fighters.length];
-      if(atk._fires) engageShip(atk,tgt);
-      // Stagger the counter-attack so they trade shots
-      if(tgt._fires) setTimeout(()=>{
-        if(!tgt._exploded) engageShip(tgt,atk);
-      }, 380+Math.random()*220);
-    }
-    setTimeout(()=>fighters.forEach(w=>{if(w.isConnected) delete w._fighting;}), 8000);
-  }
-
-  function startSpaceBattle(){
-    [0,2200,4800,7500,11000].forEach(t=>setTimeout(spawnBattleShip,t));
-    setInterval(()=>{if(activeShips<MAX_SHIPS)spawnBattleShip();},5500);
-    startAmbientNovas();
-    // Periodic dogfights — first one after ships have had time to arrive
-    setTimeout(function triggerFight(){
-      startDogfight();
-      setTimeout(triggerFight, 11000+Math.random()*14000);
-    }, 9000);
-  }
-
-  /* ── Doc-level hit detection: bypasses z-index blocking for both mouse & touch ── */
-  function _scanShipsAt(tx,ty){
-    for(const w of shipRegistry){
-      if(!w.isConnected){shipRegistry.delete(w);continue;}
-      const r=w.getBoundingClientRect();
-      const PAD=34;
-      if(tx>=r.left-PAD&&tx<=r.right+PAD&&ty>=r.top-PAD&&ty<=r.bottom+PAD){
-        if(w._onHit) w._onHit(null);
-        return true;
-      }
-    }
-    return false;
-  }
-  let _touchMoved=false;
-  document.addEventListener('touchstart',e=>{
-    _touchMoved=false;
-    if(e.touches.length!==1) return;
-    const t=e.touches[0];
-    if(_scanShipsAt(t.clientX,t.clientY)) e.preventDefault();
-  },{passive:false});
-  document.addEventListener('touchmove',()=>{_touchMoved=true;},{passive:true});
-  document.addEventListener('click',e=>{
-    if(e.target.closest('a,button,input,.p-music,.p-nav')) return;
-    _scanShipsAt(e.clientX,e.clientY);
-  },false);
-
-  /* ── Double-tap anywhere on background → black hole ── */
-  let _bhLastT=0,_bhLastX=0,_bhLastY=0;
+  document.addEventListener('click',e=>_voidSpatter(e.clientX,e.clientY,e.target),false);
   document.addEventListener('touchend',e=>{
-    if(_touchMoved||e.touches.length!==0) return;
-    const tgt=e.target;
-    if(tgt?.closest?.('.p-card,.p-music,.p-nav,a,button,input,textarea,.p-fab')) return;
-    const t=e.changedTouches[0];
-    const now=Date.now(),dx=t.clientX-_bhLastX,dy=t.clientY-_bhLastY;
-    if(now-_bhLastT<360&&dx*dx+dy*dy<70*70){
-      e.preventDefault();
-      spawnBlackHole(t.clientX,t.clientY);
-      _bhLastT=0;
-    }else{_bhLastT=now;_bhLastX=t.clientX;_bhLastY=t.clientY;}
-  },{passive:false});
-  document.addEventListener('dblclick',e=>{
-    if(e.target?.closest?.('.p-card,.p-music,.p-nav,a,button,input,textarea,.p-fab')) return;
-    spawnBlackHole(e.clientX,e.clientY);
-  });
+    if(e.changedTouches&&e.changedTouches.length){ const t=e.changedTouches[0]; _voidSpatter(t.clientX,t.clientY,e.target); }
+  },{passive:true});
 
   /* ── Subtle cursor spotlight ── */
   const spotlight = document.createElement('div');
@@ -1259,7 +710,7 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:fo
     document.documentElement.style.setProperty('--neon-b', neon.b);
 
     createStars();
-    startSpaceBattle();
+    startAmbient();
   }
 
   fetch(`config.json?t=${Date.now()}`)
